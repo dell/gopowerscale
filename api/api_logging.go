@@ -23,6 +23,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httputil"
+	"strings"
+	"encoding/base64"
 
 	log "github.com/akutz/gournal"
 )
@@ -31,20 +33,26 @@ func isBinOctetBody(h http.Header) bool {
 	return h.Get(headerKeyContentType) == headerValContentTypeBinaryOctetStream
 }
 
-func logRequest(ctx context.Context, w io.Writer, req *http.Request) {
+func logRequest(ctx context.Context, w io.Writer, req *http.Request, verbose VerboseType) {
 	fmt.Fprintln(w, "")
 	fmt.Fprint(w, "    -------------------------- ")
 	fmt.Fprint(w, "GOISILON HTTP REQUEST")
 	fmt.Fprintln(w, " -------------------------")
-	buf, err := httputil.DumpRequest(req, !isBinOctetBody(req.Header))
-	if err != nil {
-		return
+	
+	switch verbose {
+	case Verbose_Low:
+		//minimal logging, i.e. print request line only
+		fmt.Fprintf(w, "    %s %s %s\r\n", req.Method, req.URL.RequestURI(), req.Proto)
+	default:
+		//full logging, i.e. print full request message content
+		buf, _ := httputil.DumpRequest(req, !isBinOctetBody(req.Header))
+		decodedBuf := decodeAuthorization(buf)
+		WriteIndented(w, decodedBuf)
+		fmt.Fprintln(w)
 	}
-	WriteIndented(w, buf)
-	fmt.Fprintln(w)
 }
 
-func logResponse(ctx context.Context, res *http.Response, verbose bool) {
+func logResponse(ctx context.Context, res *http.Response, verbose VerboseType) {
 	w := &bytes.Buffer{}
 
 	fmt.Fprintln(w)
@@ -52,21 +60,22 @@ func logResponse(ctx context.Context, res *http.Response, verbose bool) {
 	fmt.Fprint(w, "GOISILON HTTP RESPONSE")
 	fmt.Fprintln(w, " -------------------------")
 
-	buf, err := httputil.DumpResponse(res, !isBinOctetBody(res.Header) && verbose)
-	if err != nil {
-		return
+	var buf []byte
+
+	switch verbose {
+	case Verbose_Low:
+		//minimal logging, i.e. pirnt status line only
+		fmt.Fprintf(w, "    %s %s\r\n", res.Proto, res.Status)
+	case Verbose_Medium:
+		//print status line + headers
+		buf, _ = httputil.DumpResponse(res, false)
+	default:
+		//print full response message content
+		buf, _ = httputil.DumpResponse(res, !isBinOctetBody(res.Header))
 	}
 
-	bw := &bytes.Buffer{}
-	WriteIndented(bw, buf)
-
-	scanner := bufio.NewScanner(bw)
-	for {
-		if !scanner.Scan() {
-			break
-		}
-		fmt.Fprintln(w, scanner.Text())
-	}
+	//when DumpResponse gets err, buf will be nil. No message content will be printed
+	WriteIndented(w, buf)
 
 	log.Debug(ctx, w.String())
 }
@@ -101,4 +110,25 @@ func WriteIndentedN(w io.Writer, b []byte, n int) error {
 // WriteIndented indents all lines four spaces.
 func WriteIndented(w io.Writer, b []byte) error {
 	return WriteIndentedN(w, b, 4)
+}
+
+func decodeAuthorization(buf []byte) []byte{
+	sc := bufio.NewScanner(bytes.NewReader(buf))
+	ou := &bytes.Buffer{}
+	var l string
+	
+	for sc.Scan() {
+		l = sc.Text()
+		if strings.Contains(l, "Authorization") {
+			base64str := strings.Split(l, " ")[2]
+			decoded, _ := base64.StdEncoding.DecodeString(base64str)
+			decodedName := strings.Split(string(decoded), ":")[0]
+			//l = "Authorization: Decoded Username: " + decodedName
+			//l = "Authorization: " + decodedName + " [decoded username]"
+			l = "Authorization: " + decodedName + ":******"
+		}
+		fmt.Fprintln(ou, l)
+	}
+	
+	return ou.Bytes()
 }

@@ -38,7 +38,7 @@ func NewClient(ctx context.Context) (*Client, error) {
 		ctx,
 		os.Getenv("GOISILON_ENDPOINT"),
 		insecure,
-		false,
+		1,
 		os.Getenv("GOISILON_USERNAME"),
 		os.Getenv("GOISILON_GROUP"),
 		os.Getenv("GOISILON_PASSWORD"),
@@ -49,7 +49,7 @@ func NewClient(ctx context.Context) (*Client, error) {
 func NewClientWithArgs(
 	ctx context.Context,
 	endpoint string,
-	insecure, verboseLogging bool,
+	insecure bool, verboseLogging uint,
 	user, group, pass, volumesPath string) (*Client, error) {
 
 	timeout, _ := time.ParseDuration(os.Getenv("GOISILON_TIMEOUT"))

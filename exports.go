@@ -1,4 +1,4 @@
-/* 
+/*
  Copyright (c) 2019 Dell Inc, or its subsidiaries.
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +12,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
- */
+*/
 package goisilon
 
 import (
@@ -692,6 +692,17 @@ func (c *Client) AddExportClientsByIDWithZone(
 	return c.exportAddClients(ctx, export, clients)
 }
 
+// AddExportRootClientsByIDWithZone adds to the Export's clients property.
+func (c *Client) AddExportRootClientsByIDWithZone(
+	ctx context.Context, id int, zone string, clients []string) error {
+
+	export, err := c.GetExportByIDWithZone(ctx, id, zone)
+	if err != nil {
+		return err
+	}
+	return c.exportAddRootClients(ctx, export, clients)
+}
+
 // AddExportReadOnlyClientsByIDWithZone adds to the Export's read-only clients property.
 func (c *Client) AddExportReadOnlyClientsByIDWithZone(
 	ctx context.Context, id int, zone string, clients []string) error {
@@ -727,6 +738,17 @@ func (c *Client) exportAddClients(ctx context.Context, export Export, clientsToA
 	updatedClients := c.getUpdatedClients(ctx, export.ID, export.Clients, clientsToAdd)
 	return apiv2.ExportUpdateWithZone(
 		ctx, c.API, &apiv2.Export{ID: export.ID, Clients: updatedClients}, export.Zone)
+}
+
+func (c *Client) exportAddRootClients(ctx context.Context, export Export, clientsToAdd []string) error {
+
+	if export == nil {
+
+		return errors.New("Export instance is nil, abort calling exportAddRootClients")
+	}
+	updatedClients := c.getUpdatedClients(ctx, export.ID, export.RootClients, clientsToAdd)
+	return apiv2.ExportUpdateWithZone(
+		ctx, c.API, &apiv2.Export{ID: export.ID, RootClients: updatedClients}, export.Zone)
 }
 
 func (c *Client) exportAddReadOnlyClients(ctx context.Context, export Export, clientsToAdd []string) error {
@@ -802,7 +824,7 @@ func (c *Client) RemoveExportClientsByName(
 }
 
 // RemoveExportClientsWithPathAndZone removes the given clients from
-// the Export's clients/read_only_clients/read_write_clients properties with export path and access zone.
+// the Export's clients/read_only_clients/read_write_clients/root_clients properties with export path and access zone.
 func (c *Client) RemoveExportClientsWithPathAndZone(
 	ctx context.Context, path, zone string, clientsToRemove []string) error {
 	export, err := c.GetExportWithPathAndZone(ctx, path, zone)
@@ -823,12 +845,14 @@ func (c *Client) removeExportClients(ctx context.Context, export Export, clients
 	clients := export.Clients
 	readOnlyClients := export.ReadOnlyClients
 	readWriteClients := export.ReadWriteClients
+	rootClients := export.RootClients
 
 	*clients = c.removeClients(clientsToRemove, *clients)
 	*readOnlyClients = c.removeClients(clientsToRemove, *readOnlyClients)
 	*readWriteClients = c.removeClients(clientsToRemove, *readWriteClients)
+	*rootClients = c.removeClients(clientsToRemove, *rootClients)
 	return apiv2.ExportUpdateWithZone(
-		ctx, c.API, &apiv2.Export{ID: export.ID, Clients: clients, ReadOnlyClients: readOnlyClients, ReadWriteClients: readWriteClients}, export.Zone)
+		ctx, c.API, &apiv2.Export{ID: export.ID, Clients: clients, ReadOnlyClients: readOnlyClients, ReadWriteClients: readWriteClients, RootClients: rootClients}, export.Zone)
 }
 
 func (c *Client) removeClients(clientsToRemove []string, sourceClients []string) []string {
