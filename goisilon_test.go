@@ -57,7 +57,7 @@ func TestMain(m *testing.M) {
 		defaultCtx,
 		"https://10.230.24.244:8080",
 		true,
-		false,
+		1,
 		"admin",
 		"",
 		"Password123!",

@@ -118,8 +118,16 @@ type client struct {
 	volumePath      string
 	apiVersion      uint8
 	apiMinorVersion uint8
-	verboseLogging  bool
+	verboseLogging  VerboseType
 }
+
+type VerboseType uint
+
+const (
+	Verbose_High            VerboseType = 0
+	Verbose_Medium          VerboseType = 1
+	Verbose_Low             VerboseType = 2
+)
 
 type apiVerResponse struct {
 	Latest *string `json:"latest"`
@@ -155,7 +163,7 @@ type ClientOptions struct {
 func New(
 	ctx context.Context,
 	hostname, username, password, groupname string,
-	verboseLogging bool,
+	verboseLogging uint,
 	opts *ClientOptions) (Client, error) {
 
 	if hostname == "" || username == "" || password == "" {
@@ -168,7 +176,7 @@ func New(
 		groupname:      groupname,
 		password:       password,
 		volumePath:     defaultVolumesPath,
-		verboseLogging: verboseLogging,
+		verboseLogging: VerboseType(verboseLogging),
 	}
 
 	c.http = &http.Client{}
@@ -448,7 +456,7 @@ func (c *client) DoAndGetResponseBody(
 		isDebugLog = true
 	}
 
-	logRequest(ctx, logReqBuf, req)
+	logRequest(ctx, logReqBuf, req, c.verboseLogging)
 	log.Debug(ctx, logReqBuf.String())
 
 	// send the request

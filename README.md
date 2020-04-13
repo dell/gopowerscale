@@ -47,7 +47,7 @@ client, err := NewClientWithArgs(
 	context.Background(),
 	"https://172.17.177.230:8080",
 	true,
-	false,
+	1,
 	"userName",
 	"groupName",
 	"password",
