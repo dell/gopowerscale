@@ -18,12 +18,13 @@ package goisilon
 import (
 	"fmt"
 	"testing"
+        "os"
 
 	apiv1 "github.com/dell/goisilon/api/v1"
 )
 
-func TestSnapshotsGet(t *testing.T) {
 
+func TestSnapshotsGet(t *testing.T) {
 	snapshotPath := "test_snapshots_get_volume"
 	snapshotName1 := "test_snapshots_get_snapshot_0"
 	snapshotName2 := "test_snapshots_get_snapshot_1"
@@ -446,13 +447,12 @@ func TestSnapshotExportWithZone(t *testing.T) {
 }
 
 func TestGetRealVolumeSnapshotPathWithIsiPath(t *testing.T) {
-	isiPath := "/ifs/data/csi/"
 	volName := "volFromSnap0"
-	fmt.Printf(apiv1.GetRealVolumeSnapshotPathWithIsiPath(isiPath, volName))
+        newIsiPath := os.Getenv("GOISILON_VOLUMEPATH") 
+	fmt.Printf(apiv1.GetRealVolumeSnapshotPathWithIsiPath(newIsiPath, volName))
 }
 
 func TestSnapshotSizeGet(t *testing.T) {
-
 	snapshotPath := "test_snapshots_get_volume"
 	snapshotName1 := "test_snapshots_get_snapshot_0"
 
@@ -473,6 +473,7 @@ func TestSnapshotSizeGet(t *testing.T) {
 	// make sure we clean up when we're done
 	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.Id, snapshotName1)
 
+        newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
 	// get the updated snapshot list
 	totalSize, err := client.GetSnapshotFolderSize(defaultCtx, newIsiPath, snapshotName1)
 	if err != nil {

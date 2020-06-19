@@ -35,6 +35,16 @@ func (c *Client) GetQuota(ctx context.Context, name string) (Quota, error) {
 	return quota, nil
 }
 
+// GetQuotaByID returns a specific quota by ID
+func (c *Client) GetQuotaByID(ctx context.Context, ID string) (Quota, error) {
+	quota, err := api.GetIsiQuotaByID(ctx, c.API, ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return quota, nil
+}
+
 // GetQuotaWithPath returns a specific quota by path
 func (c *Client) GetQuotaWithPath(ctx context.Context, path string) (Quota, error) {
 	quota, err := api.GetIsiQuota(ctx, c.API, path)
@@ -77,6 +87,14 @@ func (c *Client) UpdateQuotaSize(
 
 	return api.UpdateIsiQuotaHardThreshold(
 		ctx, c.API, c.API.VolumePath(name), size)
+}
+
+// UpdateQuotaSizeByID modifies the max size (hard threshold) of a quota for a volume
+func (c *Client) UpdateQuotaSizeByID(
+	ctx context.Context, ID string, size int64) error {
+
+	return api.UpdateIsiQuotaHardThresholdByID(
+		ctx, c.API, ID, size)
 }
 
 // ClearQuota removes the quota from a volume

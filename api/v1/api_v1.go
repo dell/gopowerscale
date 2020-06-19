@@ -46,7 +46,7 @@ func realexportsPath(client api.Client) string {
 }
 
 func realVolumeSnapshotPath(client api.Client, name string) string {
-	parts := strings.SplitN(realNamespacePath(client), "/ifs/", 2)
+	parts := strings.SplitN(realNamespacePath(client), "/ifs", 2)
 	return path.Join(parts[0], volumesnapshotsPath, name, parts[1])
 }
 
@@ -64,6 +64,6 @@ func GetRealNamespacePathWithIsiPath(isiPath string) string {
 // GetRealVolumeSnapshotPathWithIsiPath gets the real volume snapshot path by using
 // the isiPath in the parameter rather than use the default one in the client object
 func GetRealVolumeSnapshotPathWithIsiPath(isiPath string, name string) string {
-	parts := strings.SplitN(GetRealNamespacePathWithIsiPath(isiPath), "/ifs/", 2)
+	parts := strings.SplitN(GetRealNamespacePathWithIsiPath(isiPath), "/ifs", 2)
 	return path.Join(parts[0], volumesnapshotsPath, name, parts[1])
 }

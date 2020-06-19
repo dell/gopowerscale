@@ -48,6 +48,29 @@ func GetIsiQuota(
 	return nil, errors.New(fmt.Sprintf("Quota not found: %s", path))
 }
 
+// GetIsiQuotaByID get the Quota instance by ID
+func GetIsiQuotaByID(
+	ctx context.Context,
+	client api.Client,
+	ID string) (quota *IsiQuota, err error) {
+
+	// PAPI call: GET https://1.2.3.4:8080/platform/1/quota/quotas/igSJAAEAAAAAAAAAAAAAQH0RAAAAAAAA
+	// This will list the quota by id on the cluster
+
+	var quotaResp isiQuotaListResp
+	err = client.Get(ctx, quotaPath, ID, nil, nil, &quotaResp)
+	if err != nil {
+		return nil, err
+	}
+
+	if quotaResp.Quotas != nil && len(quotaResp.Quotas) > 0 {
+		quota = &quotaResp.Quotas[0]
+		return quota, nil
+	}
+
+	return quota, fmt.Errorf("Quota not found: %s", ID)
+}
+
 // TODO: Add a means to set/update more than just the hard threshold
 
 // CreateIsiQuota creates a hard directory quota on given path
@@ -120,6 +143,31 @@ func UpdateIsiQuotaHardThreshold(
 
 	var quotaResp IsiQuota
 	err = client.Put(ctx, quotaPath, quota.Id, nil, nil, data, &quotaResp)
+	return err
+}
+
+// UpdateIsiQuotaHardThresholdByID modifies the hard threshold of a quota for a directory
+func UpdateIsiQuotaHardThresholdByID(
+	ctx context.Context,
+	client api.Client,
+	ID string, size int64) (err error) {
+
+	// PAPI call: PUT https://1.2.3.4:8080/platform/1/quota/quotas/Id
+	//             { "enforced" : true,
+	//               "thresholds_include_overhead" : false,
+	//               "thresholds" : { "advisory" : null,
+	//                                "hard" : 1234567890,
+	//                                "soft" : null
+	//                              }
+	//             }
+	var data = &IsiUpdateQuotaReq{
+		Enforced:                  true,
+		ThresholdsIncludeOverhead: false,
+		Thresholds:                isiThresholdsReq{Advisory: nil, Hard: size, Soft: nil},
+	}
+
+	var quotaResp IsiQuota
+	err = client.Put(ctx, quotaPath, ID, nil, nil, data, &quotaResp)
 	return err
 }
 
