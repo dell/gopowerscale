@@ -26,6 +26,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var exportForClient int
+
 func TestExportsList(t *testing.T) {
 	volumeName1 := "test_get_exports1"
 	volumeName2 := "test_get_exports2"
@@ -313,8 +315,20 @@ func TestExportClientsAdd(t *testing.T) {
 }
 
 func TestAddExportClientsByID(t *testing.T) {
+  
+        // Add the test exports
+        volumeName1 := "test_get_exports1"
+        vol, err := client.CreateVolume(defaultCtx, volumeName1)
+        assertNoError(t, err)
+        assertNotNil(t, vol)
+        volumeName1 = vol.Name
+        t.Logf("created volume: %s", volumeName1)
 
-	exportID := 19
+        exportID, err := client.Export(defaultCtx, volumeName1)
+        assertNoError(t, err)
+        t.Logf("created export: %d", exportID)
+
+        exportForClient = exportID
 	export, _ := client.GetExportByID(defaultCtx, exportID)
 
 	fmt.Printf("export '%d' has \n%-20v: '%v'\n%-20v: '%v'\n%-20v: '%v'\n", exportID, "clients", *export.Clients, "read_only_cilents", *export.ReadOnlyClients, "read_write_cilents", *export.ReadWriteClients)
@@ -351,15 +365,21 @@ func TestRemoveExportClientsByID(t *testing.T) {
 func TestRemoveExportClientsByName(t *testing.T) {
 
 	testRemoveExportClients(t, nil, client.RemoveExportClientsByName)
+        volumeName1 := "test_get_exports1"
+        // make sure we clean up when we're done
+        defer client.Unexport(defaultCtx, volumeName1)
+        defer client.DeleteVolume(defaultCtx, volumeName1)
 }
 
 func testRemoveExportClients(t *testing.T,
 	removeExportClientsByIDFunc func(ctx context.Context, id int, clientsToRemove []string) error,
 	removeExportClientsByNameFunc func(ctx context.Context, name string, clientsToRemove []string) error) {
 
-	exportID := 19
-	export, _ := client.GetExportByID(defaultCtx, exportID)
-	exportName := "k8s-afc1b126a2"
+        volumeName1 := "test_get_exports1"
+
+        exportID := exportForClient
+	export, _ := client.GetExportByName(defaultCtx, volumeName1)
+	exportName := volumeName1
 
 	fmt.Printf("export '%d' has \n%-20v: '%v'\n%-20v: '%v'\n%-20v: '%v'\n", exportID, "clients", *export.Clients, "read_only_cilents", *export.ReadOnlyClients, "read_write_cilents", *export.ReadWriteClients)
 

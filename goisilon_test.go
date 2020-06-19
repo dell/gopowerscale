@@ -20,6 +20,7 @@ import (
 	"flag"
 	"os"
 	"testing"
+        "strconv"
 
 	log "github.com/akutz/gournal"
 	glogrus "github.com/akutz/gournal/logrus"
@@ -44,6 +45,12 @@ func init() {
 			logrus.StandardLogger().Formatter))
 }
 
+func skipTest(t *testing.T) {
+  if os.Getenv("GOISILON_SKIP_TEST") != "" {
+    t.Skip("Skipping testing in CI environment")
+  }
+}
+
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if testing.Verbose() {
@@ -53,15 +60,20 @@ func TestMain(m *testing.M) {
 			log.DebugLevel)
 	}
 
+        goInsecure, err := strconv.ParseBool(os.Getenv("GOISILON_INSECURE"))
+        if err != nil {
+            log.WithError(err).Panic(defaultCtx, "error fetching environment variable GOISILON_INSECURE")
+        }
+
 	client, err = NewClientWithArgs(
 		defaultCtx,
-		"https://10.230.24.244:8080",
-		true,
+		os.Getenv("GOISILON_ENDPOINT"),
+		goInsecure,
 		1,
-		"admin",
+		os.Getenv("GOISILON_USERNAME"),
 		"",
-		"Password123!",
-		"/ifs/data/csi_share_1")
+		os.Getenv("GOISILON_PASSWORD"),
+		os.Getenv("GOISILON_VOLUMEPATH"))
 
 	if err != nil {
 		log.WithError(err).Panic(defaultCtx, "error creating test client")

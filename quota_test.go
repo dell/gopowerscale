@@ -213,3 +213,55 @@ func TestIsQuotaLicenseActivated(t *testing.T) {
 
 	assert.True(t, isActivated)
 }
+
+// Test TestQuotaUpdateByID()
+func TestQuotaUpdateByID(t *testing.T) {
+
+	volumeName := "test_quota_update"
+	quotaSize := int64(12345)
+	updatedQuotaSize := int64(22345000)
+
+	// Setup the test
+	_, err := client.CreateVolume(defaultCtx, volumeName)
+	if err != nil {
+		panic(err)
+	}
+	// make sure we clean up when we're done
+	defer client.DeleteVolume(defaultCtx, volumeName)
+	defer client.ClearQuota(defaultCtx, volumeName)
+	// Set the quota
+	id, err := client.SetQuotaSize(defaultCtx, volumeName, quotaSize)
+	if err != nil {
+		panic(err)
+	}
+	// Make sure the quota is initialized
+	quota, err := client.GetQuotaByID(defaultCtx, id)
+	if err != nil {
+		panic(err)
+	}
+	if quota == nil {
+		panic(fmt.Sprintf("Quota should not be nil: %v", quota))
+	}
+	if quota.Thresholds.Hard != quotaSize {
+		panic(fmt.Sprintf("Initial quota not set properly.  Expected: %d Actual: %d", quotaSize, quota.Thresholds.Hard))
+	}
+
+	// Update the quota
+	err = client.UpdateQuotaSizeByID(defaultCtx, quota.Id, updatedQuotaSize)
+	if err != nil {
+		panic(err)
+	}
+
+	// Make sure the quota is updated
+	quota, err = client.GetQuota(defaultCtx, volumeName)
+	if err != nil {
+		panic(err)
+	}
+	if quota == nil {
+		panic(fmt.Sprintf("Updated quota should not be nil: %v", quota))
+	}
+	if quota.Thresholds.Hard != updatedQuotaSize {
+		panic(fmt.Sprintf("Updated quota not set properly.  Expected: %d Actual: %d", updatedQuotaSize, quota.Thresholds.Hard))
+	}
+
+}
