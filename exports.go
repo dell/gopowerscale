@@ -205,6 +205,30 @@ func (c *Client) EnableRootMappingByID(
 	return apiv2.ExportUpdate(ctx, c.API, nex)
 }
 
+// EnableRootMappingByID enables the root mapping for an Export.
+func (c *Client) EnableRootMappingByIDWithZone(
+	ctx context.Context, id int, zone, user string) error {
+
+	ex, err := c.GetExportByIDWithZone(ctx, id, zone)
+	if err != nil {
+		return err
+	}
+	if ex == nil {
+		return nil
+	}
+
+	nex := &apiv2.Export{ID: ex.ID, MapRoot: ex.MapRoot}
+
+	setUserMapping(
+		nex,
+		user,
+		true,
+		func(e Export) UserMapping { return e.MapRoot },
+		func(e Export, m UserMapping) { e.MapRoot = m })
+
+	return apiv2.ExportUpdate(ctx, c.API, nex)
+}
+
 // DisableRootMapping disables the root mapping for an Export.
 func (c *Client) DisableRootMapping(
 	ctx context.Context, name string) error {
@@ -234,6 +258,30 @@ func (c *Client) DisableRootMappingByID(
 	ctx context.Context, id int) error {
 
 	ex, err := c.GetExportByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if ex == nil {
+		return nil
+	}
+
+	nex := &apiv2.Export{ID: ex.ID, MapRoot: ex.MapRoot}
+
+	setUserMapping(
+		nex,
+		"nobody",
+		false,
+		func(e Export) UserMapping { return e.MapRoot },
+		func(e Export, m UserMapping) { e.MapRoot = m })
+
+	return apiv2.ExportUpdate(ctx, c.API, nex)
+}
+
+// DisableRootMappingByID disables the root mapping for an Export.
+func (c *Client) DisableRootMappingByIDWithZone(
+	ctx context.Context, id int, zone string) error {
+
+	ex, err := c.GetExportByIDWithZone(ctx, id, zone)
 	if err != nil {
 		return err
 	}
