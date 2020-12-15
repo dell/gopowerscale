@@ -1,4 +1,4 @@
-/* 
+/*
  Copyright (c) 2019 Dell Inc, or its subsidiaries.
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,17 +12,16 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
- */
+*/
 package goisilon
 
 import (
 	"fmt"
+	"os"
 	"testing"
-        "os"
 
 	apiv1 "github.com/dell/goisilon/api/v1"
 )
-
 
 func TestSnapshotsGet(t *testing.T) {
 	snapshotPath := "test_snapshots_get_volume"
@@ -334,6 +333,79 @@ func TestSnapshotCopy(t *testing.T) {
 	}
 }
 
+func TestSnapshotCopyWithIsiPath(t *testing.T) {
+
+	sourceSnapshotPath := "test_snapshot_copy_src_volume"
+	sourceSnapshotName := "test_snapshot_copy_src_snapshot"
+	destinationVolume := "test_snapshot_copy_dst_volume"
+	subdirectoryName := "test_snapshot_copy_sub_dir"
+	sourceSubDirectory := fmt.Sprintf("%s/%s", sourceSnapshotPath, subdirectoryName)
+	destinationSubDirectory := fmt.Sprintf("%s/%s", destinationVolume, subdirectoryName)
+
+	// create the test volume
+	_, err := client.CreateVolume(defaultCtx, sourceSnapshotPath)
+	if err != nil {
+		panic(err)
+	}
+	//	defer client.DeleteVolume(snapshotPath)
+	// create a subdirectory in the test tvolume
+	_, err = client.CreateVolume(defaultCtx, sourceSubDirectory)
+	if err != nil {
+		panic(err)
+	}
+
+	// make sure the snapshot doesn't exist yet
+	snapshot, err := client.GetSnapshot(defaultCtx, -1, sourceSnapshotName)
+	if err == nil && snapshot != nil {
+		panic(fmt.Sprintf("Snapshot (%s) already exists.\n", sourceSnapshotName))
+	}
+
+	// Add the test snapshot
+	testSnapshot, err := client.CreateSnapshot(
+		defaultCtx, sourceSnapshotPath, sourceSnapshotName)
+	if err != nil {
+		panic(err)
+	}
+	// make sure we clean up when we're done
+	defer client.RemoveSnapshot(defaultCtx, testSnapshot.Id, sourceSnapshotName)
+	// remove the sub directory
+	err = client.DeleteVolume(defaultCtx, sourceSubDirectory)
+	if err != nil {
+		panic(err)
+	}
+
+	// copy the snapshot to the destination volume
+	_, err = client.CreateVolume(defaultCtx, destinationVolume)
+	if err != nil {
+		panic(err)
+	}
+	newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
+	copiedVolume, err := client.CopySnapshotWithIsiPath(
+		defaultCtx, newIsiPath, testSnapshot.Id, testSnapshot.Name, destinationVolume)
+	if err != nil {
+		panic(err)
+	}
+	defer client.DeleteVolume(defaultCtx, destinationVolume)
+
+	if copiedVolume.Name != destinationVolume {
+		panic(fmt.Sprintf("Copied volume has incorrect name.  Expected: (%s) Acutal: (%s)", destinationVolume, copiedVolume.Name))
+	}
+
+	// make sure the destination volume was created
+	volume, err := client.GetVolume(defaultCtx, "", destinationVolume)
+	if err != nil || volume == nil {
+		panic(fmt.Sprintf("Destination volume: (%s) was not created.\n", destinationVolume))
+	}
+	// make sure the sub directory was also created
+	subDirectory, err := client.GetVolume(defaultCtx, "", destinationSubDirectory)
+	if err != nil {
+		panic(fmt.Sprintf("Destination sub directory: (%s) was not created.\n", subdirectoryName))
+	}
+	if subDirectory.Name != destinationSubDirectory {
+		panic(fmt.Sprintf("Sub directory has incorrect name.  Expected: (%s) Acutal: (%s)", destinationSubDirectory, subDirectory.Name))
+	}
+}
+
 func TestSnapshotGetByIdentity(t *testing.T) {
 
 	snapshotPath := "test_snapshots_get_volume"
@@ -448,7 +520,7 @@ func TestSnapshotExportWithZone(t *testing.T) {
 
 func TestGetRealVolumeSnapshotPathWithIsiPath(t *testing.T) {
 	volName := "volFromSnap0"
-        newIsiPath := os.Getenv("GOISILON_VOLUMEPATH") 
+	newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
 	fmt.Printf(apiv1.GetRealVolumeSnapshotPathWithIsiPath(newIsiPath, volName))
 }
 
@@ -473,7 +545,7 @@ func TestSnapshotSizeGet(t *testing.T) {
 	// make sure we clean up when we're done
 	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.Id, snapshotName1)
 
-        newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
+	newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
 	// get the updated snapshot list
 	totalSize, err := client.GetSnapshotFolderSize(defaultCtx, newIsiPath, snapshotName1)
 	if err != nil {

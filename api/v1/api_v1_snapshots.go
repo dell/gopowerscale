@@ -16,10 +16,12 @@
 package v1
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"path"
+	"strings"
 
 	"github.com/dell/goisilon/api"
 )
@@ -124,18 +126,17 @@ func CopyIsiSnapshot(
 func CopyIsiSnapshotWithIsiPath(
 	ctx context.Context,
 	client api.Client,
-	isiPath, sourceSnapshotName, sourceVolume, destinationName string) (resp *IsiVolume, err error) {
-	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/destination_volume_name?merge=True
-	//             x-isi-ifs-copy-source: /path/to/snapshot/volumes/source_volume_name
-	headers := map[string]string{
-		"x-isi-ifs-copy-source": path.Join(
-			"/",
-			GetRealVolumeSnapshotPathWithIsiPath(isiPath, sourceSnapshotName),
-			sourceVolume),
-	}
-	// copy the volume
-	err = client.Put(ctx, GetRealNamespacePathWithIsiPath(isiPath), destinationName, mergeQS, headers, nil, &resp)
-	return resp, err
+	isiPath, sourceSnapshotName, sourceVolume, destinationName string) (*bytes.Buffer, *bytes.Buffer, error) {
+	// SSH call: ssh "cp <source_path> <destination path>
+	// copies contents from source path(i.e., snapshot directory) recursively to destination volume preserving file ownerships
+	snapshotPath := path.Join(GetRealVolumeSnapshotPathWithIsiPath(isiPath, sourceSnapshotName), sourceVolume)
+	parts := strings.SplitN(snapshotPath, namespacePath, 2)
+	srcPath := parts[1]
+	srcPath = srcPath + "/"
+	dstPath := path.Join(isiPath, destinationName)
+	cmd := strings.Join([]string{"cp -p -R -f", srcPath, dstPath}, " ")
+
+	return client.ExecuteSSHCommand(ctx, &cmd)
 }
 
 // RemoveIsiSnapshot deletes a snapshot from the cluster

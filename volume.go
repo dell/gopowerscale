@@ -1,4 +1,4 @@
-/* 
+/*
  Copyright (c) 2019 Dell Inc, or its subsidiaries.
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +12,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
- */
+*/
 package goisilon
 
 import (
@@ -23,9 +23,9 @@ import (
 	"sync"
 
 	log "github.com/akutz/gournal"
-	logger "github.com/sirupsen/logrus"
 	apiv1 "github.com/dell/goisilon/api/v1"
 	apiv2 "github.com/dell/goisilon/api/v2"
+	logger "github.com/sirupsen/logrus"
 )
 
 // Volume represents an Isilon Volume (namespace API).
@@ -290,7 +290,7 @@ func (c *Client) CopyVolume(
 //CopyVolumeWithIsiPath creates a volume based on an existing volume
 func (c *Client) CopyVolumeWithIsiPath(
 	ctx context.Context, isiPath, src, dest string) (Volume, error) {
-	_, err := apiv1.CopyIsiVolumeWithIsiPath(ctx, c.API, isiPath, src, dest)
+	_, _, err := apiv1.CopyIsiVolumeWithIsiPath(ctx, c.API, isiPath, src, dest)
 	if err != nil {
 		return nil, err
 	}

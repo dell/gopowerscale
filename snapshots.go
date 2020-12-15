@@ -1,4 +1,4 @@
-/* 
+/*
  Copyright (c) 2019 Dell Inc, or its subsidiaries.
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,17 +12,19 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
- */
+*/
 package goisilon
 
 import (
 	"context"
 	"fmt"
+	api "github.com/dell/goisilon/api/v1"
 	"path"
 	"strconv"
-
-	api "github.com/dell/goisilon/api/v1"
+	"strings"
 )
+
+const namespacePath = "namespace"
 
 // SnapshotList represents a list of Isilon snapshots.
 type SnapshotList []*api.IsiSnapshot
@@ -149,7 +151,7 @@ func (c *Client) CopySnapshotWithIsiPath(
 		return nil, fmt.Errorf("Snapshot doesn't exist: (%d, %s)", sourceID, sourceName)
 	}
 
-	_, err = api.CopyIsiSnapshotWithIsiPath(
+	_, _, err = api.CopyIsiSnapshotWithIsiPath(
 		ctx, c.API, isiPath, snapshot.Name,
 		path.Base(snapshot.Path), destinationName)
 	if err != nil {
@@ -198,4 +200,28 @@ func (c *Client) GetSnapshotFolderSize(ctx context.Context,
 		totalSize += attr.Size
 	}
 	return totalSize, nil
+}
+
+// GetSnapshotIsiPath returns the snapshot directory path
+func (c *Client) GetSnapshotIsiPath(
+	ctx context.Context,
+	isiPath, snapshotId string) (string, error) {
+
+	snapshot, err := c.GetIsiSnapshotByIdentity(ctx, snapshotId)
+	if err != nil {
+		return "", err
+	}
+	if snapshot == nil {
+		return "", fmt.Errorf("Snapshot doesn't exist for snapshot id: (%s)", snapshotId)
+	}
+
+	snapshotPath := api.GetRealVolumeSnapshotPathWithIsiPath(isiPath, snapshot.Name)
+	snapshotPath = path.Join(snapshotPath, path.Base(snapshot.Path))
+
+	parts := strings.SplitN(snapshotPath, namespacePath, 2)
+	if len(parts) < 2 {
+		return "", fmt.Errorf("Snapshot doesn't exist for snapshot id: (%s)", snapshotId)
+	}
+
+	return parts[1], nil
 }

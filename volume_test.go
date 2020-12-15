@@ -217,6 +217,68 @@ func TestVolumeCopy(*testing.T) {
 
 }
 
+func TestVolumeCopyWithIsiPath(*testing.T) {
+	sourceVolumeName := "test_copy_source_volume_name"
+	destinationVolumeName := "test_copy_destination_volume_name"
+	subDirectoryName := "test_sub_directory"
+	sourceSubDirectoryPath := fmt.Sprintf("%s/%s", sourceVolumeName, subDirectoryName)
+	destinationSubDirectoryPath := fmt.Sprintf("%s/%s", destinationVolumeName, subDirectoryName)
+
+	// make sure the destination volume doesn't exist yet
+	destinationVolume, err := client.GetVolume(
+		defaultCtx, destinationVolumeName, destinationVolumeName)
+	if err == nil && destinationVolume != nil {
+		panic(fmt.Sprintf("Volume (%s) already exists.\n", destinationVolumeName))
+	}
+
+	// Add the test volume
+	sourceTestVolume, err := client.CreateVolume(defaultCtx, sourceVolumeName)
+	if err != nil {
+		panic(err)
+	}
+	// make sure we clean up when we're done
+	defer client.DeleteVolume(defaultCtx, sourceTestVolume.Name)
+	// add a sub directory to the source volume
+	_, err = client.CreateVolume(defaultCtx, sourceSubDirectoryPath)
+	if err != nil {
+		panic(err)
+	}
+
+	// copy the source volume to the test volume
+	_, err = client.CreateVolume(defaultCtx, destinationVolumeName)
+	if err != nil {
+		panic(err)
+	}
+	newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
+	destinationTestVolume, err := client.CopyVolumeWithIsiPath(
+		defaultCtx, newIsiPath, sourceVolumeName, destinationVolumeName)
+	if err != nil {
+		panic(err)
+	}
+	defer client.DeleteVolume(defaultCtx, destinationTestVolume.Name)
+	// verify the copied volume is the same as the source volume
+	if destinationTestVolume == nil {
+		panic(fmt.Sprintf("Destination volume (%s) was not created.\n", destinationVolumeName))
+	}
+	if destinationTestVolume.Name != destinationVolumeName {
+		panic(fmt.Sprintf("Destination volume name not set properly.  Expected: (%s) Actual: (%s)\n", destinationVolumeName, destinationTestVolume.Name))
+	}
+	// make sure the destination volume contains the sub-directory
+	subTestVolume, err := client.GetVolume(
+		defaultCtx, "", destinationSubDirectoryPath)
+	if err != nil {
+		panic(err)
+	}
+	// verify the copied subdirectory is the same as int the source volume
+	if subTestVolume == nil {
+		panic(fmt.Sprintf("Destination sub directory (%s) was not created.\n", subDirectoryName))
+	}
+	if subTestVolume.Name != destinationSubDirectoryPath {
+		panic(fmt.Sprintf("Destination sub directory name not set properly.  Expected: (%s) Actual: (%s)\n", destinationSubDirectoryPath, subTestVolume.Name))
+	}
+
+}
+
 func TestVolumeExport(*testing.T) {
 	// TODO: Make this more robust
 	_, err := client.ExportVolume(defaultCtx, "testing")

@@ -1,4 +1,4 @@
-/* 
+/*
  Copyright (c) 2019 Dell Inc, or its subsidiaries.
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,19 +12,19 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
- */
+*/
 package api
 
 import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httputil"
 	"strings"
-	"encoding/base64"
 
 	log "github.com/akutz/gournal"
 )
@@ -38,7 +38,7 @@ func logRequest(ctx context.Context, w io.Writer, req *http.Request, verbose Ver
 	fmt.Fprint(w, "    -------------------------- ")
 	fmt.Fprint(w, "GOISILON HTTP REQUEST")
 	fmt.Fprintln(w, " -------------------------")
-	
+
 	switch verbose {
 	case Verbose_Low:
 		//minimal logging, i.e. print request line only
@@ -80,6 +80,42 @@ func logResponse(ctx context.Context, res *http.Response, verbose VerboseType) {
 	log.Debug(ctx, w.String())
 }
 
+func logSSHRequest(ctx context.Context, req *SSHReq) {
+	w := &bytes.Buffer{}
+	fmt.Fprintln(w, "")
+	fmt.Fprint(w, "    -------------------------- ")
+	fmt.Fprint(w, "GOISILON SSH REQUEST")
+	fmt.Fprintln(w, " -------------------------")
+
+	fmt.Fprintf(w, "    Command      : %s\n", *req.command)
+	fmt.Fprintf(w, "    Host         : %s\n", *req.isiIp)
+	fmt.Fprintf(w, "    Authorization: %s:******\n", *req.user)
+
+	log.Debug(ctx, w.String())
+}
+
+func logSSHResponse(ctx context.Context, resp *SSHResp) {
+	w := &bytes.Buffer{}
+
+	fmt.Fprintln(w)
+	fmt.Fprint(w, "    -------------------------- ")
+	fmt.Fprint(w, "GOISILON SSH RESPONSE")
+	fmt.Fprintln(w, " -------------------------")
+
+	fmt.Fprintf(w, "    Command Output: %s\n", resp.stdout)
+	fmt.Fprintf(w, "    Command Error : %s\n", resp.stderr)
+
+	var exitStatus interface{}
+	if resp.err != nil {
+		exitStatus = resp.err
+	} else {
+		exitStatus = 0
+	}
+
+	fmt.Fprintf(w, "    Exit Status   : %v\n", exitStatus)
+	log.Debug(ctx, w.String())
+}
+
 // WriteIndentedN indents all lines n spaces.
 func WriteIndentedN(w io.Writer, b []byte, n int) error {
 	s := bufio.NewScanner(bytes.NewReader(b))
@@ -112,11 +148,11 @@ func WriteIndented(w io.Writer, b []byte) error {
 	return WriteIndentedN(w, b, 4)
 }
 
-func decodeAuthorization(buf []byte) []byte{
+func decodeAuthorization(buf []byte) []byte {
 	sc := bufio.NewScanner(bytes.NewReader(buf))
 	ou := &bytes.Buffer{}
 	var l string
-	
+
 	for sc.Scan() {
 		l = sc.Text()
 		if strings.Contains(l, "Authorization") {
@@ -129,6 +165,6 @@ func decodeAuthorization(buf []byte) []byte{
 		}
 		fmt.Fprintln(ou, l)
 	}
-	
+
 	return ou.Bytes()
 }

@@ -16,8 +16,10 @@
 package v1
 
 import (
+	"bytes"
 	"context"
 	"path"
+	"strings"
 
 	"github.com/dell/goisilon/api"
 )
@@ -64,7 +66,6 @@ func CreateIsiVolumeWithIsiPath(
 	ctx context.Context,
 	client api.Client,
 	isiPath, name string) (resp *getIsiVolumesResp, err error) {
-
 	return CreateIsiVolumeWithACLAndIsiPath(ctx, client, isiPath, name, defaultACL)
 }
 
@@ -286,25 +287,15 @@ func CopyIsiVolume(
 func CopyIsiVolumeWithIsiPath(
 	ctx context.Context,
 	client api.Client,
-	isiPath, sourceName, destinationName string) (resp *getIsiVolumesResp, err error) {
-	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/destination_volume_name?merge=True
-	//             x-isi-ifs-copy-source: /path/to/volumes/source_volume_name
+	isiPath, sourceName, destinationName string) (*bytes.Buffer, *bytes.Buffer, error) {
+	// SSH call: ssh "cp <source_path> <destination path>
+	// copies contents from source volume path recursively to destination volume preserving file ownerships
+	srcPath := path.Join(isiPath, sourceName)
+	srcPath = srcPath + "/"
+	dstPath := path.Join(isiPath, destinationName)
 
-	// copy the volume
-	err = client.Put(
-		ctx,
-		GetRealNamespacePathWithIsiPath(isiPath),
-		destinationName,
-		mergeQS,
-		map[string]string{
-			"x-isi-ifs-copy-source": path.Join(
-				"/",
-				GetRealNamespacePathWithIsiPath(isiPath),
-				sourceName),
-		},
-		nil,
-		&resp)
-	return resp, err
+	cmd := strings.Join([]string{"cp -p -R -f", srcPath, dstPath}, " ")
+	return client.ExecuteSSHCommand(ctx, &cmd)
 }
 
 // GetIsiVolumeWithSize lists size of all the children files and subfolders in a directory
