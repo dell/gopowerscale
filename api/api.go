@@ -21,7 +21,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
+	"golang.org/x/crypto/ssh"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -93,6 +96,13 @@ type Client interface {
 		params OrderedValues, headers map[string]string,
 		resp interface{}) error
 
+	// ExecuteSSHCommand sends a command string to execute on oneFS CLI using ssh
+	// Returns data from remote process's standard output and error as *bytes.Buffer, started through ssh
+	// Returns error in case of any error
+	ExecuteSSHCommand(
+		ctx context.Context,
+		command *string) (*bytes.Buffer, *bytes.Buffer, error)
+
 	// APIVersion returns the API version.
 	APIVersion() uint8
 
@@ -157,6 +167,15 @@ type ClientOptions struct {
 
 	// Timeout specifies a time limit for requests made by this client.
 	Timeout time.Duration
+}
+
+type SSHReq struct {
+	command, isiIp, user *string
+}
+
+type SSHResp struct {
+	stdout, stderr *bytes.Buffer
+	err error
 }
 
 // New returns a new API client.
@@ -284,6 +303,57 @@ func (c *client) Delete(
 
 	return c.DoWithHeaders(
 		ctx, http.MethodDelete, path, id, params, headers, nil, resp)
+}
+
+func (c *client) ExecuteSSHCommand(
+	ctx context.Context,
+	command *string) (*bytes.Buffer, *bytes.Buffer, error) {
+	var bufStdOut, bufStdErr bytes.Buffer
+
+	// Validate URL and fetch host IP
+	if ! strings.HasPrefix(c.hostname, "https://") {
+		return nil, nil, errors.New("invalid endpoint")
+	}
+
+	ipPort := strings.SplitAfter(c.hostname, "https://")
+	if len(ipPort) == 1 {
+		return nil, nil, errors.New("invalid endpoint")
+	}
+
+	isiIp, _, err := net.SplitHostPort(ipPort[1])
+	if err != nil {
+		return nil, nil, err
+	}
+
+	sshReq := &SSHReq{command, &isiIp, &c.username}
+	logSSHRequest(ctx, sshReq)
+
+	config := &ssh.ClientConfig{
+		User: c.username,
+		Auth: []ssh.AuthMethod{
+			ssh.Password(c.password),
+		},
+		HostKeyCallback: ssh.HostKeyCallback(func(hostname string, remote net.Addr, key ssh.PublicKey) error { return nil }),
+	}
+	sshClient, err := ssh.Dial("tcp", net.JoinHostPort(isiIp, "22"), config)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	session, err := sshClient.NewSession()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create session: %s", err)
+	}
+	defer session.Close()
+
+	// Capture command output
+	session.Stdout = &bufStdOut
+	session.Stderr = &bufStdErr
+
+	err = session.Run(*command)
+	resp := &SSHResp{&bufStdOut, &bufStdErr, err}
+	logSSHResponse(ctx, resp)
+	return &bufStdOut, &bufStdErr, err
 }
 
 func (c *client) Do(

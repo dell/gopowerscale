@@ -1,4 +1,4 @@
-/* 
+/*
  Copyright (c) 2019 Dell Inc, or its subsidiaries.
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,15 +12,15 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
- */
+*/
 package goisilon
 
 import (
 	"context"
 	"flag"
 	"os"
+	"strconv"
 	"testing"
-        "strconv"
 
 	log "github.com/akutz/gournal"
 	glogrus "github.com/akutz/gournal/logrus"
@@ -46,9 +46,9 @@ func init() {
 }
 
 func skipTest(t *testing.T) {
-  if os.Getenv("GOISILON_SKIP_TEST") != "" {
-    t.Skip("Skipping testing in CI environment")
-  }
+	if os.Getenv("GOISILON_SKIP_TEST") != "" {
+		t.Skip("Skipping testing in CI environment")
+	}
 }
 
 func TestMain(m *testing.M) {
@@ -60,10 +60,10 @@ func TestMain(m *testing.M) {
 			log.DebugLevel)
 	}
 
-        goInsecure, err := strconv.ParseBool(os.Getenv("GOISILON_INSECURE"))
-        if err != nil {
-            log.WithError(err).Panic(defaultCtx, "error fetching environment variable GOISILON_INSECURE")
-        }
+	goInsecure, err := strconv.ParseBool(os.Getenv("GOISILON_INSECURE"))
+	if err != nil {
+		log.WithError(err).Panic(defaultCtx, "error fetching environment variable GOISILON_INSECURE")
+	}
 
 	client, err = NewClientWithArgs(
 		defaultCtx,
