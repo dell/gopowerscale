@@ -1,4 +1,4 @@
-/* 
+/*
  Copyright (c) 2019 Dell Inc, or its subsidiaries.
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,16 +12,13 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
- */
+*/
 package v1
 
 import (
-	"bytes"
 	"context"
-	"path"
-	"strings"
-
 	"github.com/dell/goisilon/api"
+	"path"
 )
 
 //const defaultACL = "public_read_write"
@@ -67,6 +64,14 @@ func CreateIsiVolumeWithIsiPath(
 	client api.Client,
 	isiPath, name string) (resp *getIsiVolumesResp, err error) {
 	return CreateIsiVolumeWithACLAndIsiPath(ctx, client, isiPath, name, defaultACL)
+}
+
+// CreateIsiVolumeWithIsiPathMetaData makes a new volume with isiPath on the cluster
+func CreateIsiVolumeWithIsiPathMetaData(
+	ctx context.Context,
+	client api.Client,
+	isiPath, name string, metadata map[string]string) (resp *getIsiVolumesResp, err error) {
+	return CreateIsiVolumeWithACLAndIsiPathMetaData(ctx, client, isiPath, name, defaultACL, metadata)
 }
 
 // CreateIsiVolumeWithACL makes a new volume on the cluster with the specified permissions
@@ -144,6 +149,34 @@ func CreateIsiVolumeWithACLAndIsiPath(
 		"x-isi-ifs-target-type":    "container",
 		"x-isi-ifs-access-control": ACL,
 	}
+	// create the volume
+	err = client.Put(
+		ctx,
+		GetRealNamespacePathWithIsiPath(isiPath),
+		name,
+		nil,
+		createVolumeHeaders,
+		nil,
+		&resp)
+	return resp, err
+}
+
+// CreateIsiVolumeWithACLAndIsiPathMetadata makes a new volume on the cluster with the specified permissions and isiPath
+func CreateIsiVolumeWithACLAndIsiPathMetaData(
+	ctx context.Context,
+	client api.Client,
+	isiPath, name, ACL string, metadata map[string]string) (resp *getIsiVolumesResp, err error) {
+	var createVolumeHeaders = make(map[string]string)
+
+	createVolumeHeaders["x-isi-ifs-target-type"] = "container"
+	createVolumeHeaders["x-isi-ifs-access-control"] = ACL
+
+	if len(metadata) != 0 {
+		for key, value := range metadata {
+			createVolumeHeaders[key] = value
+		}
+	}
+
 	// create the volume
 	err = client.Put(
 		ctx,
@@ -287,15 +320,27 @@ func CopyIsiVolume(
 func CopyIsiVolumeWithIsiPath(
 	ctx context.Context,
 	client api.Client,
-	isiPath, sourceName, destinationName string) (*bytes.Buffer, *bytes.Buffer, error) {
-	// SSH call: ssh "cp <source_path> <destination path>
-	// copies contents from source volume path recursively to destination volume preserving file ownerships
-	srcPath := path.Join(isiPath, sourceName)
-	srcPath = srcPath + "/"
-	dstPath := path.Join(isiPath, destinationName)
+	isiPath, sourceName, destinationName string) (resp *getIsiVolumesResp, err error) {
+	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/destination_volume_name?merge=True
+	//             x-isi-ifs-copy-source: /path/to/volumes/source_volume_name
+	//             x-isi-ifs-mode-mask: preserve
 
-	cmd := strings.Join([]string{"cp -p -R -f", srcPath, dstPath}, " ")
-	return client.ExecuteSSHCommand(ctx, &cmd)
+	// copy the volume
+	err = client.Put(
+		ctx,
+		GetRealNamespacePathWithIsiPath(isiPath),
+		destinationName,
+		mergeQS,
+		map[string]string{
+			"x-isi-ifs-copy-source": path.Join(
+				"/",
+				GetRealNamespacePathWithIsiPath(isiPath),
+				sourceName),
+			"x-isi-ifs-mode-mask": "preserve",
+		},
+		nil,
+		&resp)
+	return resp, err
 }
 
 // GetIsiVolumeWithSize lists size of all the children files and subfolders in a directory

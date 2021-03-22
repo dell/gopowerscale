@@ -151,7 +151,7 @@ func (c *Client) CopySnapshotWithIsiPath(
 		return nil, fmt.Errorf("Snapshot doesn't exist: (%d, %s)", sourceID, sourceName)
 	}
 
-	_, _, err = api.CopyIsiSnapshotWithIsiPath(
+	_, err = api.CopyIsiSnapshotWithIsiPath(
 		ctx, c.API, isiPath, snapshot.Name,
 		path.Base(snapshot.Path), destinationName)
 	if err != nil {

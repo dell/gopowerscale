@@ -144,6 +144,18 @@ func (c *Client) CreateVolumeWithIsipath(
 	return isiVolume, nil
 }
 
+// CreateVolumeWithIsipathMetaData creates a volume with isiPath
+func (c *Client) CreateVolumeWithIsipathMetaData(
+	ctx context.Context, isiPath, name string, metadata map[string]string) (Volume, error) {
+	_, err := apiv1.CreateIsiVolumeWithIsiPathMetaData(ctx, c.API, isiPath, name, metadata)
+	if err != nil {
+		return nil, err
+	}
+
+	var isiVolume = &apiv1.IsiVolume{Name: name, AttributeMap: nil}
+	return isiVolume, nil
+}
+
 // CreateVolumeNoACL creates a volume without setting ACL
 func (c *Client) CreateVolumeNoACL(
 	ctx context.Context, name string) (Volume, error) {
@@ -290,7 +302,7 @@ func (c *Client) CopyVolume(
 //CopyVolumeWithIsiPath creates a volume based on an existing volume
 func (c *Client) CopyVolumeWithIsiPath(
 	ctx context.Context, isiPath, src, dest string) (Volume, error) {
-	_, _, err := apiv1.CopyIsiVolumeWithIsiPath(ctx, c.API, isiPath, src, dest)
+	_, err := apiv1.CopyIsiVolumeWithIsiPath(ctx, c.API, isiPath, src, dest)
 	if err != nil {
 		return nil, err
 	}

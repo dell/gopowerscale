@@ -80,42 +80,6 @@ func logResponse(ctx context.Context, res *http.Response, verbose VerboseType) {
 	log.Debug(ctx, w.String())
 }
 
-func logSSHRequest(ctx context.Context, req *SSHReq) {
-	w := &bytes.Buffer{}
-	fmt.Fprintln(w, "")
-	fmt.Fprint(w, "    -------------------------- ")
-	fmt.Fprint(w, "GOISILON SSH REQUEST")
-	fmt.Fprintln(w, " -------------------------")
-
-	fmt.Fprintf(w, "    Command      : %s\n", *req.command)
-	fmt.Fprintf(w, "    Host         : %s\n", *req.isiIp)
-	fmt.Fprintf(w, "    Authorization: %s:******\n", *req.user)
-
-	log.Debug(ctx, w.String())
-}
-
-func logSSHResponse(ctx context.Context, resp *SSHResp) {
-	w := &bytes.Buffer{}
-
-	fmt.Fprintln(w)
-	fmt.Fprint(w, "    -------------------------- ")
-	fmt.Fprint(w, "GOISILON SSH RESPONSE")
-	fmt.Fprintln(w, " -------------------------")
-
-	fmt.Fprintf(w, "    Command Output: %s\n", resp.stdout)
-	fmt.Fprintf(w, "    Command Error : %s\n", resp.stderr)
-
-	var exitStatus interface{}
-	if resp.err != nil {
-		exitStatus = resp.err
-	} else {
-		exitStatus = 0
-	}
-
-	fmt.Fprintf(w, "    Exit Status   : %v\n", exitStatus)
-	log.Debug(ctx, w.String())
-}
-
 // WriteIndentedN indents all lines n spaces.
 func WriteIndentedN(w io.Writer, b []byte, n int) error {
 	s := bufio.NewScanner(bytes.NewReader(b))
