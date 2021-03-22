@@ -26,7 +26,7 @@ import (
 func TestQuotaGetSet(t *testing.T) {
 
 	volumeName := "test_quota_get_set"
-	quotaSize := int64(12345)
+	quotaSize := int64(1234567)
 
 	// Setup the test
 	_, err := client.CreateVolume(defaultCtx, volumeName)
@@ -47,13 +47,13 @@ func TestQuotaGetSet(t *testing.T) {
 	}
 
 	// Set the quota
-	_, err = client.SetQuotaSize(defaultCtx, volumeName, quotaSize)
+	quotaID, err := client.SetQuotaSize(defaultCtx, volumeName, quotaSize)
 	if err != nil {
 		panic(err)
 	}
 
 	// Make sure the quota was set
-	quota, err = client.GetQuota(defaultCtx, volumeName)
+	quota, err = client.GetQuotaByID(defaultCtx, quotaID)
 	if err != nil {
 		panic(err)
 	}
@@ -70,7 +70,7 @@ func TestQuotaGetSet(t *testing.T) {
 func TestQuotaUpdate(t *testing.T) {
 
 	volumeName := "test_quota_update"
-	quotaSize := int64(12345)
+	quotaSize := int64(1234567)
 	updatedQuotaSize := int64(22345000)
 
 	// Setup the test
@@ -82,12 +82,12 @@ func TestQuotaUpdate(t *testing.T) {
 	defer client.DeleteVolume(defaultCtx, volumeName)
 	defer client.ClearQuota(defaultCtx, volumeName)
 	// Set the quota
-	_, err = client.SetQuotaSize(defaultCtx, volumeName, quotaSize)
+	quotaID, err := client.SetQuotaSize(defaultCtx, volumeName, quotaSize)
 	if err != nil {
 		panic(err)
 	}
 	// Make sure the quota is initialized
-	quota, err := client.GetQuota(defaultCtx, volumeName)
+	quota, err := client.GetQuotaByID(defaultCtx, quotaID)
 	if err != nil {
 		panic(err)
 	}
@@ -99,13 +99,13 @@ func TestQuotaUpdate(t *testing.T) {
 	}
 
 	// Update the quota
-	err = client.UpdateQuotaSize(defaultCtx, volumeName, updatedQuotaSize)
+	err = client.UpdateQuotaSizeByID(defaultCtx, quotaID, updatedQuotaSize)
 	if err != nil {
 		panic(err)
 	}
 
 	// Make sure the quota is updated
-	quota, err = client.GetQuota(defaultCtx, volumeName)
+	quota, err = client.GetQuotaByID(defaultCtx, quotaID)
 	if err != nil {
 		panic(err)
 	}
@@ -122,7 +122,7 @@ func TestQuotaUpdate(t *testing.T) {
 func TestQuotaClear(t *testing.T) {
 
 	volumeName := "test_quota_clear"
-	quotaSize := int64(12345)
+	quotaSize := int64(1234567)
 
 	// Setup the test
 	_, err := client.CreateVolume(defaultCtx, volumeName)
@@ -133,12 +133,12 @@ func TestQuotaClear(t *testing.T) {
 	defer client.DeleteVolume(defaultCtx, volumeName)
 	defer client.ClearQuota(defaultCtx, volumeName)
 	// Set the quota
-	_, err = client.SetQuotaSize(defaultCtx, volumeName, quotaSize)
+	quotaID, err := client.SetQuotaSize(defaultCtx, volumeName, quotaSize)
 	if err != nil {
 		panic(err)
 	}
 	// Make sure the quota is initialized
-	quota, err := client.GetQuota(defaultCtx, volumeName)
+	quota, err := client.GetQuotaByID(defaultCtx, quotaID)
 	if err != nil {
 		panic(err)
 	}
@@ -156,7 +156,7 @@ func TestQuotaClear(t *testing.T) {
 	}
 
 	// Make sure the quota is gone
-	quota, err = client.GetQuota(defaultCtx, volumeName)
+	quota, err = client.GetQuotaByID(defaultCtx, quotaID)
 	if err == nil {
 		panic(fmt.Sprintf("Attempting to get a cleared quota should return an error but returned nil"))
 	}
@@ -169,7 +169,7 @@ func TestQuotaClear(t *testing.T) {
 func TestQuotaClearByID(t *testing.T) {
 
 	volumeName := "test_quota_clear_by_id"
-	quotaSize := int64(12345)
+	quotaSize := int64(1234567)
 
 	// Setup the test
 	_, err := client.CreateVolume(defaultCtx, volumeName)
@@ -187,7 +187,7 @@ func TestQuotaClearByID(t *testing.T) {
 
 	var quota Quota
 	// Make sure the quota is initialized
-	if quota, err = client.GetQuota(defaultCtx, volumeName); err != nil {
+	if quota, err = client.GetQuotaByID(defaultCtx, quotaID); err != nil {
 		panic(err)
 	}
 
@@ -197,7 +197,7 @@ func TestQuotaClearByID(t *testing.T) {
 	}
 
 	// Make sure the quota is gone
-	if quota, err = client.GetQuota(defaultCtx, volumeName); err == nil {
+	if quota, err = client.GetQuotaByID(defaultCtx, quotaID); err == nil {
 		panic(fmt.Sprintf("Attempting to get a cleared quota should return an error but returned nil"))
 	} else if quota != nil {
 		panic(fmt.Sprintf("Cleared quota should be nil: %v", quota))
@@ -218,7 +218,7 @@ func TestIsQuotaLicenseActivated(t *testing.T) {
 func TestQuotaUpdateByID(t *testing.T) {
 
 	volumeName := "test_quota_update"
-	quotaSize := int64(12345)
+	quotaSize := int64(1234567)
 	updatedQuotaSize := int64(22345000)
 
 	// Setup the test
@@ -253,7 +253,7 @@ func TestQuotaUpdateByID(t *testing.T) {
 	}
 
 	// Make sure the quota is updated
-	quota, err = client.GetQuota(defaultCtx, volumeName)
+	quota, err = client.GetQuotaByID(defaultCtx, id)
 	if err != nil {
 		panic(err)
 	}
