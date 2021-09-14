@@ -42,7 +42,9 @@ func NewClient(ctx context.Context) (*Client, error) {
 		os.Getenv("GOISILON_USERNAME"),
 		os.Getenv("GOISILON_GROUP"),
 		os.Getenv("GOISILON_PASSWORD"),
-		os.Getenv("GOISILON_VOLUMEPATH"))
+		os.Getenv("GOISILON_VOLUMEPATH"),
+		os.Getenv("GOISILON_VOLUMEPATH_PERMISSIONS"))
+
 }
 
 // NewClientWithArgs returns a new Isilon client struct initialized from the supplied arguments.
@@ -50,16 +52,17 @@ func NewClientWithArgs(
 	ctx context.Context,
 	endpoint string,
 	insecure bool, verboseLogging uint,
-	user, group, pass, volumesPath string) (*Client, error) {
+	user, group, pass, volumesPath string, volumesPathPermissions string) (*Client, error) {
 
 	timeout, _ := time.ParseDuration(os.Getenv("GOISILON_TIMEOUT"))
 
 	client, err := api.New(
 		ctx, endpoint, user, pass, group, verboseLogging,
 		&api.ClientOptions{
-			Insecure:    insecure,
-			VolumesPath: volumesPath,
-			Timeout:     timeout,
+			Insecure:               insecure,
+			VolumesPath:            volumesPath,
+			VolumesPathPermissions: volumesPathPermissions,
+			Timeout:                timeout,
 		})
 
 	if err != nil {

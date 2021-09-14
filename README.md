@@ -37,6 +37,7 @@ Name | Description
 `GOISILON_PASSWORD`   | the password
 `GOISILON_INSECURE`   | whether to skip SSL validation
 `GOISILON_VOLUMEPATH` | which base path to use when looking for volume directories
+`GOISILON_VOLUMEPATH_PERMISSIONS` | permissions for new volume directory
 
 ### Initialize a new client with options
 The following example demonstrates how to explicitly specify options when
