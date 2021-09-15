@@ -125,6 +125,7 @@ func TestVolumeGetCreate(*testing.T) {
 func TestVolumeGetCreateMetaData(*testing.T) {
 	volumeName := "test_get_create_volume_name"
 	isiPath := "/ifs/data/csi"
+	isiVolumePathPermissions := "077"
 
 	testHeader := map[string]string{
 		"x-csi-pv-name":      "pv-name",
@@ -138,7 +139,7 @@ func TestVolumeGetCreateMetaData(*testing.T) {
 	}
 
 	// Add the test volume
-	testVolume, err := client.CreateVolumeWithIsipathMetaData(defaultCtx, isiPath, volumeName, testHeader)
+	testVolume, err := client.CreateVolumeWithIsipathMetaData(defaultCtx, isiPath, volumeName, isiVolumePathPermissions, testHeader)
 	if err != nil {
 		panic(err)
 	}

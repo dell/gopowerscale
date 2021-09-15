@@ -73,7 +73,8 @@ func TestMain(m *testing.M) {
 		os.Getenv("GOISILON_USERNAME"),
 		"",
 		os.Getenv("GOISILON_PASSWORD"),
-		os.Getenv("GOISILON_VOLUMEPATH"))
+		os.Getenv("GOISILON_VOLUMEPATH"),
+		os.Getenv("GOISILON_VOLUMEPATH_PERMISSIONS"))
 
 	if err != nil {
 		log.WithError(err).Panic(defaultCtx, "error creating test client")

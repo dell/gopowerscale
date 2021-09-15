@@ -62,16 +62,16 @@ func CreateIsiVolume(
 func CreateIsiVolumeWithIsiPath(
 	ctx context.Context,
 	client api.Client,
-	isiPath, name string) (resp *getIsiVolumesResp, err error) {
-	return CreateIsiVolumeWithACLAndIsiPath(ctx, client, isiPath, name, defaultACL)
+	isiPath, name, isiVolumePathPermissions string) (resp *getIsiVolumesResp, err error) {
+	return CreateIsiVolumeWithACLAndIsiPath(ctx, client, isiPath, name, isiVolumePathPermissions)
 }
 
 // CreateIsiVolumeWithIsiPathMetaData makes a new volume with isiPath on the cluster
 func CreateIsiVolumeWithIsiPathMetaData(
 	ctx context.Context,
 	client api.Client,
-	isiPath, name string, metadata map[string]string) (resp *getIsiVolumesResp, err error) {
-	return CreateIsiVolumeWithACLAndIsiPathMetaData(ctx, client, isiPath, name, defaultACL, metadata)
+	isiPath, name, isiVolumePathPermissions string, metadata map[string]string) (resp *getIsiVolumesResp, err error) {
+	return CreateIsiVolumeWithACLAndIsiPathMetaData(ctx, client, isiPath, name, isiVolumePathPermissions, metadata)
 }
 
 // CreateIsiVolumeWithACL makes a new volume on the cluster with the specified permissions
