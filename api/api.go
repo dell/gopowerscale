@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -41,6 +42,11 @@ const (
 	headerValContentTypeBinaryOctetStream = "binary/octet-stream"
 	headerKeyContentLength                = "Content-Length"
 	defaultVolumesPath                    = "/ifs/volumes"
+	defaultVolumesPathPermissions         = "0777"
+	headerISISessToken                    = "Cookie"
+	headerISICSRFToken                    = "X-CSRF-Token"
+	headerISIReferer                      = "Referer"
+	isiSessCsrfToken                      = "Set-Cookie"
 )
 
 var (
@@ -107,18 +113,50 @@ type Client interface {
 
 	// VolumePath returns the path to a volume with the provided name.
 	VolumePath(name string) string
+
+	// SetAuthToken sets the Auth token/Cookie for the HTTP client
+	SetAuthToken(token string)
+
+	// SetCSRFToken sets the Auth token for the HTTP client
+	SetCSRFToken(csrf string)
+
+	// SetReferer sets the Referer header
+	SetReferer(referer string)
+
+	// GetAuthToken gets the Auth token/Cookie for the HTTP client
+	GetAuthToken() string
+
+	// GetCSRFToken gets the CSRF token for the HTTP client
+	GetCSRFToken() string
+
+	// GetReferer gets the Referer header
+	GetReferer() string
 }
 
 type client struct {
-	http            *http.Client
-	hostname        string
-	username        string
-	groupname       string
-	password        string
-	volumePath      string
-	apiVersion      uint8
-	apiMinorVersion uint8
-	verboseLogging  VerboseType
+	http                  *http.Client
+	hostname              string
+	username              string
+	groupname             string
+	password              string
+	volumePath            string
+	volumePathPermissions string
+	apiVersion            uint8
+	apiMinorVersion       uint8
+	verboseLogging        VerboseType
+	sessionCredentials    session
+}
+
+type session struct {
+	sessionCookies string
+	sessionCSRF    string
+	referer        string
+}
+
+type setupConnection struct {
+	Services []string `json:"services"`
+	Username string   `json:"username"`
+	Password string   `json:"password"`
 }
 
 type VerboseType uint
@@ -155,6 +193,9 @@ type ClientOptions struct {
 	// stored.
 	VolumesPath string
 
+	// VolumesPathPermissions is the directory permissions for VolumesPath
+	VolumesPathPermissions string
+
 	// Timeout specifies a time limit for requests made by this client.
 	Timeout time.Duration
 }
@@ -171,12 +212,13 @@ func New(
 	}
 
 	c := &client{
-		hostname:       hostname,
-		username:       username,
-		groupname:      groupname,
-		password:       password,
-		volumePath:     defaultVolumesPath,
-		verboseLogging: VerboseType(verboseLogging),
+		hostname:              hostname,
+		username:              username,
+		groupname:             groupname,
+		password:              password,
+		volumePath:            defaultVolumesPath,
+		volumePathPermissions: defaultVolumesPathPermissions,
+		verboseLogging:        VerboseType(verboseLogging),
 	}
 
 	c.http = &http.Client{}
@@ -184,6 +226,10 @@ func New(
 	if opts != nil {
 		if opts.VolumesPath != "" {
 			c.volumePath = opts.VolumesPath
+		}
+
+		if opts.VolumesPathPermissions != "" {
+			c.volumePathPermissions = opts.VolumesPathPermissions
 		}
 
 		if opts.Timeout != 0 {
@@ -212,6 +258,7 @@ func New(
 		}
 	}
 
+	c.authenticate(ctx, username, password, hostname)
 	resp := &apiVerResponse{}
 	if err := c.Get(ctx, "/platform/latest", "", nil, nil, resp); err != nil &&
 		!strings.HasPrefix(err.Error(), "json: ") {
@@ -252,7 +299,7 @@ func (c *client) Get(
 	params OrderedValues, headers map[string]string,
 	resp interface{}) error {
 
-	return c.DoWithHeaders(
+	return c.executeWithRetryAuthenticate(
 		ctx, http.MethodGet, path, id, params, headers, nil, resp)
 }
 
@@ -262,7 +309,7 @@ func (c *client) Post(
 	params OrderedValues, headers map[string]string,
 	body, resp interface{}) error {
 
-	return c.DoWithHeaders(
+	return c.executeWithRetryAuthenticate(
 		ctx, http.MethodPost, path, id, params, headers, body, resp)
 }
 
@@ -272,7 +319,7 @@ func (c *client) Put(
 	params OrderedValues, headers map[string]string,
 	body, resp interface{}) error {
 
-	return c.DoWithHeaders(
+	return c.executeWithRetryAuthenticate(
 		ctx, http.MethodPut, path, id, params, headers, body, resp)
 }
 
@@ -282,7 +329,7 @@ func (c *client) Delete(
 	params OrderedValues, headers map[string]string,
 	resp interface{}) error {
 
-	return c.DoWithHeaders(
+	return c.executeWithRetryAuthenticate(
 		ctx, http.MethodDelete, path, id, params, headers, nil, resp)
 }
 
@@ -292,7 +339,7 @@ func (c *client) Do(
 	params OrderedValues,
 	body, resp interface{}) error {
 
-	return c.DoWithHeaders(ctx, method, path, id, params, nil, body, resp)
+	return c.executeWithRetryAuthenticate(ctx, method, path, id, params, nil, body, resp)
 }
 
 func beginsWithSlash(s string) bool {
@@ -443,8 +490,11 @@ func (c *client) DoAndGetResponseBody(
 		}
 	}
 
-	// set the username and password
-	req.SetBasicAuth(c.username, c.password)
+	if c.GetAuthToken() != "" {
+		req.Header.Set(headerISISessToken, c.GetAuthToken())
+		req.Header.Set(headerISIReferer, c.GetReferer())
+		req.Header.Set(headerISICSRFToken, c.GetCSRFToken())
+	}
 
 	var (
 		isDebugLog bool
@@ -492,6 +542,30 @@ func (err *JSONError) Error() string {
 	return err.Err[0].Message
 }
 
+func (c *client) SetAuthToken(cookie string) {
+	c.sessionCredentials.sessionCookies = cookie
+}
+
+func (c *client) SetCSRFToken(csrf string) {
+	c.sessionCredentials.sessionCSRF = csrf
+}
+
+func (c *client) SetReferer(referer string) {
+	c.sessionCredentials.referer = referer
+}
+
+func (c *client) GetAuthToken() string {
+	return c.sessionCredentials.sessionCookies
+}
+
+func (c *client) GetCSRFToken() string {
+	return c.sessionCredentials.sessionCSRF
+}
+
+func (c *client) GetReferer() string {
+	return c.sessionCredentials.referer
+}
+
 func parseJSONError(r *http.Response) error {
 	jsonError := &JSONError{}
 	if err := json.NewDecoder(r.Body).Decode(jsonError); err != nil {
@@ -504,4 +578,94 @@ func parseJSONError(r *http.Response) error {
 	}
 
 	return jsonError
+}
+
+// Authenticate make a REST API call [/session/1/session] to PowerScale to authenticate the given credentials.
+// The response contains the session Cookie, X-CSRF-Token and the client uses it for further communication.
+func (c *client) authenticate(ctx context.Context, username string, password string, endpoint string) error {
+	headers := make(map[string]string, 1)
+	headers[headerKeyContentType] = headerValContentTypeJSON
+	var data = &setupConnection{Services: []string{"platform", "namespace"}, Username: username, Password: password}
+	resp, _, err := c.DoAndGetResponseBody(ctx, http.MethodPost, "/session/1/session", "", nil, headers, data)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Authentication error: %v", err))
+	}
+
+	if resp != nil {
+		log.Debug(ctx, "Authentication response code: %d", resp.StatusCode)
+		defer resp.Body.Close()
+
+		switch {
+		case resp.StatusCode == 201:
+			{
+				log.Debug(ctx, "Authentication successful")
+			}
+		case resp.StatusCode == 401:
+			{
+				log.Debug(ctx, "Response Code %v", resp)
+				return errors.New(fmt.Sprintf("Authentication failed. Unable to login to PowerScale. Verify username and password."))
+			}
+		default:
+			return errors.New(fmt.Sprintf("Authenticate error. Response:"))
+		}
+
+		headerRes := strings.Join(resp.Header.Values(isiSessCsrfToken), " ")
+
+		startIndex, endIndex, matchStrLen := FetchValueIndexForKey(headerRes, "isisessid=", ";")
+		if startIndex < 0 || endIndex < 0 {
+			return errors.New(fmt.Sprintf("Session ID not retrieved"))
+		} else {
+			c.SetAuthToken(headerRes[startIndex : startIndex+matchStrLen+endIndex])
+		}
+
+		startIndex, endIndex, matchStrLen = FetchValueIndexForKey(headerRes, "isicsrf=", ";")
+		if startIndex < 0 || endIndex < 0 {
+			log.Warn(ctx, "Anti-CSRF Token not retrieved")
+		} else {
+			c.SetCSRFToken(headerRes[startIndex+matchStrLen : startIndex+matchStrLen+endIndex])
+		}
+
+		c.SetReferer(endpoint)
+	} else {
+		log.Error(ctx, "Authenticate error: Nil response received")
+	}
+	return nil
+}
+
+// executeWithRetryAuthenticate re-authenticates when session credentials become invalid due to time-out or requests exceed.
+// it retries the same operation after performing authentication.
+func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri string, id string, params OrderedValues, headers map[string]string, body, resp interface{}) error {
+	err := c.DoWithHeaders(ctx, method, uri, id, params, headers, body, resp)
+	if err == nil {
+		log.Debug(ctx, "Execution successful on Method: %v, URI: %v", method, uri)
+		return nil
+	}
+	// check if we need to Re-authenticate
+	if e, ok := err.(*JSONError); ok {
+		log.Debug(ctx, "Error in response. Method:%s URI:%s Error: %v JSON Error: %+v", method, uri, err, e)
+		if e.StatusCode == 401 {
+			log.Debug(ctx, "need to re-authenticate")
+			// Authenticate then try again
+			if err := c.authenticate(ctx, c.username, c.password, c.hostname); err != nil {
+				return fmt.Errorf("authentication failure due to: %v", err)
+			}
+			return c.DoWithHeaders(ctx, method, uri, id, params, headers, body, resp)
+		}
+	} else {
+		log.Error(ctx, "Error is not a type of \"*JSONError\". Error:", err)
+	}
+
+	return err
+}
+
+func FetchValueIndexForKey(l string, match string, sep string) (int, int, int) {
+
+	if strings.Contains(l, match) {
+		if i := strings.Index(l, match); i != -1 {
+			if j := strings.Index(l[i+len(match):], sep); j != -1 {
+				return i, j, len(match)
+			}
+		}
+	}
+	return -1, -1, len(match)
 }

@@ -19,14 +19,12 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/base64"
 	"fmt"
+	log "github.com/akutz/gournal"
 	"io"
 	"net/http"
 	"net/http/httputil"
 	"strings"
-
-	log "github.com/akutz/gournal"
 )
 
 func isBinOctetBody(h http.Header) bool {
@@ -46,7 +44,7 @@ func logRequest(ctx context.Context, w io.Writer, req *http.Request, verbose Ver
 	default:
 		//full logging, i.e. print full request message content
 		buf, _ := httputil.DumpRequest(req, !isBinOctetBody(req.Header))
-		decodedBuf := decodeAuthorization(buf)
+		decodedBuf := encryptPassword(buf)
 		WriteIndented(w, decodedBuf)
 		fmt.Fprintln(w)
 	}
@@ -112,20 +110,17 @@ func WriteIndented(w io.Writer, b []byte) error {
 	return WriteIndentedN(w, b, 4)
 }
 
-func decodeAuthorization(buf []byte) []byte {
+func encryptPassword(buf []byte) []byte {
 	sc := bufio.NewScanner(bytes.NewReader(buf))
 	ou := &bytes.Buffer{}
 	var l string
 
 	for sc.Scan() {
 		l = sc.Text()
-		if strings.Contains(l, "Authorization") {
-			base64str := strings.Split(l, " ")[2]
-			decoded, _ := base64.StdEncoding.DecodeString(base64str)
-			decodedName := strings.Split(string(decoded), ":")[0]
-			//l = "Authorization: Decoded Username: " + decodedName
-			//l = "Authorization: " + decodedName + " [decoded username]"
-			l = "Authorization: " + decodedName + ":******"
+		match := `"password":"`
+		if strings.Contains(l, match) {
+			startIndex, endIndex, matchStrLen := FetchValueIndexForKey(l, match, `"`)
+			l = l[:startIndex+matchStrLen] + "****" + l[startIndex+matchStrLen+endIndex:]
 		}
 		fmt.Fprintln(ou, l)
 	}

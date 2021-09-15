@@ -25,7 +25,6 @@ import (
 	log "github.com/akutz/gournal"
 	apiv1 "github.com/dell/goisilon/api/v1"
 	apiv2 "github.com/dell/goisilon/api/v2"
-	logger "github.com/sirupsen/logrus"
 )
 
 // Volume represents an Isilon Volume (namespace API).
@@ -78,9 +77,9 @@ func (c *Client) IsVolumeExistent(
 	err := apiv1.GetIsiVolumeWithoutMetadata(ctx, c.API, name)
 
 	if err == nil {
-		logger.Debugf("the query of volume (id '%s', name '%s') did not return an error, regard the volume as existent.", id, name)
+		log.Debug(ctx, "the query of volume (id '%s', name '%s') did not return an error, regard the volume as existent.", id, name)
 	} else {
-		logger.Debugf("the query of volume (id '%s', name '%s') returned an error, regard the volume as non-existent. error : '%v'", id, name, err)
+		log.Debug(ctx, "the query of volume (id '%s', name '%s') returned an error, regard the volume as non-existent. error : '%v'", id, name, err)
 	}
 
 	return err == nil
@@ -97,9 +96,9 @@ func (c *Client) IsVolumeExistentWithIsiPath(
 	err := apiv1.GetIsiVolumeWithoutMetadataWithIsiPath(ctx, c.API, isiPath, name)
 
 	if err == nil {
-		logger.Debugf("the query of volume (id '%s', name '%s') did not return an error, regard the volume as existent.", id, name)
+		log.Debug(ctx, "the query of volume (id '%s', name '%s') did not return an error, regard the volume as existent.", id, name)
 	} else {
-		logger.Debugf("the query of volume (id '%s', name '%s') returned an error, regard the volume as non-existent. error : '%v'", id, name, err)
+		log.Debug(ctx, "the query of volume (id '%s', name '%s') returned an error, regard the volume as non-existent. error : '%v'", id, name, err)
 	}
 
 	return err == nil
@@ -134,8 +133,8 @@ func (c *Client) CreateVolume(
 
 // CreateVolumeWithIsipath creates a volume with isiPath
 func (c *Client) CreateVolumeWithIsipath(
-	ctx context.Context, isiPath, name string) (Volume, error) {
-	_, err := apiv1.CreateIsiVolumeWithIsiPath(ctx, c.API, isiPath, name)
+	ctx context.Context, isiPath, name, isiVolumePathPermissions string) (Volume, error) {
+	_, err := apiv1.CreateIsiVolumeWithIsiPath(ctx, c.API, isiPath, name, isiVolumePathPermissions)
 	if err != nil {
 		return nil, err
 	}
@@ -146,8 +145,8 @@ func (c *Client) CreateVolumeWithIsipath(
 
 // CreateVolumeWithIsipathMetaData creates a volume with isiPath
 func (c *Client) CreateVolumeWithIsipathMetaData(
-	ctx context.Context, isiPath, name string, metadata map[string]string) (Volume, error) {
-	_, err := apiv1.CreateIsiVolumeWithIsiPathMetaData(ctx, c.API, isiPath, name, metadata)
+	ctx context.Context, isiPath, name, isiVolumePathPermissions string, metadata map[string]string) (Volume, error) {
+	_, err := apiv1.CreateIsiVolumeWithIsiPathMetaData(ctx, c.API, isiPath, name, isiVolumePathPermissions, metadata)
 	if err != nil {
 		return nil, err
 	}
