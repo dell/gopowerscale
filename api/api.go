@@ -642,14 +642,15 @@ func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri s
 	}
 	// check if we need to Re-authenticate
 	if e, ok := err.(*JSONError); ok {
-		log.Debug(ctx, "Error in response. Method:%s URI:%s Error: %v JSON Error: %+v", method, uri, err, e)
 		if e.StatusCode == 401 {
-			log.Debug(ctx, "need to re-authenticate")
+			log.Debug(ctx, "Authentication failed. Trying to re-authenticate")
 			// Authenticate then try again
 			if err := c.authenticate(ctx, c.username, c.password, c.hostname); err != nil {
 				return fmt.Errorf("authentication failure due to: %v", err)
 			}
 			return c.DoWithHeaders(ctx, method, uri, id, params, headers, body, resp)
+		} else {
+			log.Error(ctx, "Error in response. Method:%s URI:%s Error: %v JSON Error: %+v", method, uri, err, e)
 		}
 	} else {
 		log.Error(ctx, "Error is not a type of \"*JSONError\". Error:", err)

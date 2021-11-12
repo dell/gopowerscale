@@ -116,11 +116,26 @@ func encryptPassword(buf []byte) []byte {
 	var l string
 
 	for sc.Scan() {
+		match := ""
+		separator := ""
 		l = sc.Text()
-		match := `"password":"`
-		if strings.Contains(l, match) {
-			startIndex, endIndex, matchStrLen := FetchValueIndexForKey(l, match, `"`)
-			l = l[:startIndex+matchStrLen] + "****" + l[startIndex+matchStrLen+endIndex:]
+
+		switch {
+		case strings.Contains(l, "password"):
+			match = `"password":"`
+			separator = `"`
+		case strings.Contains(l, "Cookie"):
+			match = `Cookie: isisessid=`
+			separator = `-`
+		case strings.Contains(l, "X-Csrf-Token"):
+			match = `X-Csrf-Token:`
+			separator = `-`
+		}
+		if match != "" && separator != "" {
+			startIndex, endIndex, matchStrLen := FetchValueIndexForKey(l, match, separator)
+			if startIndex > 0 || endIndex > 0 {
+				l = l[:startIndex+matchStrLen] + "****" + l[startIndex+matchStrLen+endIndex:]
+			}
 		}
 		fmt.Fprintln(ou, l)
 	}
