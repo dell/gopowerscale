@@ -643,7 +643,7 @@ func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri s
 	// check if we need to Re-authenticate
 	if e, ok := err.(*JSONError); ok {
 		if e.StatusCode == 401 {
-			log.Debug(ctx, "Authentication expired. Trying to re-authenticate")
+			log.Debug(ctx, "Authentication failed. Trying to re-authenticate")
 			// Authenticate then try again
 			if err := c.authenticate(ctx, c.username, c.password, c.hostname); err != nil {
 				return fmt.Errorf("authentication failure due to: %v", err)

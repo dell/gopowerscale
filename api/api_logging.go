@@ -24,7 +24,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httputil"
-	"regexp"
 	"strings"
 )
 
@@ -121,20 +120,18 @@ func encryptPassword(buf []byte) []byte {
 		separator := ""
 		l = sc.Text()
 
-		filterString := `password|Cookie|Csrf-Token`
-		if present, _ := regexp.MatchString(filterString, l); present {
-			switch {
-			case strings.Contains(l, "password"):
-				match = `"password":"`
-				separator = `"`
-			case strings.Contains(l, "Cookie"):
-				match = `Cookie: isisessid=`
-				separator = `-`
-			case strings.Contains(l, "Csrf-Token"):
-				match = `X-Csrf-Token:`
-				separator = `-`
-
-			}
+		switch {
+		case strings.Contains(l, "password"):
+			match = `"password":"`
+			separator = `"`
+		case strings.Contains(l, "Cookie"):
+			match = `Cookie: isisessid=`
+			separator = `-`
+		case strings.Contains(l, "X-Csrf-Token"):
+			match = `X-Csrf-Token:`
+			separator = `-`
+		}
+		if match != "" && separator != "" {
 			startIndex, endIndex, matchStrLen := FetchValueIndexForKey(l, match, separator)
 			if startIndex > 0 || endIndex > 0 {
 				l = l[:startIndex+matchStrLen] + "****" + l[startIndex+matchStrLen+endIndex:]
