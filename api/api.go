@@ -145,6 +145,7 @@ type client struct {
 	apiMinorVersion       uint8
 	verboseLogging        VerboseType
 	sessionCredentials    session
+	isBasicAuth           bool
 }
 
 type session struct {
@@ -204,7 +205,7 @@ type ClientOptions struct {
 func New(
 	ctx context.Context,
 	hostname, username, password, groupname string,
-	verboseLogging uint,
+	verboseLogging uint, isBasicAuth bool,
 	opts *ClientOptions) (Client, error) {
 
 	if hostname == "" || username == "" || password == "" {
@@ -219,6 +220,7 @@ func New(
 		volumePath:            defaultVolumesPath,
 		volumePathPermissions: defaultVolumesPathPermissions,
 		verboseLogging:        VerboseType(verboseLogging),
+		isBasicAuth:           isBasicAuth,
 	}
 
 	c.http = &http.Client{}
@@ -258,7 +260,9 @@ func New(
 		}
 	}
 
-	c.authenticate(ctx, username, password, hostname)
+	if !isBasicAuth {
+		c.authenticate(ctx, username, password, hostname, isBasicAuth)
+	}
 	resp := &apiVerResponse{}
 	if err := c.Get(ctx, "/platform/latest", "", nil, nil, resp); err != nil &&
 		!strings.HasPrefix(err.Error(), "json: ") {
@@ -490,10 +494,14 @@ func (c *client) DoAndGetResponseBody(
 		}
 	}
 
-	if c.GetAuthToken() != "" {
-		req.Header.Set(headerISISessToken, c.GetAuthToken())
-		req.Header.Set(headerISIReferer, c.GetReferer())
-		req.Header.Set(headerISICSRFToken, c.GetCSRFToken())
+	if c.isBasicAuth {
+		req.SetBasicAuth(c.username, c.password)
+	} else {
+		if c.GetAuthToken() != "" {
+			req.Header.Set(headerISISessToken, c.GetAuthToken())
+			req.Header.Set(headerISIReferer, c.GetReferer())
+			req.Header.Set(headerISICSRFToken, c.GetCSRFToken())
+		}
 	}
 
 	var (
@@ -582,7 +590,7 @@ func parseJSONError(r *http.Response) error {
 
 // Authenticate make a REST API call [/session/1/session] to PowerScale to authenticate the given credentials.
 // The response contains the session Cookie, X-CSRF-Token and the client uses it for further communication.
-func (c *client) authenticate(ctx context.Context, username string, password string, endpoint string) error {
+func (c *client) authenticate(ctx context.Context, username string, password string, endpoint string, isBasicAuth bool) error {
 	headers := make(map[string]string, 1)
 	headers[headerKeyContentType] = headerValContentTypeJSON
 	var data = &setupConnection{Services: []string{"platform", "namespace"}, Username: username, Password: password}
@@ -636,6 +644,9 @@ func (c *client) authenticate(ctx context.Context, username string, password str
 // it retries the same operation after performing authentication.
 func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri string, id string, params OrderedValues, headers map[string]string, body, resp interface{}) error {
 	err := c.DoWithHeaders(ctx, method, uri, id, params, headers, body, resp)
+	if c.isBasicAuth {
+		return err
+	}
 	if err == nil {
 		log.Debug(ctx, "Execution successful on Method: %v, URI: %v", method, uri)
 		return nil
@@ -645,7 +656,7 @@ func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri s
 		if e.StatusCode == 401 {
 			log.Debug(ctx, "Authentication failed. Trying to re-authenticate")
 			// Authenticate then try again
-			if err := c.authenticate(ctx, c.username, c.password, c.hostname); err != nil {
+			if err := c.authenticate(ctx, c.username, c.password, c.hostname, c.isBasicAuth); err != nil {
 				return fmt.Errorf("authentication failure due to: %v", err)
 			}
 			return c.DoWithHeaders(ctx, method, uri, id, params, headers, body, resp)
