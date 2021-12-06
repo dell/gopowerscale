@@ -1,4 +1,4 @@
-/* 
+/*
  Copyright (c) 2019 Dell Inc, or its subsidiaries.
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +12,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
- */
+*/
 package goisilon
 
 import (
@@ -34,6 +34,7 @@ type Client struct {
 // NewClient returns a new Isilon client struct initialized from the environment.
 func NewClient(ctx context.Context) (*Client, error) {
 	insecure, _ := strconv.ParseBool(os.Getenv("GOISILON_INSECURE"))
+	isBasicAuth, _ := strconv.ParseBool(os.Getenv("GOISILON_ISBASICAUTH"))
 	return NewClientWithArgs(
 		ctx,
 		os.Getenv("GOISILON_ENDPOINT"),
@@ -43,7 +44,8 @@ func NewClient(ctx context.Context) (*Client, error) {
 		os.Getenv("GOISILON_GROUP"),
 		os.Getenv("GOISILON_PASSWORD"),
 		os.Getenv("GOISILON_VOLUMEPATH"),
-		os.Getenv("GOISILON_VOLUMEPATH_PERMISSIONS"))
+		os.Getenv("GOISILON_VOLUMEPATH_PERMISSIONS"),
+		isBasicAuth)
 
 }
 
@@ -52,12 +54,12 @@ func NewClientWithArgs(
 	ctx context.Context,
 	endpoint string,
 	insecure bool, verboseLogging uint,
-	user, group, pass, volumesPath string, volumesPathPermissions string) (*Client, error) {
+	user, group, pass, volumesPath string, volumesPathPermissions string, isBasicAuth bool) (*Client, error) {
 
 	timeout, _ := time.ParseDuration(os.Getenv("GOISILON_TIMEOUT"))
 
 	client, err := api.New(
-		ctx, endpoint, user, pass, group, verboseLogging,
+		ctx, endpoint, user, pass, group, verboseLogging, isBasicAuth,
 		&api.ClientOptions{
 			Insecure:               insecure,
 			VolumesPath:            volumesPath,
