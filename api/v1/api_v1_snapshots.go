@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dell/goisilon/api"
+	"github.com/sirupsen/logrus"
 	"path"
 )
 
@@ -62,6 +63,7 @@ func GetIsiSnapshotByIdentity(
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/snapshot/snapshots/id|name
 	snapshotURL := fmt.Sprintf("%s/%s", snapshotsPath, identity)
 	var resp *getIsiSnapshotsResp
+	logrus.Debugf("####### DEBUG snapshotURL= %#v", snapshotURL)
 	err := client.Get(ctx, snapshotURL, "", nil, nil, &resp)
 	if err != nil {
 		return nil, err
@@ -123,14 +125,14 @@ func CopyIsiSnapshot(
 func CopyIsiSnapshotWithIsiPath(
 	ctx context.Context,
 	client api.Client,
-	isiPath, sourceSnapshotName, sourceVolume, destinationName string) (resp *IsiVolume, err error) {
+	isiPath, snapshotSourceVolumeIsiPath, sourceSnapshotName, sourceVolume, destinationName string) (resp *IsiVolume, err error) {
 	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/destination_volume_name?merge=True
 	//             x-isi-ifs-copy-source: /path/to/snapshot/volumes/source_volume_name
 	//             x-isi-ifs-mode-mask: preserve
 	headers := map[string]string{
 		"x-isi-ifs-copy-source": path.Join(
 			"/",
-			GetRealVolumeSnapshotPathWithIsiPath(isiPath, sourceSnapshotName),
+			GetRealVolumeSnapshotPathWithIsiPath(snapshotSourceVolumeIsiPath, sourceSnapshotName),
 			sourceVolume),
 		"x-isi-ifs-mode-mask": "preserve",
 	}

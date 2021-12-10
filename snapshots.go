@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	api "github.com/dell/goisilon/api/v1"
+	"github.com/sirupsen/logrus"
 	"path"
 	"strconv"
 	"strings"
@@ -119,6 +120,7 @@ func (c *Client) CopySnapshot(
 	sourceID int64, sourceName, destinationName string) (Volume, error) {
 
 	snapshot, err := c.GetSnapshot(ctx, sourceID, sourceName)
+	logrus.Debugf("sourceID= %v, sourceName= %v, snapshot= %#v", sourceID, sourceName, snapshot)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +141,7 @@ func (c *Client) CopySnapshot(
 // CopySnapshotWithIsiPath copies all files/directories in a snapshot with isiPath to a new directory.
 func (c *Client) CopySnapshotWithIsiPath(
 	ctx context.Context,
-	isiPath string,
+	isiPath, snapshotSourceVolumeIsiPath string,
 	sourceID int64,
 	sourceName, destinationName string) (Volume, error) {
 
@@ -152,7 +154,7 @@ func (c *Client) CopySnapshotWithIsiPath(
 	}
 
 	_, err = api.CopyIsiSnapshotWithIsiPath(
-		ctx, c.API, isiPath, snapshot.Name,
+		ctx, c.API, isiPath, snapshotSourceVolumeIsiPath, snapshot.Name,
 		path.Base(snapshot.Path), destinationName)
 	if err != nil {
 		return nil, err
