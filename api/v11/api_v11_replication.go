@@ -56,5 +56,5 @@ func CreatePolicy(ctx context.Context, client api.Client, name string, sourcePat
 
 func DeletePolicy(ctx context.Context, client api.Client, name string,) (error) {
 	resp := ""
-	return client.Delete(ctx,"",name,nil,nil, &resp)
+	return client.Delete(ctx,policiesPath,name,nil,nil, &resp)
 }
