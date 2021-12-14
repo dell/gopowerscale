@@ -53,3 +53,8 @@ func CreatePolicy(ctx context.Context, client api.Client, name string, sourcePat
 	}
 	return client.Post(ctx,policiesPath, "", nil,nil,body,resp)
 }
+
+func DeletePolicy(ctx context.Context, client api.Client, name string,) (error) {
+	resp := ""
+	return client.Delete(ctx,"",name,nil,nil, &resp)
+}

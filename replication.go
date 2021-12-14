@@ -16,3 +16,7 @@ func (c *Client) GetPolicyByName(ctx context.Context, id string) (Policy, error)
 func (c *Client) CreatePolicy(ctx context.Context, name string, rpo int, sourcePath string, targetPath string, targetHost string) error{
 	return apiv11.CreatePolicy(ctx,c.API,name,sourcePath,targetPath,targetHost,rpo)
 }
+
+func (c *Client) DeletePolicy(ctx context.Context, name string) error{
+	return apiv11.DeletePolicy(ctx,c.API,name)
+}
