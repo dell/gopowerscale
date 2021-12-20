@@ -65,7 +65,7 @@ func TestMain(m *testing.M) {
 		log.WithError(err).Panic(defaultCtx, "error fetching environment variable GOISILON_INSECURE")
 	}
 
-	isBasicAuth, err := strconv.ParseBool(os.Getenv("GOISILON_ISBASICAUTH"))
+	isiAuthType, err := strconv.Atoi(os.Getenv("GOISILON_ISIAUTHTYPE"))
 
 	client, err = NewClientWithArgs(
 		defaultCtx,
@@ -77,7 +77,7 @@ func TestMain(m *testing.M) {
 		os.Getenv("GOISILON_PASSWORD"),
 		os.Getenv("GOISILON_VOLUMEPATH"),
 		os.Getenv("GOISILON_VOLUMEPATH_PERMISSIONS"),
-		isBasicAuth)
+		uint(isiAuthType))
 
 	if err != nil {
 		log.WithError(err).Panic(defaultCtx, "error creating test client")
