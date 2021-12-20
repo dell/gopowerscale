@@ -145,7 +145,7 @@ type client struct {
 	apiMinorVersion       uint8
 	verboseLogging        VerboseType
 	sessionCredentials    session
-	isBasicAuth           bool
+	isiAuthType           uint
 }
 
 type session struct {
@@ -205,7 +205,7 @@ type ClientOptions struct {
 func New(
 	ctx context.Context,
 	hostname, username, password, groupname string,
-	verboseLogging uint, isBasicAuth bool,
+	verboseLogging uint, isiAuthType uint,
 	opts *ClientOptions) (Client, error) {
 
 	if hostname == "" || username == "" || password == "" {
@@ -220,7 +220,7 @@ func New(
 		volumePath:            defaultVolumesPath,
 		volumePathPermissions: defaultVolumesPathPermissions,
 		verboseLogging:        VerboseType(verboseLogging),
-		isBasicAuth:           isBasicAuth,
+		isiAuthType:           isiAuthType,
 	}
 
 	c.http = &http.Client{}
@@ -260,8 +260,8 @@ func New(
 		}
 	}
 
-	if !isBasicAuth {
-		c.authenticate(ctx, username, password, hostname, isBasicAuth)
+	if isiAuthType == 1 {
+		c.authenticate(ctx, username, password, hostname)
 	}
 	resp := &apiVerResponse{}
 	if err := c.Get(ctx, "/platform/latest", "", nil, nil, resp); err != nil &&
@@ -494,7 +494,7 @@ func (c *client) DoAndGetResponseBody(
 		}
 	}
 
-	if c.isBasicAuth {
+	if c.isiAuthType == 0 {
 		req.SetBasicAuth(c.username, c.password)
 	} else {
 		if c.GetAuthToken() != "" {
@@ -590,7 +590,7 @@ func parseJSONError(r *http.Response) error {
 
 // Authenticate make a REST API call [/session/1/session] to PowerScale to authenticate the given credentials.
 // The response contains the session Cookie, X-CSRF-Token and the client uses it for further communication.
-func (c *client) authenticate(ctx context.Context, username string, password string, endpoint string, isBasicAuth bool) error {
+func (c *client) authenticate(ctx context.Context, username string, password string, endpoint string) error {
 	headers := make(map[string]string, 1)
 	headers[headerKeyContentType] = headerValContentTypeJSON
 	var data = &setupConnection{Services: []string{"platform", "namespace"}, Username: username, Password: password}
@@ -644,7 +644,7 @@ func (c *client) authenticate(ctx context.Context, username string, password str
 // it retries the same operation after performing authentication.
 func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri string, id string, params OrderedValues, headers map[string]string, body, resp interface{}) error {
 	err := c.DoWithHeaders(ctx, method, uri, id, params, headers, body, resp)
-	if c.isBasicAuth {
+	if c.isiAuthType == 0 {
 		return err
 	}
 	if err == nil {
@@ -656,7 +656,7 @@ func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri s
 		if e.StatusCode == 401 {
 			log.Debug(ctx, "Authentication failed. Trying to re-authenticate")
 			// Authenticate then try again
-			if err := c.authenticate(ctx, c.username, c.password, c.hostname, c.isBasicAuth); err != nil {
+			if err := c.authenticate(ctx, c.username, c.password, c.hostname); err != nil {
 				return fmt.Errorf("authentication failure due to: %v", err)
 			}
 			return c.DoWithHeaders(ctx, method, uri, id, params, headers, body, resp)
