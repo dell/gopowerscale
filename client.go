@@ -33,8 +33,14 @@ type Client struct {
 
 // NewClient returns a new Isilon client struct initialized from the environment.
 func NewClient(ctx context.Context) (*Client, error) {
-	insecure, _ := strconv.ParseBool(os.Getenv("GOISILON_INSECURE"))
-	isiAuthType, _ := strconv.Atoi(os.Getenv("GOISILON_ISIAUTHTYPE"))
+	insecure, err := strconv.ParseBool(os.Getenv("GOISILON_INSECURE"))
+	if err != nil {
+		return nil, err
+	}
+	isiAuthType, err := strconv.Atoi(os.Getenv("GOISILON_AUTHTYPE"))
+	if err != nil {
+		return nil, err
+	}
 	return NewClientWithArgs(
 		ctx,
 		os.Getenv("GOISILON_ENDPOINT"),
@@ -45,7 +51,7 @@ func NewClient(ctx context.Context) (*Client, error) {
 		os.Getenv("GOISILON_PASSWORD"),
 		os.Getenv("GOISILON_VOLUMEPATH"),
 		os.Getenv("GOISILON_VOLUMEPATH_PERMISSIONS"),
-		uint(isiAuthType),
+		uint8(isiAuthType),
 	)
 }
 
@@ -54,7 +60,7 @@ func NewClientWithArgs(
 	ctx context.Context,
 	endpoint string,
 	insecure bool, verboseLogging uint,
-	user, group, pass, volumesPath string, volumesPathPermissions string, isiAuthType uint) (*Client, error) {
+	user, group, pass, volumesPath string, volumesPathPermissions string, isiAuthType uint8) (*Client, error) {
 
 	timeout, _ := time.ParseDuration(os.Getenv("GOISILON_TIMEOUT"))
 
