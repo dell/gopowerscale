@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dell/goisilon/api"
-	"github.com/sirupsen/logrus"
 	"path"
 )
 
@@ -63,7 +62,6 @@ func GetIsiSnapshotByIdentity(
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/snapshot/snapshots/id|name
 	snapshotURL := fmt.Sprintf("%s/%s", snapshotsPath, identity)
 	var resp *getIsiSnapshotsResp
-	logrus.Debugf("####### DEBUG snapshotURL= %#v", snapshotURL)
 	err := client.Get(ctx, snapshotURL, "", nil, nil, &resp)
 	if err != nil {
 		return nil, err

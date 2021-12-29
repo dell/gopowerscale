@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	api "github.com/dell/goisilon/api/v1"
-	"github.com/sirupsen/logrus"
 	"path"
 	"strconv"
 	"strings"
@@ -120,7 +119,6 @@ func (c *Client) CopySnapshot(
 	sourceID int64, sourceName, destinationName string) (Volume, error) {
 
 	snapshot, err := c.GetSnapshot(ctx, sourceID, sourceName)
-	logrus.Debugf("sourceID= %v, sourceName= %v, snapshot= %#v", sourceID, sourceName, snapshot)
 	if err != nil {
 		return nil, err
 	}
