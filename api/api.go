@@ -47,6 +47,8 @@ const (
 	headerISICSRFToken                    = "X-CSRF-Token"
 	headerISIReferer                      = "Referer"
 	isiSessCsrfToken                      = "Set-Cookie"
+	authTypeBasic                         = 0
+	authTypeSessionBased                  = 1
 )
 
 var (
@@ -205,10 +207,10 @@ type ClientOptions struct {
 func New(
 	ctx context.Context,
 	hostname, username, password, groupname string,
-	verboseLogging uint, isiAuthType uint8,
+	verboseLogging uint, authType uint8,
 	opts *ClientOptions) (Client, error) {
 
-	if hostname == "" || username == "" || password == "" || isiAuthType > 1 {
+	if hostname == "" || username == "" || password == "" || authType > 1 {
 		return nil, errNewClient
 	}
 
@@ -220,7 +222,7 @@ func New(
 		volumePath:            defaultVolumesPath,
 		volumePathPermissions: defaultVolumesPathPermissions,
 		verboseLogging:        VerboseType(verboseLogging),
-		authType:              isiAuthType,
+		authType:              authType,
 	}
 
 	c.http = &http.Client{}
@@ -260,7 +262,7 @@ func New(
 		}
 	}
 
-	if c.authType == 1 {
+	if c.authType == authTypeSessionBased {
 		c.authenticate(ctx, username, password, hostname)
 	}
 	resp := &apiVerResponse{}
@@ -494,7 +496,7 @@ func (c *client) DoAndGetResponseBody(
 		}
 	}
 
-	if c.authType == 0 {
+	if c.authType == authTypeBasic {
 		req.SetBasicAuth(c.username, c.password)
 	} else {
 		if c.GetAuthToken() != "" {
@@ -644,7 +646,7 @@ func (c *client) authenticate(ctx context.Context, username string, password str
 // it retries the same operation after performing authentication.
 func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri string, id string, params OrderedValues, headers map[string]string, body, resp interface{}) error {
 	err := c.DoWithHeaders(ctx, method, uri, id, params, headers, body, resp)
-	if c.authType == 0 {
+	if c.authType == authTypeBasic {
 		return err
 	}
 	if err == nil {
