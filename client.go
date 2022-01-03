@@ -1,4 +1,4 @@
-/* 
+/*
  Copyright (c) 2019 Dell Inc, or its subsidiaries.
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +12,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
- */
+*/
 package goisilon
 
 import (
@@ -33,7 +33,14 @@ type Client struct {
 
 // NewClient returns a new Isilon client struct initialized from the environment.
 func NewClient(ctx context.Context) (*Client, error) {
-	insecure, _ := strconv.ParseBool(os.Getenv("GOISILON_INSECURE"))
+	insecure, err := strconv.ParseBool(os.Getenv("GOISILON_INSECURE"))
+	if err != nil {
+		return nil, err
+	}
+	authType, err := strconv.Atoi(os.Getenv("GOISILON_AUTHTYPE"))
+	if err != nil {
+		return nil, err
+	}
 	return NewClientWithArgs(
 		ctx,
 		os.Getenv("GOISILON_ENDPOINT"),
@@ -43,8 +50,9 @@ func NewClient(ctx context.Context) (*Client, error) {
 		os.Getenv("GOISILON_GROUP"),
 		os.Getenv("GOISILON_PASSWORD"),
 		os.Getenv("GOISILON_VOLUMEPATH"),
-		os.Getenv("GOISILON_VOLUMEPATH_PERMISSIONS"))
-
+		os.Getenv("GOISILON_VOLUMEPATH_PERMISSIONS"),
+		uint8(authType),
+	)
 }
 
 // NewClientWithArgs returns a new Isilon client struct initialized from the supplied arguments.
@@ -52,12 +60,12 @@ func NewClientWithArgs(
 	ctx context.Context,
 	endpoint string,
 	insecure bool, verboseLogging uint,
-	user, group, pass, volumesPath string, volumesPathPermissions string) (*Client, error) {
+	user, group, pass, volumesPath string, volumesPathPermissions string, authType uint8) (*Client, error) {
 
 	timeout, _ := time.ParseDuration(os.Getenv("GOISILON_TIMEOUT"))
 
 	client, err := api.New(
-		ctx, endpoint, user, pass, group, verboseLogging,
+		ctx, endpoint, user, pass, group, verboseLogging, authType,
 		&api.ClientOptions{
 			Insecure:               insecure,
 			VolumesPath:            volumesPath,
