@@ -214,9 +214,9 @@ func New(
 		return nil, errNewClient
 	}
 
-	if authType != 0 && authType != 1 {
+	if authType != authTypeBasic && authType != authTypeSessionBased {
 		log.Warn(ctx, "AuthType can be 0 or 1. Setting it to default value 0")
-		authType = 0
+		authType = authTypeBasic
 	}
 
 	c := &client{
@@ -682,7 +682,7 @@ func FetchValueIndexForKey(l string, match string, sep string) (int, int, int) {
 	var startIndex, endIndex = -1, -1
 	if strings.Contains(l, match) {
 		startIndex = strings.Index(l, match)
-		if sep != "" {
+		if startIndex != -1 && sep != "" {
 			endIndex = strings.Index(l[startIndex+len(match):], sep)
 		}
 	}
