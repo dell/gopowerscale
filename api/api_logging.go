@@ -124,17 +124,21 @@ func encryptPassword(buf []byte) []byte {
 		case strings.Contains(l, "password"):
 			match = `"password":"`
 			separator = `"`
-		case strings.Contains(l, "Cookie"):
-			match = `Cookie: isisessid=`
+		case strings.Contains(l, "Cookie: isisessid="):
+			match = `isisessid=`
 			separator = `-`
 		case strings.Contains(l, "X-Csrf-Token"):
 			match = `X-Csrf-Token:`
 			separator = `-`
+		case strings.Contains(l, "Authorization: Basic"):
+			match = `Basic `
 		}
-		if match != "" && separator != "" {
+		if match != "" {
 			startIndex, endIndex, matchStrLen := FetchValueIndexForKey(l, match, separator)
-			if startIndex > 0 || endIndex > 0 {
+			if startIndex >= 0 && endIndex > 0 { // if the separator is present then replace only the characters till separator with the special character
 				l = l[:startIndex+matchStrLen] + "****" + l[startIndex+matchStrLen+endIndex:]
+			} else if startIndex >= 0 { // if the separator in not present then replace the string to be masked with the special character
+				l = l[:startIndex+matchStrLen] + "****"
 			}
 		}
 		fmt.Fprintln(ou, l)

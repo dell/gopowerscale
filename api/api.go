@@ -210,8 +210,13 @@ func New(
 	verboseLogging uint, authType uint8,
 	opts *ClientOptions) (Client, error) {
 
-	if hostname == "" || username == "" || password == "" || authType > 1 {
+	if hostname == "" || username == "" || password == "" {
 		return nil, errNewClient
+	}
+
+	if authType != authTypeBasic && authType != authTypeSessionBased {
+		log.Warn(ctx, "AuthType can be 0 or 1. Setting it to default value 0")
+		authType = authTypeBasic
 	}
 
 	c := &client{
@@ -674,12 +679,12 @@ func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri s
 
 func FetchValueIndexForKey(l string, match string, sep string) (int, int, int) {
 
+	var startIndex, endIndex = -1, -1
 	if strings.Contains(l, match) {
-		if i := strings.Index(l, match); i != -1 {
-			if j := strings.Index(l[i+len(match):], sep); j != -1 {
-				return i, j, len(match)
-			}
+		startIndex = strings.Index(l, match)
+		if startIndex != -1 && sep != "" {
+			endIndex = strings.Index(l[startIndex+len(match):], sep)
 		}
 	}
-	return -1, -1, len(match)
+	return startIndex, endIndex, len(match)
 }
