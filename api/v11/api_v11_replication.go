@@ -2,6 +2,7 @@ package v11
 
 import (
 	"context"
+	"fmt"
 	"github.com/dell/goisilon/api"
 )
 
@@ -11,15 +12,15 @@ const (
 
 // Policy contains the CloudIQ policy info.
 type Policy struct {
-	Action       string `json:"action,omitempty"`
-	Id           string `json:"id,omitempty"`
-	Name         string `json:"name,omitempty"`
-	Enabled      bool   `json:"enabled,omitempty"`
-	TargetPath   string `json:"target_path,omitempty"`
-	SourcePath   string `json:"source_root_path,omitempty"`
-	TargetHost   string `json:"target_host,omitempty"`
-	JobDelay     int    `json:"job_delay,omitempty"`
-	Schedule     string `json:"schedule,omitempty"`
+	Action     string `json:"action,omitempty"`
+	Id         string `json:"id,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Enabled    bool   `json:"enabled,omitempty"`
+	TargetPath string `json:"target_path,omitempty"`
+	SourcePath string `json:"source_root_path,omitempty"`
+	TargetHost string `json:"target_host,omitempty"`
+	JobDelay   int    `json:"job_delay,omitempty"`
+	Schedule   string `json:"schedule,omitempty"`
 }
 
 type Policies struct {
@@ -32,13 +33,15 @@ func GetPolicyByName(
 	client api.Client, name string) (policy *Policy, err error) {
 	p := &Policies{}
 	err = client.Get(ctx, policiesPath, name, nil, nil, &p)
-	if err != nil || len(p.Policy) == 0 {
+	if err != nil {
 		return nil, err
+	} else if len(p.Policy) == 0 {
+		return nil, fmt.Errorf("empty policy")
 	}
-		return &p.Policy[0], nil
+	return &p.Policy[0], nil
 }
 
-func CreatePolicy(ctx context.Context, client api.Client, name string, sourcePath string, targetPath string, targetHost string, rpo int) (error) {
+func CreatePolicy(ctx context.Context, client api.Client, name string, sourcePath string, targetPath string, targetHost string, rpo int) error {
 	resp := ""
 	body := &Policy{
 		Action:     "sync",
@@ -51,10 +54,10 @@ func CreatePolicy(ctx context.Context, client api.Client, name string, sourcePat
 		JobDelay:   rpo,
 		Schedule:   "when-source-modified",
 	}
-	return client.Post(ctx,policiesPath, "", nil,nil,body,resp)
+	return client.Post(ctx, policiesPath, "", nil, nil, body, resp)
 }
 
-func DeletePolicy(ctx context.Context, client api.Client, name string,) (error) {
+func DeletePolicy(ctx context.Context, client api.Client, name string) error {
 	resp := ""
-	return client.Delete(ctx,policiesPath,name,nil,nil, &resp)
+	return client.Delete(ctx, policiesPath, name, nil, nil, &resp)
 }
