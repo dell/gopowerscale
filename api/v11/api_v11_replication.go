@@ -36,7 +36,7 @@ func GetPolicyByName(
 	if err != nil {
 		return nil, err
 	} else if len(p.Policy) == 0 {
-		return nil, fmt.Errorf("empty policy")
+		return nil, fmt.Errorf("successful code returned, but policy %s not found", name)
 	}
 	return &p.Policy[0], nil
 }
