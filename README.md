@@ -38,6 +38,7 @@ Name | Description
 `GOISILON_INSECURE`   | whether to skip SSL validation
 `GOISILON_VOLUMEPATH` | which base path to use when looking for volume directories
 `GOISILON_VOLUMEPATH_PERMISSIONS` | permissions for new volume directory
+`GOISILON_AUTHTYPE` | what should be the auth type, session-based or basic
 
 ### Initialize a new client with options
 The following example demonstrates how to explicitly specify options when
@@ -53,7 +54,8 @@ client, err := NewClientWithArgs(
 	"groupName",
 	"password",
 	"/ifs/volumes",
-	"0777")
+	"0777",
+	0)
 if err != nil {
 	panic(err)
 }

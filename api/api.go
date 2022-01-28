@@ -47,6 +47,8 @@ const (
 	headerISICSRFToken                    = "X-CSRF-Token"
 	headerISIReferer                      = "Referer"
 	isiSessCsrfToken                      = "Set-Cookie"
+	authTypeBasic                         = 0
+	authTypeSessionBased                  = 1
 )
 
 var (
@@ -145,6 +147,7 @@ type client struct {
 	apiMinorVersion       uint8
 	verboseLogging        VerboseType
 	sessionCredentials    session
+	authType              uint8
 }
 
 type session struct {
@@ -204,11 +207,16 @@ type ClientOptions struct {
 func New(
 	ctx context.Context,
 	hostname, username, password, groupname string,
-	verboseLogging uint,
+	verboseLogging uint, authType uint8,
 	opts *ClientOptions) (Client, error) {
 
 	if hostname == "" || username == "" || password == "" {
 		return nil, errNewClient
+	}
+
+	if authType != authTypeBasic && authType != authTypeSessionBased {
+		log.Warn(ctx, "AuthType can be 0 or 1. Setting it to default value 0")
+		authType = authTypeBasic
 	}
 
 	c := &client{
@@ -219,6 +227,7 @@ func New(
 		volumePath:            defaultVolumesPath,
 		volumePathPermissions: defaultVolumesPathPermissions,
 		verboseLogging:        VerboseType(verboseLogging),
+		authType:              authType,
 	}
 
 	c.http = &http.Client{}
@@ -258,7 +267,9 @@ func New(
 		}
 	}
 
-	c.authenticate(ctx, username, password, hostname)
+	if c.authType == authTypeSessionBased {
+		c.authenticate(ctx, username, password, hostname)
+	}
 	resp := &apiVerResponse{}
 	if err := c.Get(ctx, "/platform/latest", "", nil, nil, resp); err != nil &&
 		!strings.HasPrefix(err.Error(), "json: ") {
@@ -490,10 +501,14 @@ func (c *client) DoAndGetResponseBody(
 		}
 	}
 
-	if c.GetAuthToken() != "" {
-		req.Header.Set(headerISISessToken, c.GetAuthToken())
-		req.Header.Set(headerISIReferer, c.GetReferer())
-		req.Header.Set(headerISICSRFToken, c.GetCSRFToken())
+	if c.authType == authTypeBasic {
+		req.SetBasicAuth(c.username, c.password)
+	} else {
+		if c.GetAuthToken() != "" {
+			req.Header.Set(headerISISessToken, c.GetAuthToken())
+			req.Header.Set(headerISIReferer, c.GetReferer())
+			req.Header.Set(headerISICSRFToken, c.GetCSRFToken())
+		}
 	}
 
 	var (
@@ -636,6 +651,9 @@ func (c *client) authenticate(ctx context.Context, username string, password str
 // it retries the same operation after performing authentication.
 func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri string, id string, params OrderedValues, headers map[string]string, body, resp interface{}) error {
 	err := c.DoWithHeaders(ctx, method, uri, id, params, headers, body, resp)
+	if c.authType == authTypeBasic {
+		return err
+	}
 	if err == nil {
 		log.Debug(ctx, "Execution successful on Method: %v, URI: %v", method, uri)
 		return nil
@@ -661,12 +679,12 @@ func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri s
 
 func FetchValueIndexForKey(l string, match string, sep string) (int, int, int) {
 
+	var startIndex, endIndex = -1, -1
 	if strings.Contains(l, match) {
-		if i := strings.Index(l, match); i != -1 {
-			if j := strings.Index(l[i+len(match):], sep); j != -1 {
-				return i, j, len(match)
-			}
+		startIndex = strings.Index(l, match)
+		if startIndex != -1 && sep != "" {
+			endIndex = strings.Index(l[startIndex+len(match):], sep)
 		}
 	}
-	return -1, -1, len(match)
+	return startIndex, endIndex, len(match)
 }

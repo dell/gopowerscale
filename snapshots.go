@@ -139,7 +139,7 @@ func (c *Client) CopySnapshot(
 // CopySnapshotWithIsiPath copies all files/directories in a snapshot with isiPath to a new directory.
 func (c *Client) CopySnapshotWithIsiPath(
 	ctx context.Context,
-	isiPath string,
+	isiPath, snapshotSourceVolumeIsiPath string,
 	sourceID int64,
 	sourceName, destinationName string) (Volume, error) {
 
@@ -152,7 +152,7 @@ func (c *Client) CopySnapshotWithIsiPath(
 	}
 
 	_, err = api.CopyIsiSnapshotWithIsiPath(
-		ctx, c.API, isiPath, snapshot.Name,
+		ctx, c.API, isiPath, snapshotSourceVolumeIsiPath, snapshot.Name,
 		path.Base(snapshot.Path), destinationName)
 	if err != nil {
 		return nil, err
