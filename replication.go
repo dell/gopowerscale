@@ -2,7 +2,6 @@ package goisilon
 
 import (
 	"context"
-	"fmt"
 	log "github.com/akutz/gournal"
 	"github.com/dell/goisilon/api/common/utils"
 	apiv11 "github.com/dell/goisilon/api/v11"
@@ -39,7 +38,6 @@ const (
 type Policy *apiv11.Policy
 
 type TargetPolicy *apiv11.TargetPolicy
-
 
 // GetPolicyByName returns a policy with the provided ID.
 func (c *Client) GetPolicyByName(ctx context.Context, id string) (Policy, error) {
@@ -268,17 +266,20 @@ func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
 		// Check if report is for sync action and is recent enough
 		isSync := r.Policy.Action == "sync"
 
-		endTime := time.Unix(r.EndTime, 0)
-		diff := time.Now().Sub(endTime).Seconds()
+		now := time.Now().Unix()
+		diff := r.EndTime - now
 
-		fmt.Println("end time", endTime.String())
+		log.Debug(ctx, "end time", r.EndTime)
+		log.Debug(ctx, "now", now)
+		log.Debug(ctx, "diff", diff)
 
-		fmt.Println("diff", diff)
-
-		isRecent := diff < float64(rpo) / 2
+		isRecent := diff < int64(rpo)
 
 		isFinished := r.State == apiv11.FINISHED
 
+		log.Debug(ctx, "sync", isSync)
+		log.Debug(ctx, "recent", isRecent)
+		log.Debug(ctx, "finished", isFinished)
 		return isSync && isRecent && isFinished
 	}
 
