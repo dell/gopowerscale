@@ -59,7 +59,6 @@ func poll(ctx context.Context, immediate bool, wait WaitWithContextFunc, conditi
 	}
 }
 
-
 func poller(interval, timeout time.Duration) WaitWithContextFunc {
 	return func(ctx context.Context) <-chan struct{} {
 		ch := make(chan struct{})

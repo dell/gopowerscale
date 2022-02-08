@@ -1,4 +1,4 @@
-/* 
+/*
  Copyright (c) 2019 Dell Inc, or its subsidiaries.
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +12,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
- */
+*/
 package goisilon
 
 import (
@@ -315,20 +315,20 @@ func TestExportClientsAdd(t *testing.T) {
 }
 
 func TestAddExportClientsByID(t *testing.T) {
-  
-        // Add the test exports
-        volumeName1 := "test_get_exports1"
-        vol, err := client.CreateVolume(defaultCtx, volumeName1)
-        assertNoError(t, err)
-        assertNotNil(t, vol)
-        volumeName1 = vol.Name
-        t.Logf("created volume: %s", volumeName1)
 
-        exportID, err := client.Export(defaultCtx, volumeName1)
-        assertNoError(t, err)
-        t.Logf("created export: %d", exportID)
+	// Add the test exports
+	volumeName1 := "test_get_exports1"
+	vol, err := client.CreateVolume(defaultCtx, volumeName1)
+	assertNoError(t, err)
+	assertNotNil(t, vol)
+	volumeName1 = vol.Name
+	t.Logf("created volume: %s", volumeName1)
 
-        exportForClient = exportID
+	exportID, err := client.Export(defaultCtx, volumeName1)
+	assertNoError(t, err)
+	t.Logf("created export: %d", exportID)
+
+	exportForClient = exportID
 	export, _ := client.GetExportByID(defaultCtx, exportID)
 
 	fmt.Printf("export '%d' has \n%-20v: '%v'\n%-20v: '%v'\n%-20v: '%v'\n", exportID, "clients", *export.Clients, "read_only_cilents", *export.ReadOnlyClients, "read_write_cilents", *export.ReadWriteClients)
@@ -365,19 +365,19 @@ func TestRemoveExportClientsByID(t *testing.T) {
 func TestRemoveExportClientsByName(t *testing.T) {
 
 	testRemoveExportClients(t, nil, client.RemoveExportClientsByName)
-        volumeName1 := "test_get_exports1"
-        // make sure we clean up when we're done
-        defer client.Unexport(defaultCtx, volumeName1)
-        defer client.DeleteVolume(defaultCtx, volumeName1)
+	volumeName1 := "test_get_exports1"
+	// make sure we clean up when we're done
+	defer client.Unexport(defaultCtx, volumeName1)
+	defer client.DeleteVolume(defaultCtx, volumeName1)
 }
 
 func testRemoveExportClients(t *testing.T,
 	removeExportClientsByIDFunc func(ctx context.Context, id int, clientsToRemove []string) error,
 	removeExportClientsByNameFunc func(ctx context.Context, name string, clientsToRemove []string) error) {
 
-        volumeName1 := "test_get_exports1"
+	volumeName1 := "test_get_exports1"
 
-        exportID := exportForClient
+	exportID := exportForClient
 	export, _ := client.GetExportByName(defaultCtx, volumeName1)
 	exportName := volumeName1
 

@@ -48,8 +48,8 @@ func (c *Client) GetTargetPolicyByName(ctx context.Context, id string) (TargetPo
 	return apiv11.GetTargetPolicyByName(ctx, c.API, id)
 }
 
-func (c *Client) CreatePolicy(ctx context.Context, name string, rpo int, sourcePath string, targetPath string, targetHost string, enabled bool) error {
-	return apiv11.CreatePolicy(ctx, c.API, name, sourcePath, targetPath, targetHost, rpo, enabled)
+func (c *Client) CreatePolicy(ctx context.Context, name string, rpo int, sourcePath string, targetPath string, targetHost string, targetCert string, enabled bool) error {
+	return apiv11.CreatePolicy(ctx, c.API, name, sourcePath, targetPath, targetHost, targetCert, rpo, enabled)
 }
 
 func (c *Client) DeletePolicy(ctx context.Context, name string) error {

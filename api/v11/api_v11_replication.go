@@ -63,6 +63,7 @@ type Policy struct {
 	TargetPath   string    `json:"target_path,omitempty"`
 	SourcePath   string    `json:"source_root_path,omitempty"`
 	TargetHost   string    `json:"target_host,omitempty"`
+	TargetCert   string    `json:"target_certificate_id,omitempty"`
 	JobDelay     int       `json:"job_delay,omitempty"`
 	Schedule     string    `json:"schedule,omitempty"`
 	LastJobState JOB_STATE `json:"last_job_state,omitempty"`
@@ -128,7 +129,7 @@ func GetTargetPolicyByName(ctx context.Context, client api.Client, name string) 
 	return &p.Policy[0], nil
 }
 
-func CreatePolicy(ctx context.Context, client api.Client, name string, sourcePath string, targetPath string, targetHost string, rpo int, enabled bool) error {
+func CreatePolicy(ctx context.Context, client api.Client, name string, sourcePath string, targetPath string, targetHost string, targetCert string, rpo int, enabled bool) error {
 	var policyResp Policy
 	body := &Policy{
 		Action:     "sync",
@@ -139,6 +140,7 @@ func CreatePolicy(ctx context.Context, client api.Client, name string, sourcePat
 		SourcePath: sourcePath,
 		TargetHost: targetHost,
 		JobDelay:   rpo,
+		TargetCert: targetCert,
 		Schedule:   "when-source-modified",
 	}
 	return client.Post(ctx, policiesPath, "", nil, nil, body, &policyResp)
