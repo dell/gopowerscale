@@ -2,6 +2,7 @@ package goisilon
 
 import (
 	"context"
+	log "github.com/akutz/gournal"
 	"github.com/dell/goisilon/api/common/utils"
 	apiv11 "github.com/dell/goisilon/api/v11"
 	"time"
@@ -167,7 +168,7 @@ func (c *Client) ResyncPrep(ctx context.Context, policyName string) error {
 	return nil
 }
 
-func (c *Client) RunActionForPolicy(ctx context.Context, policyName string, action apiv11.JOB_ACTION) (*apiv11.JobRequest, error) {
+func (c *Client) RunActionForPolicy(ctx context.Context, policyName string, action apiv11.JOB_ACTION) (*apiv11.Job, error) {
 	job := &apiv11.JobRequest{
 		Id:     policyName,
 		Action: action,
@@ -176,7 +177,7 @@ func (c *Client) RunActionForPolicy(ctx context.Context, policyName string, acti
 	return apiv11.StartSyncIQJob(ctx, c.API, job)
 }
 
-func (c *Client) StartSyncIQJob(ctx context.Context, job *apiv11.JobRequest) (*apiv11.JobRequest, error) {
+func (c *Client) StartSyncIQJob(ctx context.Context, job *apiv11.JobRequest) (*apiv11.Job, error) {
 	return apiv11.StartSyncIQJob(ctx, c.API, job)
 }
 
@@ -197,6 +198,28 @@ func (c *Client) WaitForPolicyEnabledFieldCondition(ctx context.Context, policyN
 			}
 
 			if p.Enabled != enabled {
+				return false, nil
+			}
+
+			return true, nil
+		})
+
+	if pollErr != nil {
+		return pollErr
+	}
+
+	return nil
+}
+
+func (c *Client) WaitForNoActiveJobs(ctx context.Context, policyName string) error {
+	pollErr := utils.PollImmediateWithContext(ctx, defaultPoll, defaultTimeout,
+		func(iCtx context.Context) (bool, error) {
+			p, err := c.GetJobsByPolicyName(iCtx, policyName)
+			if err != nil {
+				return false, err
+			}
+
+			if len(p)!= 0 {
 				return false, nil
 			}
 
@@ -255,20 +278,59 @@ func (c *Client) WaitForTargetPolicyCondition(ctx context.Context, policyName st
 }
 
 func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
-	_, err := c.GetJobsByPolicyName(ctx, policyName)
+
+	// get all running
+	// if running - wait for it and succeed
+	// if no running - start new - wait for it and succeed
+
+	var isRunning bool
+
+	policy, err := c.GetPolicyByName(ctx,policyName)
 	if err != nil {
+		return err
+	}
+	if policy.Enabled != true{
+		return nil
+	}
+
+	runningJobs, err := c.GetJobsByPolicyName(ctx, policyName)
+	if err != nil {
+		log.Info(ctx,err.Error())
+		return err
+	}
+	for _, i := range runningJobs {
+		if i.Action == apiv11.SYNC {
+			// running job detected. Wait for it to complete.
+			isRunning = true
+		}
+	}
+	if isRunning {
+		log.Info(ctx, "found active jobs, waiting for completion")
+		err = c.WaitForNoActiveJobs(ctx, policyName)
+		if err != nil {
+			return err
+		}
+		return nil
+	} else {
 		jobReq := &apiv11.JobRequest{
 			Id: policyName,
 		}
+		log.Info(ctx, "found no active sync jobs, starting a new one")
 		_, err := c.StartSyncIQJob(ctx, jobReq)
 		if err != nil {
 			return err
 		}
+		time.Sleep(3 * time.Second)
+		err = c.WaitForNoActiveJobs(ctx, policyName)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
-	return nil
+
 }
 
-func (c *Client) GetJobsByPolicyName(ctx context.Context, policyName string) (*apiv11.JobRequest, error) {
+func (c *Client) GetJobsByPolicyName(ctx context.Context, policyName string) ([]apiv11.Job, error) {
 	return apiv11.GetJobsByPolicyName(ctx, c.API, policyName)
 }
 

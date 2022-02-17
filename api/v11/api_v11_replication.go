@@ -3,9 +3,8 @@ package v11
 import (
 	"context"
 	"fmt"
-	"strconv"
-
 	"github.com/dell/goisilon/api"
+	"strconv"
 )
 
 const (
@@ -22,6 +21,13 @@ const (
 	ALLOW_WRITE        JOB_ACTION = "allow_write"
 	ALLOW_WRITE_REVERT JOB_ACTION = "allow_write_revert"
 	TEST               JOB_ACTION = "test"
+)
+
+type RUNNING_JOB_ACTION string
+
+const (
+	SYNC RUNNING_JOB_ACTION = "sync"
+	COPY RUNNING_JOB_ACTION = "copy"
 )
 
 type JOB_STATE string
@@ -100,8 +106,13 @@ type JobRequest struct {
 	SkipCopy     bool       `json:"skip_copy,omitempty"`
 }
 
+type Job struct {
+	Action RUNNING_JOB_ACTION `json:"policy_action,omitempty"`
+	Id     string             `json:"id,omitempty"` // ID or Name of policy
+}
+
 type Jobs struct {
-	Job []JobRequest `json:"jobs,omitempty"`
+	Job []Job `json:"jobs,omitempty"`
 }
 
 type Report struct {
@@ -172,8 +183,8 @@ func ResetPolicy(ctx context.Context, client api.Client, name string) error {
 	return client.Post(ctx, policiesPath, name+"/reset", nil, nil, nil, &resp)
 }
 
-func StartSyncIQJob(ctx context.Context, client api.Client, job *JobRequest) (*JobRequest, error) {
-	var jobResp JobRequest
+func StartSyncIQJob(ctx context.Context, client api.Client, job *JobRequest) (*Job, error) {
+	var jobResp Job
 	return &jobResp, client.Post(ctx, jobsPath, "", nil, nil, job, &jobResp)
 }
 
@@ -206,11 +217,16 @@ func GetReportsByPolicyName(ctx context.Context, client api.Client, policyName s
 	return r, nil
 }
 
-func GetJobsByPolicyName(ctx context.Context, client api.Client, policyName string) (*JobRequest, error) {
+func GetJobsByPolicyName(ctx context.Context, client api.Client, policyName string) ([]Job, error) {
 	j := &Jobs{}
 	err := client.Get(ctx, jobsPath, policyName, nil, nil, &j)
 	if err != nil {
+		if e,ok:= err.(*api.JSONError);ok{
+			if e.StatusCode == 404{
+				return []Job{}, nil
+			}
+		}
 		return nil, err
 	}
-	return &j.Job[0], nil
+	return j.Job, nil
 }
