@@ -100,6 +100,10 @@ type JobRequest struct {
 	SkipCopy     bool       `json:"skip_copy,omitempty"`
 }
 
+type Jobs struct {
+	Job []JobRequest `json:"jobs,omitempty"`
+}
+
 type Report struct {
 	Policy  Policy    `json:"policy,omitempty"`
 	Id      string    `json:"id"`
@@ -200,4 +204,13 @@ func GetReportsByPolicyName(ctx context.Context, client api.Client, policyName s
 	}
 
 	return r, nil
+}
+
+func GetJobsByPolicyName(ctx context.Context, client api.Client, policyName string) (*JobRequest, error) {
+	j := &Jobs{}
+	err := client.Get(ctx, jobsPath, policyName, nil, nil, &j)
+	if err != nil {
+		return nil, err
+	}
+	return &j.Job[0], nil
 }

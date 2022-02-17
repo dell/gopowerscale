@@ -2,7 +2,6 @@ package goisilon
 
 import (
 	"context"
-	log "github.com/akutz/gournal"
 	"github.com/dell/goisilon/api/common/utils"
 	apiv11 "github.com/dell/goisilon/api/v11"
 	"time"
@@ -256,44 +255,8 @@ func (c *Client) WaitForTargetPolicyCondition(ctx context.Context, policyName st
 }
 
 func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
-	p, err := c.GetPolicyByName(ctx, policyName)
+	_, err := c.GetJobsByPolicyName(ctx, policyName)
 	if err != nil {
-		return err
-	}
-	rpo := p.JobDelay
-
-	reportFilter := func(r apiv11.Report) bool {
-		// Check if report is for sync action and is recent enough
-		isSync := r.Policy.Action == "sync"
-
-		now := time.Now().Unix()
-		diff := r.EndTime - now
-
-		log.Debug(ctx, "end time", r.EndTime)
-		log.Debug(ctx, "now", now)
-		log.Debug(ctx, "diff", diff)
-
-		isRecent := diff < int64(rpo)
-
-		isFinished := r.State == apiv11.FINISHED
-
-		log.Debug(ctx, "sync", isSync)
-		log.Debug(ctx, "recent", isRecent)
-		log.Debug(ctx, "finished", isFinished)
-		return isSync && isRecent && isFinished
-	}
-
-	reports, err := c.GetReportsByPolicyName(ctx, policyName, 5)
-	if err != nil {
-		return err
-	}
-
-	filtered := FilterReports(reports.Reports, reportFilter)
-	log.Debug(ctx, "filtered reports %v for policy %s", filtered, policyName)
-
-	if len(filtered) == 0 {
-		// If no reports found matching to our criteria -- run sync job
-		log.Info(ctx, "No matching reports were found, starting sync job")
 		jobReq := &apiv11.JobRequest{
 			Id: policyName,
 		}
@@ -301,31 +264,12 @@ func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
 		if err != nil {
 			return err
 		}
-
-		log.Info(ctx, "Waiting for SyncIQ job to complete")
-		pollErr := utils.PollImmediateWithContext(ctx, defaultPoll, defaultTimeout,
-			func(iCtx context.Context) (bool, error) {
-				reports, err := c.GetReportsByPolicyName(ctx, policyName, 5)
-				if err != nil {
-					return false, err
-				}
-
-				filtered := FilterReports(reports.Reports, reportFilter)
-
-				if len(filtered) == 0 {
-					return false, nil
-				}
-
-				return true, nil
-			})
-		if pollErr != nil {
-			return pollErr
-		}
-	} else {
-		log.Info(ctx, "Matching reports for policy %s were already found", policyName)
 	}
-
 	return nil
+}
+
+func (c *Client) GetJobsByPolicyName(ctx context.Context, policyName string) (*apiv11.JobRequest, error) {
+	return apiv11.GetJobsByPolicyName(ctx, c.API, policyName)
 }
 
 func FilterReports(values []apiv11.Report, filterFunc func(apiv11.Report) bool) []apiv11.Report {
