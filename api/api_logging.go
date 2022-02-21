@@ -19,6 +19,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	log "github.com/akutz/gournal"
 	"io"
@@ -120,25 +121,30 @@ func encryptPassword(buf []byte) []byte {
 		separator := ""
 		l = sc.Text()
 
-		switch {
-		case strings.Contains(l, "password"):
-			match = `"password":"`
-			separator = `"`
-		case strings.Contains(l, "Cookie: isisessid="):
-			match = `isisessid=`
-			separator = `-`
-		case strings.Contains(l, "X-Csrf-Token"):
-			match = `X-Csrf-Token:`
-			separator = `-`
-		case strings.Contains(l, "Authorization: Basic"):
-			match = `Basic `
-		}
-		if match != "" {
-			startIndex, endIndex, matchStrLen := FetchValueIndexForKey(l, match, separator)
-			if startIndex >= 0 && endIndex > 0 { // if the separator is present then replace only the characters till separator with the special character
-				l = l[:startIndex+matchStrLen] + "****" + l[startIndex+matchStrLen+endIndex:]
-			} else if startIndex >= 0 { // if the separator in not present then replace the string to be masked with the special character
-				l = l[:startIndex+matchStrLen] + "****"
+		if strings.Contains(l, "Authorization: Basic") {
+			base64str := strings.Split(l, " ")[2]
+			decoded, _ := base64.StdEncoding.DecodeString(base64str)
+			decodedName := strings.Split(string(decoded), ":")[0]
+			l = "Authorization: " + decodedName + ":******"
+		} else {
+			switch {
+			case strings.Contains(l, "password"):
+				match = `"password":"`
+				separator = `"`
+			case strings.Contains(l, "Cookie: isisessid="):
+				match = `isisessid=`
+				separator = `-`
+			case strings.Contains(l, "X-Csrf-Token"):
+				match = `X-Csrf-Token:`
+				separator = `-`
+			}
+			if match != "" {
+				startIndex, endIndex, matchStrLen := FetchValueIndexForKey(l, match, separator)
+				if startIndex >= 0 && endIndex > 0 { // if the separator is present then replace only the characters till separator with the special character
+					l = l[:startIndex+matchStrLen] + "****" + l[startIndex+matchStrLen+endIndex:]
+				} else if startIndex >= 0 { // if the separator in not present then replace the string to be masked with the special character
+					l = l[:startIndex+matchStrLen] + "****"
+				}
 			}
 		}
 		fmt.Fprintln(ou, l)
