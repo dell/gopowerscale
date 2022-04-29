@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2022 Dell Inc, or its subsidiaries.
+ Copyright (c) 2019 Dell Inc, or its subsidiaries.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package v3
 
 import (
 	"context"
+	log "github.com/akutz/gournal"
 	"strings"
 
 	"github.com/dell/goisilon/api"
@@ -46,6 +47,15 @@ func GetIsiStats(
 		nil,
 		&resp)
 
+	return resp, err
+}
+
+func IsIOinProgress(ctx context.Context,
+	client api.Client) (resp *ExportClientList, err error) {
+	err = client.Get(
+		ctx, string(platfromStatsPath), "summary/client", nil,
+		nil,
+		&resp)
 	return resp, err
 }
 

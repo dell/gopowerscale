@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2022 Dell Inc, or its subsidiaries.
+ Copyright (c) 2019 Dell Inc, or its subsidiaries.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -48,4 +48,13 @@ type IsiDevice struct {
 	GUID  string `json:"guid"`
 	IsUp  bool   `json:"is_up"`
 	Lnn   int64  `json:"lnn"`
+}
+
+type isiClientList struct {
+	Protocol   string `json:"protocol"`
+	RemoteAddr string `json:"remote_addr"`
+	RemoteName string `json:"remote_name"`
+}
+type ExportClientList struct {
+	ClientsList []*isiClientList `json:"client"`
 }
