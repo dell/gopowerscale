@@ -17,7 +17,6 @@ package v3
 
 import (
 	"context"
-	log "github.com/akutz/gournal"
 	"strings"
 
 	"github.com/dell/goisilon/api"
