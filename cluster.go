@@ -43,11 +43,11 @@ func (c *Client) IsIOInProgress(
 	ctx context.Context) (Clients, error) {
 
 	// query the volume without using the metadata parameter, use whether an error (typically, JSONError instance with "404 Not Found" status code) is returned to indicate whether the volume already exists.
-	stats, err := apiv3.IsIOInProgress(ctx, c.API)
+	clientList, err := apiv3.IsIOInProgress(ctx, c.API)
 	if err != nil {
 		return nil, err
 	}
-	return stats, nil
+	return clientList, nil
 }
 
 // ClusterConfig represents the configuration of cluster in k8s (namespace API).
