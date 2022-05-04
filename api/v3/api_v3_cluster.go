@@ -49,7 +49,7 @@ func GetIsiStats(
 	return resp, err
 }
 
-func IsIOinProgress(ctx context.Context,
+func IsIOInProgress(ctx context.Context,
 	client api.Client) (resp *ExportClientList, err error) {
 	err = client.Get(
 		ctx, string(platfromStatsPath), "summary/client", nil,

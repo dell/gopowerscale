@@ -39,11 +39,11 @@ func (c *Client) GetStatistics(
 }
 
 // IsIOinProgress checks whether a volume on a node has IO in progress
-func (c *Client) IsIOinProgress(
+func (c *Client) IsIOInProgress(
 	ctx context.Context) (Clients, error) {
 
 	// query the volume without using the metadata parameter, use whether an error (typically, JSONError instance with "404 Not Found" status code) is returned to indicate whether the volume already exists.
-	stats, err := apiv3.IsIOinProgress(ctx, c.API)
+	stats, err := apiv3.IsIOInProgress(ctx, c.API)
 	if err != nil {
 		return nil, err
 	}
