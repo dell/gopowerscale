@@ -23,6 +23,7 @@ import (
 
 // Stats is Isilon statistics data structure .
 type Stats *apiv3.IsiStatsResp
+type Clients *apiv3.ExportClientList
 
 //GetStatistics returns statistics from Isilon. Keys indicate type of statistics expected
 func (c *Client) GetStatistics(
@@ -35,6 +36,18 @@ func (c *Client) GetStatistics(
 	}
 
 	return stats, nil
+}
+
+// IsIOinProgress checks whether a volume on a node has IO in progress
+func (c *Client) IsIOInProgress(
+	ctx context.Context) (Clients, error) {
+
+	// query the volume without using the metadata parameter, use whether an error (typically, JSONError instance with "404 Not Found" status code) is returned to indicate whether the volume already exists.
+	clientList, err := apiv3.IsIOInProgress(ctx, c.API)
+	if err != nil {
+		return nil, err
+	}
+	return clientList, nil
 }
 
 // ClusterConfig represents the configuration of cluster in k8s (namespace API).

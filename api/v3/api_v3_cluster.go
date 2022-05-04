@@ -49,6 +49,15 @@ func GetIsiStats(
 	return resp, err
 }
 
+func IsIOInProgress(ctx context.Context,
+	client api.Client) (resp *ExportClientList, err error) {
+	err = client.Get(
+		ctx, string(platfromStatsPath), "summary/client", nil,
+		nil,
+		&resp)
+	return resp, err
+}
+
 // GetIsiClusterConfig queries the config information of OneFS cluster
 func GetIsiClusterConfig(
 	ctx context.Context,

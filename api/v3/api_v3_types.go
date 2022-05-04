@@ -49,3 +49,12 @@ type IsiDevice struct {
 	IsUp  bool   `json:"is_up"`
 	Lnn   int64  `json:"lnn"`
 }
+
+type isiClientList struct {
+	Protocol   string `json:"protocol"`
+	RemoteAddr string `json:"remote_addr"`
+	RemoteName string `json:"remote_name"`
+}
+type ExportClientList struct {
+	ClientsList []*isiClientList `json:"client"`
+}
