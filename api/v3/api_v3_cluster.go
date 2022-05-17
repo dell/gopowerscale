@@ -49,10 +49,13 @@ func GetIsiStats(
 	return resp, err
 }
 
+// IsIOInProgress returns the list of clients currently performing IO on the particular array
 func IsIOInProgress(ctx context.Context,
 	client api.Client) (resp *ExportClientList, err error) {
 	err = client.Get(
-		ctx, string(platfromStatsPath), "summary/client", nil,
+		ctx, string(platfromStatsPath), "summary/client", api.OrderedValues{
+			{[]byte("numeric"), []byte("true")}, // numeric=true returns the response faster since it does not performs reverse lookup and returns IP addresses
+		},
 		nil,
 		&resp)
 	return resp, err
