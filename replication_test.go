@@ -3,11 +3,12 @@ package goisilon_test
 import (
 	"context"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/dell/goisilon"
 	"github.com/dell/goisilon/api"
 	"github.com/stretchr/testify/suite"
-	"testing"
-	"time"
 )
 
 type ReplicationTestSuite struct {
@@ -83,6 +84,7 @@ func (suite *ReplicationTestSuite) TestUnplannedFailoverScenario() {
 		"/ifs/data/test-goisilon/replicated",
 		"/ifs/data/test-goisilon/replicated",
 		suite.remoteEndpoint,
+		"",
 		true)
 	// suite.NoError(err)
 
@@ -103,7 +105,6 @@ func (suite *ReplicationTestSuite) TestUnplannedFailoverScenario() {
 
 	err = suite.remoteClient.BreakAssociation(ctx, volumeName)
 	suite.NoError(err)
-
 
 	// *** SIMULATE EXECUTE_ACTION REPROTECT CALL ***
 	// In driver EXECUTE_ACTION reprotect will be called on another side, but here we just talk to remote client
@@ -126,7 +127,6 @@ func (suite *ReplicationTestSuite) TestUnplannedFailoverScenario() {
 		err = remote.ResetPolicy(ctx, volumeName)
 		suite.NoError(err)
 
-
 		// Create policy on local (actually get it before creating it)
 		err = local.CreatePolicy(ctx,
 			volumeName,
@@ -134,12 +134,12 @@ func (suite *ReplicationTestSuite) TestUnplannedFailoverScenario() {
 			"/ifs/data/test-goisilon/replicated",
 			"/ifs/data/test-goisilon/replicated",
 			suite.localEndpoint,
+			"",
 			true)
 		suite.NoError(err)
 
 		err = local.WaitForPolicyEnabledFieldCondition(ctx, volumeName, true)
 		suite.NoError(err)
-
 
 	} else {
 		err = local.EnablePolicy(ctx, volumeName)
@@ -148,7 +148,6 @@ func (suite *ReplicationTestSuite) TestUnplannedFailoverScenario() {
 		err = local.WaitForPolicyEnabledFieldCondition(ctx, volumeName, true)
 		suite.NoError(err)
 	}
-
 
 	tp, err := remote.GetTargetPolicyByName(ctx, volumeName)
 	if err != nil {
@@ -193,6 +192,7 @@ func (suite *ReplicationTestSuite) TestReplication() {
 		"/ifs/data/test-goisilon/replicated",
 		"/ifs/data/test-goisilon/replicated",
 		suite.remoteEndpoint,
+		"",
 		true)
 	suite.NoError(err)
 
@@ -221,6 +221,7 @@ func (suite *ReplicationTestSuite) TestReplication() {
 		"/ifs/data/test-goisilon/replicated",
 		"/ifs/data/test-goisilon/replicated",
 		suite.remoteEndpoint,
+		"",
 		false)
 	suite.NoError(err)
 
