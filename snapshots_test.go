@@ -381,7 +381,7 @@ func TestSnapshotCopyWithIsiPath(t *testing.T) {
 	}
 	newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
 	copiedVolume, err := client.CopySnapshotWithIsiPath(
-		defaultCtx, newIsiPath, testSnapshot.Id, testSnapshot.Name, destinationVolume)
+		defaultCtx, newIsiPath, newIsiPath, testSnapshot.Id, testSnapshot.Name, destinationVolume)
 	if err != nil {
 		panic(err)
 	}
