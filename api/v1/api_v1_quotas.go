@@ -48,6 +48,53 @@ func GetIsiQuota(
 	return nil, errors.New(fmt.Sprintf("Quota not found: %s", path))
 }
 
+// GetAllIsiQuota queries all quotas on the cluster
+func GetAllIsiQuota(
+	ctx context.Context,
+	client api.Client) (quotas []*IsiQuota, err error) {
+
+	// PAPI call: GET https://1.2.3.4:8080/platform/1/quota/quotas
+
+	var quotaResp *IsiQuotaListRespResume
+
+	// First call without Resume param
+	if err := client.Get(ctx, quotaPath, "", nil, nil, &quotaResp); err != nil {
+		return nil, err
+	}
+	for {
+		for _, q := range quotaResp.Quotas {
+			quotas = append(quotas, q)
+		}
+		if quotaResp.Resume == "" {
+			break
+		}
+
+		if quotaResp, err = GetIsiQuotaWithResume(ctx, client,
+			quotaResp.Resume); err != nil {
+			return nil, err
+		}
+	}
+
+	return quotas, nil
+}
+
+// GetIsiQuotaWithResume queries the next page quotas based on resume token
+func GetIsiQuotaWithResume(
+	ctx context.Context,
+	client api.Client, resume string) (quotas *IsiQuotaListRespResume, err error) {
+
+	var quotaResp IsiQuotaListRespResume
+	err = client.Get(ctx, quotaPath, "",
+		api.OrderedValues{
+			{[]byte("resume"), []byte(resume)},
+		}, nil, &quotaResp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &quotaResp, nil
+}
+
 // GetIsiQuotaByID get the Quota instance by ID
 func GetIsiQuotaByID(
 	ctx context.Context,

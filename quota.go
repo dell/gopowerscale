@@ -25,6 +25,12 @@ import (
 // Quota maps to an Isilon filesystem quota.
 type Quota *api.IsiQuota
 
+// QuotaList maps to a set of quotas
+type QuotaList []*api.IsiQuota
+
+// QuotaResp returns a quota response with resume field
+type QuotaResp *api.IsiQuotaListRespResume
+
 // GetQuota returns a specific quota by volume name
 func (c *Client) GetQuota(ctx context.Context, name string) (Quota, error) {
 	quota, err := api.GetIsiQuota(ctx, c.API, c.API.VolumePath(name))
@@ -33,6 +39,26 @@ func (c *Client) GetQuota(ctx context.Context, name string) (Quota, error) {
 	}
 
 	return quota, nil
+}
+
+// GetAllQuotas returns all quotas on the cluster
+func (c *Client) GetAllQuotas(ctx context.Context) (QuotaList, error) {
+	quotas, err := api.GetAllIsiQuota(ctx, c.API)
+	if err != nil {
+		return nil, err
+	}
+
+	return quotas, nil
+}
+
+// GetQuotasWithResume returns a list of quota with resume field
+func (c *Client) GetQuotasWithResume(ctx context.Context, resume string) (QuotaResp, error) {
+	quotas, err := api.GetIsiQuotaWithResume(ctx, c.API, resume)
+	if err != nil {
+		return nil, err
+	}
+
+	return quotas, nil
 }
 
 // GetQuotaByID returns a specific quota by ID

@@ -49,6 +49,28 @@ func GetIsiStats(
 	return resp, err
 }
 
+// GetIsiFloatStats queries the float attributes of a cluster
+func GetIsiFloatStats(
+	ctx context.Context,
+	client api.Client,
+	keys []string) (resp *IsiFloatStatsResp, err error) {
+
+	// PAPI call: GET https://1.2.3.4:8080/platform/3/statistics/current?keys=ifs.bytes.avail
+
+	keysStr := strings.Join(keys, ",")
+	statsOv := api.OrderedValues{{[]byte("keys"), []byte(keysStr)}}
+
+	err = client.Get(
+		ctx,
+		string(platfromStatsPath),
+		"current",
+		statsOv,
+		nil,
+		&resp)
+
+	return resp, err
+}
+
 // IsIOInProgress returns the list of clients currently performing IO on the particular array
 func IsIOInProgress(ctx context.Context,
 	client api.Client) (resp *ExportClientList, err error) {

@@ -23,6 +23,7 @@ import (
 
 // Stats is Isilon statistics data structure .
 type Stats *apiv3.IsiStatsResp
+type FloatStats *apiv3.IsiFloatStatsResp
 type Clients *apiv3.ExportClientList
 
 //GetStatistics returns statistics from Isilon. Keys indicate type of statistics expected
@@ -31,6 +32,19 @@ func (c *Client) GetStatistics(
 	keys []string) (Stats, error) {
 
 	stats, err := apiv3.GetIsiStats(ctx, c.API, keys)
+	if err != nil {
+		return nil, err
+	}
+
+	return stats, nil
+}
+
+//GetFloatStatistics returns float statistics from Isilon. Keys indicate type of statistics expected
+func (c *Client) GetFloatStatistics(
+	ctx context.Context,
+	keys []string) (FloatStats, error) {
+
+	stats, err := apiv3.GetIsiFloatStats(ctx, c.API, keys)
 	if err != nil {
 		return nil, err
 	}
