@@ -28,6 +28,17 @@ func TestGetStatistics(*testing.T) {
 	}
 }
 
+func TestGetFloatStatistics(*testing.T) {
+	floatStatsKeyArray := []string{"cluster.disk.bytes.in.rate", "ifs.bytes.total", "cluster.disk.xfers.in.rate"}
+	stats, err := client.GetFloatStatistics(defaultCtx, floatStatsKeyArray)
+	if err != nil || len(stats.StatsList) != 3 {
+		panic("Couldn't get float statistics.")
+	}
+	if stats.StatsList[0].Value <= 0 {
+		panic("Statistics returned bad value.")
+	}
+}
+
 // Test if the local serial can be returned normally
 func TestGetLocalSerial(t *testing.T) {
 	// Get local serial

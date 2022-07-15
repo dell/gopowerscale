@@ -66,6 +66,16 @@ func TestQuotaGetSet(t *testing.T) {
 
 }
 
+// Test GetAllQuotas()
+func TestAllQuotasGet(t *testing.T) {
+	// Get All the quotas
+	quotas, err := client.GetAllQuotas(defaultCtx)
+	if err != nil {
+		panic(err)
+	}
+	assertNotNil(t, quotas)
+}
+
 // Test UpdateQuota()
 func TestQuotaUpdate(t *testing.T) {
 

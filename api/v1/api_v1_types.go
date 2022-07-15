@@ -186,6 +186,11 @@ type isiQuotaListResp struct {
 	Quotas []IsiQuota `json:"quotas"`
 }
 
+type IsiQuotaListRespResume struct {
+	Quotas []*IsiQuota `json:"quotas,omitempty"`
+	Resume string      `json:"resume,omitempty"`
+}
+
 // getIsiZonesResp returns an array of all related access zones
 type getIsiZonesResp struct {
 	Zones []*IsiZone `json:"zones"`

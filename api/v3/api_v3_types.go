@@ -24,9 +24,23 @@ type isiStats struct {
 	Value     int64  `json:"value"`
 }
 
+type isiFloatStats struct {
+	ID        int     `json:"devid"`
+	Error     string  `json:"error"`
+	ErrorCode int     `json:"error_code"`
+	Key       string  `json:"key"`
+	Time      int64   `json:"time"`
+	Value     float64 `json:"value"`
+}
+
 // IsiStatsResp PAPI stats response attributes JSON structure
 type IsiStatsResp struct {
 	StatsList []*isiStats `json:"stats"`
+}
+
+// IsiFloatStatsResp PAPI stats response float attributes JSON structure
+type IsiFloatStatsResp struct {
+	StatsList []*isiFloatStats `json:"stats"`
 }
 
 // IsiClusterConfig returns the configuration information of cluster.
