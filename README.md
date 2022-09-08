@@ -109,5 +109,5 @@ CONDITIONS OF ANY KIND, either express or implied. See the License for the
 specific language governing permissions and limitations under the License.
 
 ## Support
-If you have any questions related to this project, please utilize the Dell EMC container forum located [here.]( https://www.dell.com/community/Containers/bd-p/Containers)
-The code and documentation are released with no warranties or SLAs and are intended to be supported through a community driven process.
+For any issues, questions or feedback, please follow our [support process](https://github.com/dell/csm/blob/main/docs/SUPPORT.md)
+
