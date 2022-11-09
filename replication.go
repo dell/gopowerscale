@@ -219,7 +219,7 @@ func (c *Client) WaitForNoActiveJobs(ctx context.Context, policyName string) err
 				return false, err
 			}
 
-			if len(p)!= 0 {
+			if len(p) != 0 {
 				return false, nil
 			}
 
@@ -285,17 +285,17 @@ func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
 
 	var isRunning bool
 
-	policy, err := c.GetPolicyByName(ctx,policyName)
+	policy, err := c.GetPolicyByName(ctx, policyName)
 	if err != nil {
 		return err
 	}
-	if policy.Enabled != true{
+	if policy.Enabled != true {
 		return nil
 	}
 
 	runningJobs, err := c.GetJobsByPolicyName(ctx, policyName)
 	if err != nil {
-		log.Info(ctx,err.Error())
+		log.Info(ctx, err.Error())
 		return err
 	}
 	for _, i := range runningJobs {

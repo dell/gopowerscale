@@ -1,17 +1,17 @@
 /*
- Copyright (c) 2019 Dell Inc, or its subsidiaries.
+Copyright (c) 2019 Dell Inc, or its subsidiaries.
 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-      http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 package goisilon
 
@@ -287,7 +287,7 @@ func (c *Client) ForceDeleteVolume(ctx context.Context, name string) error {
 	return c.DeleteVolume(ctx, name)
 }
 
-//CopyVolume creates a volume based on an existing volume
+// CopyVolume creates a volume based on an existing volume
 func (c *Client) CopyVolume(
 	ctx context.Context, src, dest string) (Volume, error) {
 	_, err := apiv1.CopyIsiVolume(ctx, c.API, src, dest)
@@ -298,7 +298,7 @@ func (c *Client) CopyVolume(
 	return c.GetVolume(ctx, dest, dest)
 }
 
-//CopyVolumeWithIsiPath creates a volume based on an existing volume
+// CopyVolumeWithIsiPath creates a volume based on an existing volume
 func (c *Client) CopyVolumeWithIsiPath(
 	ctx context.Context, isiPath, src, dest string) (Volume, error) {
 	_, err := apiv1.CopyIsiVolumeWithIsiPath(ctx, c.API, isiPath, src, dest)
@@ -309,26 +309,26 @@ func (c *Client) CopyVolumeWithIsiPath(
 	return c.GetVolumeWithIsiPath(ctx, isiPath, dest, dest)
 }
 
-//ExportVolume exports a volume
+// ExportVolume exports a volume
 func (c *Client) ExportVolume(
 	ctx context.Context, name string) (int, error) {
 
 	return c.Export(ctx, name)
 }
 
-//ExportVolumeWithZone exports a volume in the specified access zone
+// ExportVolumeWithZone exports a volume in the specified access zone
 func (c *Client) ExportVolumeWithZone(
 	ctx context.Context, name, zone, description string) (int, error) {
 	return c.ExportWithZone(ctx, name, zone, description)
 }
 
-//ExportVolumeWithZoneAndPath exports a volume in the specified access zone and path
+// ExportVolumeWithZoneAndPath exports a volume in the specified access zone and path
 func (c *Client) ExportVolumeWithZoneAndPath(
 	ctx context.Context, path, zone, description string) (int, error) {
 	return c.ExportWithZoneAndPath(ctx, path, zone, description)
 }
 
-//UnexportVolume stops exporting a volume
+// UnexportVolume stops exporting a volume
 func (c *Client) UnexportVolume(
 	ctx context.Context, name string) error {
 

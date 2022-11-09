@@ -1,17 +1,17 @@
 /*
- Copyright (c) 2022 Dell Inc, or its subsidiaries.
+Copyright (c) 2022 Dell Inc, or its subsidiaries.
 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-      http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 package v11
 
@@ -239,8 +239,8 @@ func GetJobsByPolicyName(ctx context.Context, client api.Client, policyName stri
 	j := &Jobs{}
 	err := client.Get(ctx, jobsPath, policyName, nil, nil, &j)
 	if err != nil {
-		if e,ok:= err.(*api.JSONError);ok{
-			if e.StatusCode == 404{
+		if e, ok := err.(*api.JSONError); ok {
+			if e.StatusCode == 404 {
 				return []Job{}, nil
 			}
 		}
