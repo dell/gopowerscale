@@ -43,6 +43,7 @@ const (
 	headerKeyContentLength                = "Content-Length"
 	defaultVolumesPath                    = "/ifs/volumes"
 	defaultVolumesPathPermissions         = "0777"
+	defaultUnresolvableHosts              = false
 	headerISISessToken                    = "Cookie"
 	headerISICSRFToken                    = "X-CSRF-Token"
 	headerISIReferer                      = "Referer"
@@ -143,6 +144,7 @@ type client struct {
 	password              string
 	volumePath            string
 	volumePathPermissions string
+	unresolvableHosts     bool
 	apiVersion            uint8
 	apiMinorVersion       uint8
 	verboseLogging        VerboseType
@@ -199,6 +201,9 @@ type ClientOptions struct {
 	// VolumesPathPermissions is the directory permissions for VolumesPath
 	VolumesPathPermissions string
 
+	// UnresolvableHosts is the unresolvable hosts param from platform
+	UnresolvableHosts bool
+
 	// Timeout specifies a time limit for requests made by this client.
 	Timeout time.Duration
 }
@@ -226,6 +231,7 @@ func New(
 		password:              password,
 		volumePath:            defaultVolumesPath,
 		volumePathPermissions: defaultVolumesPathPermissions,
+		unresolvableHosts:     defaultUnresolvableHosts,
 		verboseLogging:        VerboseType(verboseLogging),
 		authType:              authType,
 	}
@@ -241,6 +247,9 @@ func New(
 			c.volumePathPermissions = opts.VolumesPathPermissions
 		}
 
+		if opts.UnresolvableHosts {
+			c.unresolvableHosts = opts.UnresolvableHosts
+		}
 		if opts.Timeout != 0 {
 			c.http.Timeout = opts.Timeout
 		}

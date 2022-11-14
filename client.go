@@ -37,6 +37,10 @@ func NewClient(ctx context.Context) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	unresolvableHosts, err := strconv.ParseBool(os.Getenv("GOISILON_UNRESOLVABLE_HOSTS"))
+	if err != nil {
+		return nil, err
+	}
 	authType, err := strconv.Atoi(os.Getenv("GOISILON_AUTHTYPE"))
 	if err != nil {
 		return nil, err
@@ -51,6 +55,7 @@ func NewClient(ctx context.Context) (*Client, error) {
 		os.Getenv("GOISILON_PASSWORD"),
 		os.Getenv("GOISILON_VOLUMEPATH"),
 		os.Getenv("GOISILON_VOLUMEPATH_PERMISSIONS"),
+		unresolvableHosts,
 		uint8(authType),
 	)
 }
@@ -60,7 +65,7 @@ func NewClientWithArgs(
 	ctx context.Context,
 	endpoint string,
 	insecure bool, verboseLogging uint,
-	user, group, pass, volumesPath string, volumesPathPermissions string, authType uint8) (*Client, error) {
+	user, group, pass, volumesPath string, volumesPathPermissions string, unresolvableHosts bool, authType uint8) (*Client, error) {
 
 	timeout, _ := time.ParseDuration(os.Getenv("GOISILON_TIMEOUT"))
 
@@ -70,6 +75,7 @@ func NewClientWithArgs(
 			Insecure:               insecure,
 			VolumesPath:            volumesPath,
 			VolumesPathPermissions: volumesPathPermissions,
+			UnresolvableHosts:      unresolvableHosts,
 			Timeout:                timeout,
 		})
 
