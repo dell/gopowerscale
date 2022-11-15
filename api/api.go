@@ -137,19 +137,19 @@ type Client interface {
 }
 
 type client struct {
-	http                  *http.Client
-	hostname              string
-	username              string
-	groupname             string
-	password              string
-	volumePath            string
-	volumePathPermissions string
-	unresolvableHosts     bool
-	apiVersion            uint8
-	apiMinorVersion       uint8
-	verboseLogging        VerboseType
-	sessionCredentials    session
-	authType              uint8
+	http                    *http.Client
+	hostname                string
+	username                string
+	groupname               string
+	password                string
+	volumePath              string
+	volumePathPermissions   string
+	ignoreUnresolvableHosts bool
+	apiVersion              uint8
+	apiMinorVersion         uint8
+	verboseLogging          VerboseType
+	sessionCredentials      session
+	authType                uint8
 }
 
 type session struct {
@@ -201,8 +201,8 @@ type ClientOptions struct {
 	// VolumesPathPermissions is the directory permissions for VolumesPath
 	VolumesPathPermissions string
 
-	// UnresolvableHosts is the unresolvable hosts param from platform
-	UnresolvableHosts bool
+	// IgnoreUnresolvableHosts is the unresolvable hosts param from platform
+	IgnoreUnresolvableHosts bool
 
 	// Timeout specifies a time limit for requests made by this client.
 	Timeout time.Duration
@@ -225,15 +225,15 @@ func New(
 	}
 
 	c := &client{
-		hostname:              hostname,
-		username:              username,
-		groupname:             groupname,
-		password:              password,
-		volumePath:            defaultVolumesPath,
-		volumePathPermissions: defaultVolumesPathPermissions,
-		unresolvableHosts:     defaultIgnoreUnresolvableHosts,
-		verboseLogging:        VerboseType(verboseLogging),
-		authType:              authType,
+		hostname:                hostname,
+		username:                username,
+		groupname:               groupname,
+		password:                password,
+		volumePath:              defaultVolumesPath,
+		volumePathPermissions:   defaultVolumesPathPermissions,
+		ignoreUnresolvableHosts: defaultIgnoreUnresolvableHosts,
+		verboseLogging:          VerboseType(verboseLogging),
+		authType:                authType,
 	}
 
 	c.http = &http.Client{}
@@ -247,8 +247,8 @@ func New(
 			c.volumePathPermissions = opts.VolumesPathPermissions
 		}
 
-		if opts.UnresolvableHosts {
-			c.unresolvableHosts = opts.UnresolvableHosts
+		if opts.IgnoreUnresolvableHosts {
+			c.ignoreUnresolvableHosts = opts.IgnoreUnresolvableHosts
 		}
 		if opts.Timeout != 0 {
 			c.http.Timeout = opts.Timeout
