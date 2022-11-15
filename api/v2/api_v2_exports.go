@@ -221,13 +221,13 @@ func ExportUpdateWithZone(
 	ctx context.Context,
 	client api.Client,
 	export *Export,
-	zone string, ignoreHosts bool) error {
+	zone string, ignoreUnresolvableHosts bool) error {
 
 	args := api.OrderedValues{
 		{[]byte("zone"), []byte(zone)},
 	}
-
-	if ignoreHosts {
+	// Passing ignoreUnresolvableHosts to true
+	if ignoreUnresolvableHosts {
 		args = api.OrderedValues{
 			{[]byte("zone"), []byte(zone)},
 			{[]byte("ignore_unresolvable_hosts"), []byte("true")},
@@ -265,13 +265,15 @@ func ExportDeleteWithZone(
 	client api.Client,
 	id int, zone string) error {
 
+	args := api.OrderedValues{
+		{[]byte("zone"), []byte(zone)},
+	}
+
 	return client.Delete(
 		ctx,
 		exportsPath,
 		strconv.Itoa(id),
-		api.OrderedValues{
-			{[]byte("zone"), []byte(zone)},
-		},
+		args,
 		nil,
 		nil)
 }
