@@ -43,7 +43,7 @@ const (
 	headerKeyContentLength                = "Content-Length"
 	defaultVolumesPath                    = "/ifs/volumes"
 	defaultVolumesPathPermissions         = "0777"
-	defaultUnresolvableHosts              = false
+	defaultIgnoreUnresolvableHosts        = false
 	headerISISessToken                    = "Cookie"
 	headerISICSRFToken                    = "X-CSRF-Token"
 	headerISIReferer                      = "Referer"
@@ -231,7 +231,7 @@ func New(
 		password:              password,
 		volumePath:            defaultVolumesPath,
 		volumePathPermissions: defaultVolumesPathPermissions,
-		unresolvableHosts:     defaultUnresolvableHosts,
+		unresolvableHosts:     defaultIgnoreUnresolvableHosts,
 		verboseLogging:        VerboseType(verboseLogging),
 		authType:              authType,
 	}
