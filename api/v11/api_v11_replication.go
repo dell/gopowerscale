@@ -18,8 +18,9 @@ package v11
 import (
 	"context"
 	"fmt"
-	"github.com/dell/goisilon/api"
 	"strconv"
+
+	"github.com/dell/goisilon/api"
 )
 
 const (
@@ -86,7 +87,7 @@ type Policy struct {
 	TargetHost   string    `json:"target_host,omitempty"`
 	TargetCert   string    `json:"target_certificate_id,omitempty"`
 	JobDelay     int       `json:"job_delay,omitempty"`
-	Schedule     string    `json:"schedule,omitempty"`
+	Schedule     string    `json:"schedule"`
 	LastJobState JOB_STATE `json:"last_job_state,omitempty"`
 }
 

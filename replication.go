@@ -18,10 +18,11 @@ limitations under the License.
 
 import (
 	"context"
+	"time"
+
 	log "github.com/akutz/gournal"
 	"github.com/dell/goisilon/api/common/utils"
 	apiv11 "github.com/dell/goisilon/api/v11"
-	"time"
 )
 
 const defaultPoll = 5 * time.Second
@@ -111,8 +112,33 @@ func (c *Client) SetPolicyEnabledField(ctx context.Context, name string, value b
 	}
 
 	p := &apiv11.Policy{
+		Id:       pp.Id,
+		Enabled:  value,
+		Schedule: pp.Schedule, // keep existing schedule, otherwise it will be cleared
+	}
+
+	return apiv11.UpdatePolicy(ctx, c.API, p)
+}
+
+// Modifies the policy schedule and job delay.
+// scdeule - can be either empty string (manual) or when-source-modified
+// rpo - can be 0 (manual) or in seconds (when-source-modified)
+func (c *Client) ModifyPolicy(ctx context.Context, name string, schedule string, rpo int) error {
+	pp, err := c.GetPolicyByName(ctx, name)
+	if err != nil {
+		return err
+	}
+
+	p := &apiv11.Policy{
 		Id:      pp.Id,
-		Enabled: value,
+		Enabled: pp.Enabled, // keep existing enabled state, otherwise it will be cleared
+	}
+
+	if schedule == "" { // manual
+		p.Schedule = schedule
+	} else if schedule == "when-source-modified" {
+		p.Schedule = schedule
+		p.JobDelay = rpo
 	}
 
 	return apiv11.UpdatePolicy(ctx, c.API, p)
@@ -163,20 +189,7 @@ func (c *Client) DisallowWrites(ctx context.Context, policyName string) error {
 }
 
 func (c *Client) ResyncPrep(ctx context.Context, policyName string) error {
-	targetPolicy, err := c.GetTargetPolicyByName(ctx, policyName)
-	if err != nil {
-		return err
-	}
-	if targetPolicy.FailoverFailbackState == RESYNC_POLICY_CREATED {
-		return nil
-	}
-
-	_, err = c.RunActionForPolicy(ctx, policyName, apiv11.RESYNC_PREP)
-	if err != nil {
-		return err
-	}
-
-	err = c.WaitForTargetPolicyCondition(ctx, policyName, RESYNC_POLICY_CREATED)
+	_, err := c.RunActionForPolicy(ctx, policyName, apiv11.RESYNC_PREP)
 	if err != nil {
 		return err
 	}
@@ -305,7 +318,7 @@ func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
 	if err != nil {
 		return err
 	}
-	if policy.Enabled != true {
+	if !policy.Enabled {
 		return nil
 	}
 
