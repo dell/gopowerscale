@@ -32,6 +32,7 @@ import (
 	"time"
 
 	log "github.com/akutz/gournal"
+	"github.com/sirupsen/logrus"
 
 	"github.com/dell/goisilon/api/json"
 )
@@ -381,8 +382,11 @@ func (c *client) DoWithHeaders(
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
-
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			logrus.Printf("Error closing HTTP response: %s", err.Error())
+		}
+	}()
 	logResponse(ctx, res, c.verboseLogging)
 
 	// parse the response
@@ -462,7 +466,11 @@ func (c *client) DoAndGetResponseBody(
 	if body != nil {
 		if r, ok := body.(io.ReadCloser); ok {
 			req, err = http.NewRequest(method, u.String(), r)
-			defer r.Close()
+			defer func() {
+				if err := r.Close(); err != nil {
+					logrus.Printf("Error closing HTTP response: %s", err.Error())
+				}
+			}()
 			if v, ok := headers[headerKeyContentType]; ok {
 				req.Header.Set(headerKeyContentType, v)
 			} else {
@@ -617,7 +625,11 @@ func (c *client) authenticate(ctx context.Context, username string, password str
 
 	if resp != nil {
 		log.Debug(ctx, "Authentication response code: %d", resp.StatusCode)
-		defer resp.Body.Close()
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				logrus.Printf("Error closing HTTP response: %s", err.Error())
+			}
+		}()
 
 		switch {
 		case resp.StatusCode == 201:
