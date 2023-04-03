@@ -31,7 +31,7 @@ const defaultPoll = 5 * time.Second
 const defaultTimeout = 10 * time.Minute // set high timeout, we expect to be canceled via context before
 
 const retryInterval = 15 * time.Second
-const maxRetries = 40 // with 15 sec, it is 4 retries per min. For 10 minutes, it is 40 retries
+const maxRetries = 20 // with 15 sec, it is 4 retries per min. For 5 minutes, it is 20 retries
 const retryablePolicyError = "is in an error state. Please resolve it and retry"
 const retryableReportError = "A new quota domain that has not finished QuotaScan has been found"
 const resolveErrorToIgnore = "The policy was not conflicted, so no change was made"
@@ -359,7 +359,7 @@ func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
 		}
 	}
 	if isRunning {
-		log.Info(ctx, "found active jobs -SL-, waiting for completion")
+		log.Info(ctx, "found active jobs, waiting for completion")
 		err = c.WaitForNoActiveJobs(ctx, policyName)
 		if err != nil {
 			return err
