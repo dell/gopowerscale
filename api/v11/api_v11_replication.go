@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022 Dell Inc, or its subsidiaries.
+Copyright (c) 2022-2023 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -82,6 +82,7 @@ type Policy struct {
 	Id           string    `json:"id,omitempty"`
 	Name         string    `json:"name,omitempty"`
 	Enabled      bool      `json:"enabled"`
+	Conflicted   bool      `json:"conflicted"`
 	TargetPath   string    `json:"target_path,omitempty"`
 	SourcePath   string    `json:"source_root_path,omitempty"`
 	TargetHost   string    `json:"target_host,omitempty"`
@@ -137,6 +138,7 @@ type Report struct {
 	JobId   int64     `json:"job_id"`
 	State   JOB_STATE `json:"state,omitempty"`
 	EndTime int64     `json:"end_time"`
+	Errors  []string  `json:"errors"`
 }
 
 // GetPolicyByName returns policy by name

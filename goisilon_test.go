@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2019-2022 Dell Inc, or its subsidiaries.
+Copyright (c) 2019-2023 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -64,8 +64,14 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.WithError(err).Panic(defaultCtx, "error fetching environment variable GOISILON_INSECURE")
 	}
-
+	ignoreUnresolvableHosts, err := strconv.ParseBool(os.Getenv("GOISILON_UNRESOLVABLE_HOSTS"))
+	if err != nil {
+		log.WithError(err).Panic(defaultCtx, "error fetching environment variable GOISILON_UNRESOLVABLE_HOSTS")
+	}
 	authType, err := strconv.Atoi(os.Getenv("GOISILON_AUTHTYPE"))
+	if err != nil {
+		log.WithError(err).Panic(defaultCtx, "error fetching environment variable GOISILON_AUTHTYPE")
+	}
 
 	client, err = NewClientWithArgs(
 		defaultCtx,
@@ -77,15 +83,12 @@ func TestMain(m *testing.M) {
 		os.Getenv("GOISILON_PASSWORD"),
 		os.Getenv("GOISILON_VOLUMEPATH"),
 		os.Getenv("GOISILON_VOLUMEPATH_PERMISSIONS"),
+		ignoreUnresolvableHosts,
 		uint8(authType))
-
 	if err != nil {
 		log.WithError(err).Panic(defaultCtx, "error creating test client")
 	}
 
-	if err != nil {
-		log.WithError(err).Panic(defaultCtx, "error creating test client")
-	}
 	os.Exit(m.Run())
 }
 

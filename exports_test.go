@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022 Dell Inc, or its subsidiaries.
+Copyright (c) 2022-2023 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -347,13 +347,13 @@ func TestAddExportClientsByID(t *testing.T) {
 }
 
 func testAddExportClientsByID(t *testing.T, exportID int, export Export, addExportClientsByID func(
-	ctx context.Context, id int, clients []string) error) {
+	ctx context.Context, id int, clients []string, ignoreUnresolvableHosts bool) error) {
 
 	var clientsToAdd = []string{"192.168.1.110", "192.168.1.110", "192.168.1.111", "192.168.1.112", "192.168.1.113"}
 
 	log.Debug(defaultCtx, "add '%v' to '%v' for export '%d'", clientsToAdd, *export.Clients, exportID)
 
-	err = addExportClientsByID(defaultCtx, exportID, clientsToAdd)
+	err = addExportClientsByID(defaultCtx, exportID, clientsToAdd, false)
 	assert.Nil(t, err)
 }
 
@@ -372,8 +372,8 @@ func TestRemoveExportClientsByName(t *testing.T) {
 }
 
 func testRemoveExportClients(t *testing.T,
-	removeExportClientsByIDFunc func(ctx context.Context, id int, clientsToRemove []string) error,
-	removeExportClientsByNameFunc func(ctx context.Context, name string, clientsToRemove []string) error) {
+	removeExportClientsByIDFunc func(ctx context.Context, id int, clientsToRemove []string, ignoreUnresolvableHosts bool) error,
+	removeExportClientsByNameFunc func(ctx context.Context, name string, clientsToRemove []string, ignoreUnresolvableHosts bool) error) {
 
 	volumeName1 := "test_get_exports1"
 
@@ -388,10 +388,10 @@ func testRemoveExportClients(t *testing.T,
 	log.Debug(defaultCtx, "remove '%v' from '%v' for export '%d'", clientsToRemove, *export.Clients, exportID)
 
 	if removeExportClientsByIDFunc != nil {
-		err = removeExportClientsByIDFunc(defaultCtx, exportID, clientsToRemove)
+		err = removeExportClientsByIDFunc(defaultCtx, exportID, clientsToRemove, false)
 		assert.Nil(t, err)
 	} else {
-		err = removeExportClientsByNameFunc(defaultCtx, exportName, clientsToRemove)
+		err = removeExportClientsByNameFunc(defaultCtx, exportName, clientsToRemove, false)
 		assert.Nil(t, err)
 	}
 

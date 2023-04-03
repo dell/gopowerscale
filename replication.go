@@ -1,7 +1,7 @@
 package goisilon
 
 /*
-Copyright (c) 2021-2022 Dell Inc, or its subsidiaries.
+Copyright (c) 2021-2023 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ limitations under the License.
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	log "github.com/akutz/gournal"
@@ -27,6 +29,12 @@ import (
 
 const defaultPoll = 5 * time.Second
 const defaultTimeout = 10 * time.Minute // set high timeout, we expect to be canceled via context before
+
+const retryInterval = 15 * time.Second
+const maxRetries = 40 // with 15 sec, it is 4 retries per min. For 10 minutes, it is 40 retries
+const retryablePolicyError = "is in an error state. Please resolve it and retry"
+const retryableReportError = "A new quota domain that has not finished QuotaScan has been found"
+const resolveErrorToIgnore = "The policy was not conflicted, so no change was made"
 
 const (
 	RESYNC_PREP            apiv11.JOB_ACTION              = "resync_prep"
@@ -139,6 +147,23 @@ func (c *Client) ModifyPolicy(ctx context.Context, name string, schedule string,
 	} else if schedule == "when-source-modified" {
 		p.Schedule = schedule
 		p.JobDelay = rpo
+	}
+
+	return apiv11.UpdatePolicy(ctx, c.API, p)
+}
+
+// Resolves the policy that is in error state due to QuotaScan requirement.
+func (c *Client) ResolvePolicy(ctx context.Context, name string) error {
+	pp, err := c.GetPolicyByName(ctx, name)
+	if err != nil {
+		return err
+	}
+
+	p := &apiv11.Policy{
+		Id:         pp.Id,
+		Conflicted: false,
+		Enabled:    pp.Enabled,  // keep existing enabled state, otherwise it will be cleared
+		Schedule:   pp.Schedule, // keep existing schedule, otherwise it will be cleared
 	}
 
 	return apiv11.UpdatePolicy(ctx, c.API, p)
@@ -319,7 +344,7 @@ func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
 		return err
 	}
 	if !policy.Enabled {
-		return nil
+		return fmt.Errorf("cannot run sync on disabled policy %s", policyName)
 	}
 
 	runningJobs, err := c.GetJobsByPolicyName(ctx, policyName)
@@ -334,7 +359,7 @@ func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
 		}
 	}
 	if isRunning {
-		log.Info(ctx, "found active jobs, waiting for completion")
+		log.Info(ctx, "found active jobs -SL-, waiting for completion")
 		err = c.WaitForNoActiveJobs(ctx, policyName)
 		if err != nil {
 			return err
@@ -345,10 +370,42 @@ func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
 			Id: policyName,
 		}
 		log.Info(ctx, "found no active sync jobs, starting a new one")
-		_, err := c.StartSyncIQJob(ctx, jobReq)
-		if err != nil {
-			return err
+
+		// workaround for PowerScale KB article
+		// https://www.dell.com/support/kbdoc/en-us/000019414/quotas-on-synciq-source-directories
+		for i := 0; i < maxRetries; i++ {
+			_, err := c.StartSyncIQJob(ctx, jobReq)
+			if err == nil {
+				break
+			}
+			if strings.Contains(err.Error(), retryablePolicyError) {
+				if i+1 == maxRetries {
+					return err
+				}
+
+				reports, err := c.GetReportsByPolicyName(ctx, policyName, 1)
+				if err != nil {
+					return fmt.Errorf("error while retrieving reports for failed sync job %s %s", policyName, err.Error())
+				}
+				if !(len(reports.Reports) > 0 && len(reports.Reports[0].Errors) > 0 &&
+					strings.Contains(reports.Reports[0].Errors[0], retryableReportError)) {
+					return fmt.Errorf("found no retryable error in reports for failed sync job %s", policyName)
+				}
+
+				log.Info(ctx, "Sync job failed with error: %s. %v of %v - retrying in %v...",
+					reports.Reports[0].Errors[0], i+1, maxRetries, retryInterval)
+				time.Sleep(retryInterval)
+
+				// Resolve policy with error before retrying
+				err = c.ResolvePolicy(ctx, policyName)
+				if err != nil && !strings.Contains(err.Error(), resolveErrorToIgnore) {
+					return err
+				}
+			} else { // not a retryable error
+				return err
+			}
 		}
+
 		time.Sleep(3 * time.Second)
 		err = c.WaitForNoActiveJobs(ctx, policyName)
 		if err != nil {
