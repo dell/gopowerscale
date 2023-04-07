@@ -159,16 +159,14 @@ func (c *Client) CopySnapshotWithIsiPath(
 		path.Base(snapshot.Path), destinationName)
 
 	//The response will be null on success of the snapshot creation otherwise it will return the response with a success state equal to false and with details
-	if resp != nil && !resp.Success {
-		var copySnapError bytes.Buffer
-		if resp.Errors != nil {
-			for _, errMes := range resp.Errors {
-				//Extracting the  error message from the JSON array
-				copySnapError.WriteString("Error Source = " + errMes.Source + "," + "Message = " + errMes.Message + "," + "," + "Source = " + errMes.Source + "," + "Target = " + errMes.Target + " \n")
-			}
-		}
+	if resp != nil && !resp.Success && resp.Errors != nil {
 
-		err = errors.New(copySnapError.String())
+		var copySnapError bytes.Buffer
+		for _, errMes := range resp.Errors {
+			//Extracting the  error message from the JSON array
+			copySnapError.WriteString("Error Source = " + errMes.Source + "," + "Message = " + errMes.Message + "," + "," + "Source = " + errMes.Source + "," + "Target = " + errMes.Target + " \n")
+			err = errors.New(copySnapError.String())
+		}
 
 	}
 

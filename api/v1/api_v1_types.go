@@ -205,10 +205,10 @@ type IsiZone struct {
 
 type IsiCopySnapshotResp struct {
 	Errors []struct {
-		ErrorErc string `string:"error_src"`
-		Message  string `string:"message"`
-		Source   string `string:"source"`
-		Target   string `string:"target"`
+		ErrorErc string `json:"error_src"`
+		Message  string `json:"message"`
+		Source   string `json:"source"`
+		Target   string `json:"target"`
 	} `json:"copy_errors"`
-	Success bool
+	Success bool `json:"success"`
 }
