@@ -165,8 +165,8 @@ func (c *Client) CopySnapshotWithIsiPath(
 		for _, errMes := range resp.Errors {
 			//Extracting the  error message from the JSON array
 			copySnapError.WriteString("Error Source = " + errMes.Source + "," + "Message = " + errMes.Message + "," + "," + "Source = " + errMes.Source + "," + "Target = " + errMes.Target + " \n")
-			err = errors.New(copySnapError.String())
 		}
+		err = errors.New(copySnapError.String())
 
 	}
 
