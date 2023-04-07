@@ -202,3 +202,13 @@ type IsiZone struct {
 	Name string `json:"name"`
 	Path string `json:"path"`
 }
+
+type IsiCopySnapshotResp struct {
+	Errors []struct {
+		ErrorErc string `string:"error_src"`
+		Message  string `string:"message"`
+		Source   string `string:"source"`
+		Target   string `string:"target"`
+	} `json:"copy_errors"`
+	Success bool
+}
