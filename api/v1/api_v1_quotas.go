@@ -124,7 +124,7 @@ func GetIsiQuotaByID(
 func CreateIsiQuota(
 	ctx context.Context,
 	client api.Client,
-	path string, container bool, size int64, softLimit int64, advisoryLimit int64, softGracePrd int64) (string, error) {
+	path string, container bool, size, softLimit, advisoryLimit, softGracePrd int64) (string, error) {
 
 	// PAPI call: POST https://1.2.3.4:8080/platform/1/quota/quotas
 	//             { "enforced" : true,
@@ -170,7 +170,7 @@ func CreateIsiQuota(
 func SetIsiQuotaHardThreshold(
 	ctx context.Context,
 	client api.Client,
-	path string, size int64, softLimit int64, advisoryLimit int64, softGracePrd int64) (string, error) {
+	path string, size, softLimit, advisoryLimit,softGracePrd int64) (string, error) {
 
 	return CreateIsiQuota(ctx, client, path, false, size, softLimit, advisoryLimit, softGracePrd)
 }
@@ -179,7 +179,7 @@ func SetIsiQuotaHardThreshold(
 func UpdateIsiQuotaHardThreshold(
 	ctx context.Context,
 	client api.Client,
-	path string, size int64, softLimit int64, advisoryLimit int64, softGracePrd int64) (err error) {
+	path string, size, softLimit, advisoryLimit, softGracePrd int64) (err error) {
 
 	// PAPI call: PUT https://1.2.3.4:8080/platform/1/quota/quotas/Id
 	//             { "enforced" : true,
@@ -221,7 +221,7 @@ func UpdateIsiQuotaHardThreshold(
 func UpdateIsiQuotaHardThresholdByID(
 	ctx context.Context,
 	client api.Client,
-	ID string, size int64, softLimit int64, advisoryLimit int64, softGracePrd int64) (err error) {
+	ID string, size, softLimit, advisoryLimit, softGracePrd int64) (err error) {
 
 	// PAPI call: PUT https://1.2.3.4:8080/platform/1/quota/quotas/Id
 	//             { "enforced" : true,
