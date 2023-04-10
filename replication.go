@@ -34,7 +34,6 @@ const retryInterval = 15 * time.Second
 const maxRetries = 20 // with 15 sec, it is 4 retries per min. For 5 minutes, it is 20 retries
 const retryablePolicyError = "is in an error state. Please resolve it and retry"
 const retryableReportError = "A new quota domain that has not finished QuotaScan has been found"
-const resolveErrorToIgnore = "The policy was not conflicted, so no change was made"
 
 const (
 	RESYNC_PREP            apiv11.JOB_ACTION              = "resync_prep"
@@ -159,14 +158,14 @@ func (c *Client) ResolvePolicy(ctx context.Context, name string) error {
 		return err
 	}
 
-	p := &apiv11.Policy{
+	p := &apiv11.ResolvePolicyReq{
 		Id:         pp.Id,
 		Conflicted: false,
 		Enabled:    pp.Enabled,  // keep existing enabled state, otherwise it will be cleared
 		Schedule:   pp.Schedule, // keep existing schedule, otherwise it will be cleared
 	}
 
-	return apiv11.UpdatePolicy(ctx, c.API, p)
+	return apiv11.ResolvePolicy(ctx, c.API, p)
 }
 
 func (c *Client) AllowWrites(ctx context.Context, policyName string) error {
@@ -398,7 +397,7 @@ func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
 
 				// Resolve policy with error before retrying
 				err = c.ResolvePolicy(ctx, policyName)
-				if err != nil && !strings.Contains(err.Error(), resolveErrorToIgnore) {
+				if err != nil {
 					return err
 				}
 			} else { // not a retryable error
