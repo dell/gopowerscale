@@ -189,7 +189,6 @@ func UpdateIsiQuotaHardThreshold(
 	//                                "soft" : null
 	//                              }
 	//             }
-	//shefali
 	thresholds := isiThresholdsReq{Advisory: advisoryLimit, Hard: size, Soft: softLimit, SoftGrace: softGracePrd}
 	if advisoryLimit == 0 {
 		thresholds.Advisory = nil
