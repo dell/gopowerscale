@@ -86,41 +86,41 @@ func (c *Client) GetQuotaWithPath(ctx context.Context, path string) (Quota, erro
 // CreateQuota creates a new hard directory quota with the specified size
 // and container option
 func (c *Client) CreateQuota(
-	ctx context.Context, name string, container bool, size int64) (string, error) {
+	ctx context.Context, name string, container bool, size, softLimit, advisoryLimit, softGracePrd int64) (string, error) {
 	return api.CreateIsiQuota(
-		ctx, c.API, c.API.VolumePath(name), container, size)
+		ctx, c.API, c.API.VolumePath(name), container, size, softLimit, advisoryLimit, softGracePrd)
 }
 
 // CreateQuotaWithPath creates a new hard directory quota with the specified size
 // and container option
 func (c *Client) CreateQuotaWithPath(
-	ctx context.Context, path string, container bool, size int64) (string, error) {
+	ctx context.Context, path string, container bool, size, softLimit, advisoryLimit, softGracePrd int64) (string, error) {
 	return api.CreateIsiQuota(
-		ctx, c.API, path, container, size)
+		ctx, c.API, path, container, size, softLimit, advisoryLimit, softGracePrd)
 }
 
 // SetQuotaSize sets the max size (hard threshold) of a quota for a volume
 func (c *Client) SetQuotaSize(
-	ctx context.Context, name string, size int64) (string, error) {
+	ctx context.Context, name string, size, softLimit, advisoryLimit, softGracePrd int64) (string, error) {
 
 	return api.SetIsiQuotaHardThreshold(
-		ctx, c.API, c.API.VolumePath(name), size)
+		ctx, c.API, c.API.VolumePath(name), size, softLimit, advisoryLimit, softGracePrd)
 }
 
 // UpdateQuotaSize modifies the max size (hard threshold) of a quota for a volume
 func (c *Client) UpdateQuotaSize(
-	ctx context.Context, name string, size int64) error {
+	ctx context.Context, name string, size, softLimit, advisoryLimit, softGracePrd int64) error {
 
 	return api.UpdateIsiQuotaHardThreshold(
-		ctx, c.API, c.API.VolumePath(name), size)
+		ctx, c.API, c.API.VolumePath(name), size, softLimit, advisoryLimit, softGracePrd)
 }
 
 // UpdateQuotaSizeByID modifies the max size (hard threshold) of a quota for a volume
 func (c *Client) UpdateQuotaSizeByID(
-	ctx context.Context, ID string, size int64) error {
+	ctx context.Context, ID string, size, softLimit, advisoryLimit, softGracePrd int64) error {
 
 	return api.UpdateIsiQuotaHardThresholdByID(
-		ctx, c.API, ID, size)
+		ctx, c.API, ID, size, softLimit, advisoryLimit, softGracePrd)
 }
 
 // ClearQuota removes the quota from a volume

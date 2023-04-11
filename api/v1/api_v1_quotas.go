@@ -124,7 +124,7 @@ func GetIsiQuotaByID(
 func CreateIsiQuota(
 	ctx context.Context,
 	client api.Client,
-	path string, container bool, size int64) (string, error) {
+	path string, container bool, size, softLimit, advisoryLimit, softGracePrd int64) (string, error) {
 
 	// PAPI call: POST https://1.2.3.4:8080/platform/1/quota/quotas
 	//             { "enforced" : true,
@@ -138,14 +138,26 @@ func CreateIsiQuota(
 	//                                "soft" : null
 	//                              }
 	//             }
-	var data = &IsiQuotaReq{
+	//body={'path': '/ifs/data/quotatest', 'thresholds': {'soft_grace': 86400L, 'soft': 1048576L}, 'include_snapshots': False, 'force': False, 'type': 'directory'}
+	//softGrace := 86400U
+	thresholds := isiThresholdsReq{Advisory: advisoryLimit, Hard: size, Soft: softLimit, SoftGrace: softGracePrd}
+	if advisoryLimit == 0 {
+		thresholds.Advisory = nil
+	}
+	if softLimit == 0 {
+		thresholds.Soft = nil
+	}
+	if softGracePrd == 0 {
+		thresholds.SoftGrace = nil
+	}
+	var data *IsiQuotaReq = &IsiQuotaReq{
 		Enforced:                  true,
 		IncludeSnapshots:          false,
 		Path:                      path,
 		Container:                 container,
 		ThresholdsIncludeOverhead: false,
 		Type:                      "directory",
-		Thresholds:                isiThresholdsReq{Advisory: nil, Hard: size, Soft: nil},
+		Thresholds:                thresholds,
 	}
 
 	var quotaResp IsiQuota
@@ -158,16 +170,16 @@ func CreateIsiQuota(
 func SetIsiQuotaHardThreshold(
 	ctx context.Context,
 	client api.Client,
-	path string, size int64) (string, error) {
+	path string, size, softLimit, advisoryLimit,softGracePrd int64) (string, error) {
 
-	return CreateIsiQuota(ctx, client, path, false, size)
+	return CreateIsiQuota(ctx, client, path, false, size, softLimit, advisoryLimit, softGracePrd)
 }
 
 // UpdateIsiQuotaHardThreshold modifies the hard threshold of a quota for a directory
 func UpdateIsiQuotaHardThreshold(
 	ctx context.Context,
 	client api.Client,
-	path string, size int64) (err error) {
+	path string, size, softLimit, advisoryLimit, softGracePrd int64) (err error) {
 
 	// PAPI call: PUT https://1.2.3.4:8080/platform/1/quota/quotas/Id
 	//             { "enforced" : true,
@@ -177,10 +189,22 @@ func UpdateIsiQuotaHardThreshold(
 	//                                "soft" : null
 	//                              }
 	//             }
+	//shefali
+	thresholds := isiThresholdsReq{Advisory: advisoryLimit, Hard: size, Soft: softLimit, SoftGrace: softGracePrd}
+	if advisoryLimit == 0 {
+		thresholds.Advisory = nil
+	}
+	if softLimit == 0 {
+		thresholds.Soft = nil
+	}
+	if softGracePrd == 0 {
+		thresholds.SoftGrace = nil
+	}
+
 	var data = &IsiUpdateQuotaReq{
 		Enforced:                  true,
 		ThresholdsIncludeOverhead: false,
-		Thresholds:                isiThresholdsReq{Advisory: nil, Hard: size, Soft: nil},
+		Thresholds:                thresholds,
 	}
 
 	quota, err := GetIsiQuota(ctx, client, path)
@@ -197,7 +221,7 @@ func UpdateIsiQuotaHardThreshold(
 func UpdateIsiQuotaHardThresholdByID(
 	ctx context.Context,
 	client api.Client,
-	ID string, size int64) (err error) {
+	ID string, size, softLimit, advisoryLimit, softGracePrd int64) (err error) {
 
 	// PAPI call: PUT https://1.2.3.4:8080/platform/1/quota/quotas/Id
 	//             { "enforced" : true,
@@ -207,10 +231,20 @@ func UpdateIsiQuotaHardThresholdByID(
 	//                                "soft" : null
 	//                              }
 	//             }
+	thresholds := isiThresholdsReq{Advisory: advisoryLimit, Hard: size, Soft: softLimit, SoftGrace: softGracePrd}
+	if advisoryLimit == 0 {
+		thresholds.Advisory = nil
+	}
+	if softLimit == 0 {
+		thresholds.Soft = nil
+	}
+	if softGracePrd == 0 {
+		thresholds.SoftGrace = nil
+	}
 	var data = &IsiUpdateQuotaReq{
 		Enforced:                  true,
 		ThresholdsIncludeOverhead: false,
-		Thresholds:                isiThresholdsReq{Advisory: nil, Hard: size, Soft: nil},
+		Thresholds:                thresholds,
 	}
 
 	var quotaResp IsiQuota

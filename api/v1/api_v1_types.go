@@ -138,6 +138,7 @@ type isiThresholds struct {
 	Soft                 int64       `json:"soft"`
 	SoftExceeded         bool        `json:"soft_exceeded"`
 	SoftLastExceeded     interface{} `json:"soft_last_exceeded"`
+	SoftGrace            int64       `json:"soft_grace"`
 }
 
 type IsiQuota struct {
@@ -161,9 +162,10 @@ type IsiQuota struct {
 }
 
 type isiThresholdsReq struct {
-	Advisory interface{} `json:"advisory"`
-	Hard     interface{} `json:"hard"`
-	Soft     interface{} `json:"soft"`
+	Advisory  interface{} `json:"advisory,omitempty"`
+	Hard      interface{} `json:"hard"`
+	Soft      interface{} `json:"soft,omitempty"`
+	SoftGrace interface{} `json:"soft_grace,omitempty"`
 }
 
 type IsiQuotaReq struct {
