@@ -16,12 +16,15 @@ limitations under the License.
 package goisilon
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
-	api "github.com/dell/goisilon/api/v1"
 	"path"
 	"strconv"
 	"strings"
+
+	api "github.com/dell/goisilon/api/v1"
 )
 
 const namespacePath = "namespace"
@@ -151,9 +154,22 @@ func (c *Client) CopySnapshotWithIsiPath(
 		return nil, fmt.Errorf("Snapshot doesn't exist: (%d, %s)", sourceID, sourceName)
 	}
 
-	_, err = api.CopyIsiSnapshotWithIsiPath(
+	resp, err := api.CopyIsiSnapshotWithIsiPath(
 		ctx, c.API, isiPath, snapshotSourceVolumeIsiPath, snapshot.Name,
 		path.Base(snapshot.Path), destinationName)
+
+	//The response will be null on success of the snapshot creation otherwise it will return the response with a success state equal to false and with details
+	if resp != nil && !resp.Success && resp.Errors != nil {
+
+		var copySnapError bytes.Buffer
+		for _, errMes := range resp.Errors {
+			//Extracting the  error message from the JSON array
+			copySnapError.WriteString("Error Source = " + errMes.Source + "," + "Message = " + errMes.Message + "," + "," + "Source = " + errMes.Source + "," + "Target = " + errMes.Target + " \n")
+		}
+		err = errors.New(copySnapError.String())
+
+	}
+
 	if err != nil {
 		return nil, err
 	}
