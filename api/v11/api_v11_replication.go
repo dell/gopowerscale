@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022 Dell Inc, or its subsidiaries.
+Copyright (c) 2022-2023 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/dell/goisilon/api"
 )
@@ -72,6 +73,8 @@ const (
 	RESYNC_POLICY_CREATED  FAILOVER_FAILBACK_STATE = "resync_policy_created"
 )
 
+const resolveErrorToIgnore = "The policy was not conflicted, so no change was made"
+
 var policyNameArg = []byte("policy_name")
 var sortArg = []byte("sort")
 var reportsPerPolicyArg = []byte("reports_per_policy")
@@ -89,6 +92,14 @@ type Policy struct {
 	JobDelay     int       `json:"job_delay,omitempty"`
 	Schedule     string    `json:"schedule"`
 	LastJobState JOB_STATE `json:"last_job_state,omitempty"`
+}
+
+type ResolvePolicyReq struct {
+	Id         string `json:"id,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Enabled    bool   `json:"enabled"`
+	Conflicted bool   `json:"conflicted"`
+	Schedule   string `json:"schedule"`
 }
 
 type Policies struct {
@@ -137,6 +148,7 @@ type Report struct {
 	JobId   int64     `json:"job_id"`
 	State   JOB_STATE `json:"state,omitempty"`
 	EndTime int64     `json:"end_time"`
+	Errors  []string  `json:"errors"`
 }
 
 // GetPolicyByName returns policy by name
@@ -192,6 +204,17 @@ func UpdatePolicy(ctx context.Context, client api.Client, policy *Policy) error 
 	policy.Id = ""
 
 	return client.Put(ctx, policiesPath, id, nil, nil, policy, nil)
+}
+
+func ResolvePolicy(ctx context.Context, client api.Client, policy *ResolvePolicyReq) error {
+	id := policy.Id
+	policy.Id = ""
+
+	err := client.Put(ctx, policiesPath, id, nil, nil, policy, nil)
+	if err != nil && !strings.Contains(err.Error(), resolveErrorToIgnore) {
+		return err
+	}
+	return nil
 }
 
 func ResetPolicy(ctx context.Context, client api.Client, name string) error {

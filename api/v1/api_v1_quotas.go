@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022 Dell Inc, or its subsidiaries.
+Copyright (c) 2022-2023 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package v1
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/dell/goisilon/api"
@@ -29,23 +28,22 @@ func GetIsiQuota(
 	client api.Client,
 	path string) (quota *IsiQuota, err error) {
 
-	// PAPI call: GET https://1.2.3.4:8080/platform/1/quota/quotas
-	// This will list out all quotas on the cluster
+	// PAPI call: GET https://1.2.3.4:8080/platform/1/quota/quotas?path=/path/to/volume
+	// This will list the quota by path on the cluster
 
 	var quotaResp isiQuotaListResp
-	err = client.Get(ctx, quotaPath, "", nil, nil, &quotaResp)
+	var pathWithQueryParam = quotaPath + "?path=" + path
+	err = client.Get(ctx, pathWithQueryParam, "", nil, nil, &quotaResp)
 	if err != nil {
 		return nil, err
 	}
 
-	// find the specific quota we are looking for
-	for _, quota := range quotaResp.Quotas {
-		if quota.Path == path {
-			return &quota, nil
-		}
+	if quotaResp.Quotas != nil && len(quotaResp.Quotas) > 0 {
+		quota = &quotaResp.Quotas[0]
+		return quota, nil
 	}
 
-	return nil, errors.New(fmt.Sprintf("Quota not found: %s", path))
+	return nil, fmt.Errorf("Quota not found: %s", path)
 }
 
 // GetAllIsiQuota queries all quotas on the cluster

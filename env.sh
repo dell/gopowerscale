@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright © 2019-2022 Dell Inc. or its subsidiaries. All Rights Reserved.
+# Copyright © 2019-2023 Dell Inc. or its subsidiaries. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ GOISILON_USERNAME="admin"
 GOISILON_GROUP=""
 GOISILON_PASSWORD="admin"
 GOISILON_INSECURE="true"
+GOISILON_UNRESOLVABLE_HOSTS="false"
 GOISILON_VOLUMEPATH="/ifs/data/csi"
 GOISILON_VOLUMEPATH_PERMISSIONS="0777"
 GOISILON_AUTHTYPE=0
