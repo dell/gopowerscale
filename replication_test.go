@@ -1,7 +1,7 @@
 package goisilon_test
 
 /*
-Copyright (c) 2021-2022 Dell Inc, or its subsidiaries.
+Copyright (c) 2021-2023 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ func (suite *ReplicationTestSuite) SetupSuite() {
 		"",
 		"dangerous",
 		"/ifs/data/test-goisilon",
-		"0777", 0)
+		"0777", false, 0)
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +61,7 @@ func (suite *ReplicationTestSuite) SetupSuite() {
 		"",
 		"dangerous",
 		"/ifs/data/test-goisilon",
-		"0777", 0)
+		"0777", false, 0)
 	if err != nil {
 		panic(err)
 	}
