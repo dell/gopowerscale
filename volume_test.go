@@ -180,7 +180,7 @@ func TestVolumeDelete(*testing.T) {
 	// make sure the volume was removed
 	volume, err = client.GetVolume(defaultCtx, volumeName, volumeName)
 	if err == nil {
-		panic(fmt.Sprintf("Attempting to get a removed volume should return an error but returned nil"))
+		panic("Attempting to get a removed volume should return an error but returned nil")
 	}
 	if volume != nil {
 		panic(fmt.Sprintf("Volume (%s) was not removed.\n%+v\n", volumeName, volume))
