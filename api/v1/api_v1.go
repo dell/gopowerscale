@@ -16,6 +16,7 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"strconv"
@@ -31,6 +32,9 @@ const (
 	snapshotsPath       = "platform/1/snapshot/snapshots"
 	volumesnapshotsPath = "/ifs/.snapshot"
 	zonesPath           = "platform/1/zones"
+	userPath            = "platform/1/auth/users"
+	rolePath            = "platform/1/auth/roles"
+	roleMemberPath      = "platform/1/auth/roles/%s/members"
 )
 
 var (
@@ -66,4 +70,23 @@ func GetRealNamespacePathWithIsiPath(isiPath string) string {
 func GetRealVolumeSnapshotPathWithIsiPath(isiPath string, name string) string {
 	parts := strings.SplitN(GetRealNamespacePathWithIsiPath(isiPath), "/ifs", 2)
 	return path.Join(parts[0], volumesnapshotsPath, name, parts[1])
+}
+
+// getAuthMemberId reutrns actual auth id, which can be 'UID:0', 'USER:name', 'GID:0', 'GROUP:wheel',
+// memberType can be user/group.
+func getAuthMemberId(memberType string, memberName *string, memberId *int32) (authMemberId string, err error) {
+
+	memberType = strings.ToLower(memberType)
+	if memberType != fileGroupTypeUser && memberType != fileGroupTypeGroup {
+		return "", fmt.Errorf("member type is wrong, only support %s and %s", fileGroupTypeUser, fileGroupTypeGroup)
+	}
+
+	if memberName != nil && *memberName != "" {
+		authMemberId = fmt.Sprintf("%s:%s", strings.ToUpper(memberType), *memberName)
+	}
+
+	if memberId != nil {
+		authMemberId = fmt.Sprintf("%sID:%d", strings.ToUpper(memberType)[0:1], *memberId)
+	}
+	return
 }
