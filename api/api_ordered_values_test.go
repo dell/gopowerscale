@@ -220,3 +220,28 @@ func TestParseQuery(t *testing.T) {
 	tf("name=Andrew%20Kutz&active&alias=akutz")
 	tf("name=Andrew+Kutz&active&alias=akutz")
 }
+
+func TestStructToOrderedValues(t *testing.T) {
+	type TestStruct struct {
+		TestString *string `json:"test_string,omitempty"`
+		TestInt    *int    `json:"test_int,omitempty"`
+		TestBool   *bool   `json:"test_bool,omitempty"`
+		IgnoredField string
+	}
+	testString := "A"
+	testInt := 32
+	testBool := false
+	params := TestStruct{
+		TestString: &testString, TestInt: &testInt, TestBool: &testBool,
+	}
+	var expected OrderedValues
+	expected = [][][]byte{
+		{[]byte("test_string"), []byte("A")},
+		{[]byte("test_int"), []byte("32")},
+		{[]byte("test_bool"), []byte("false")},
+	}
+	actual := StructToOrderedValues(params)
+	if !assert.Equal(t, actual, expected) {
+		t.Errorf("StructToOrderedValue(%v) = %v; want %v", params, actual, expected)
+	}
+}

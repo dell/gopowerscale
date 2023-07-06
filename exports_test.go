@@ -18,7 +18,10 @@ package goisilon
 import (
 	"context"
 	"fmt"
+	apiv4 "github.com/dell/goisilon/api/v4"
+	"github.com/dell/goisilon/openapi"
 	"sort"
+	"strconv"
 	"testing"
 
 	log "github.com/akutz/gournal"
@@ -728,4 +731,67 @@ func TestGetExportsWithPagination(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func TestClient_ListExportsWithStructParams(t *testing.T) {
+	// use limit to test pagination, would still output all shares
+	limit := int32(600)
+	_, err := client.ListAllExportsWithStructParams(defaultCtx, apiv4.ListV4NfsExportsParams{Limit: &limit})
+	assertNil(t, err)
+}
+
+func TestClient_ExportLifeCycleWithStructParams(t *testing.T) {
+	exportName := "tf_nfs_export_test"
+	defer client.DeleteVolume(defaultCtx, exportName)
+
+	vol, err := client.CreateVolume(defaultCtx, exportName)
+	assertNoError(t, err)
+	assertNotNil(t, vol)
+	defer client.DeleteVolume(defaultCtx, exportName)
+
+	fullPath := client.API.VolumePath(exportName)
+	res, err := client.CreateExportWithStructParams(defaultCtx, apiv4.CreateV4NfsExportRequest{
+		V4NfsExport: &openapi.V2NfsExport{
+			Paths: []string{fullPath},
+		},
+	})
+	assert.NotZero(t, res.Id)
+	assertNil(t, err)
+
+	// Test list Exports
+	limit := int32(1)
+	listExports, err := client.ListExportsWithStructParams(defaultCtx, apiv4.ListV4NfsExportsParams{Limit: &limit})
+	assertNil(t, err)
+	assert.Equal(t, 1, len(listExports.Exports))
+
+	exportId := strconv.Itoa(int(res.Id))
+	// Test getExport
+	getExport, err := client.GetExportWithStructParams(defaultCtx, apiv4.GetV2NfsExportRequest{
+		V2NfsExportId: exportId,
+	})
+	assertNil(t, err)
+	assert.Equal(t, 1, len(getExport.Exports))
+	assert.Equal(t, res.Id, *(getExport.Exports[0].Id))
+
+	// Test getExport
+	readOnly := true
+	err = client.UpdateExportWithStructParams(defaultCtx, apiv4.UpdateV4NfsExportRequest{
+		V2NfsExportId: exportId,
+		V2NfsExport: &openapi.V2NfsExportExtendedExtended{
+			ReadOnly: &readOnly,
+		},
+	})
+	assertNil(t, err)
+	getUpdatedExport, err := client.GetExportWithStructParams(defaultCtx, apiv4.GetV2NfsExportRequest{
+		V2NfsExportId: exportId,
+	})
+	assert.Equal(t, true, *(getUpdatedExport.Exports[0].ReadOnly))
+
+	// Test delete export
+	err = client.DeleteExportWithStructParams(defaultCtx, apiv4.DeleteV4NfsExportRequest{V2NfsExportId: exportId})
+	assertNil(t, err)
+	_, err = client.GetExportWithStructParams(defaultCtx, apiv4.GetV2NfsExportRequest{
+		V2NfsExportId: exportId,
+	})
+	assertNotNil(t, err)
 }
