@@ -15,6 +15,12 @@ limitations under the License.
 */
 package v1
 
+const (
+	fileGroupTypeUser      = "user"
+	fileGroupTypeGroup     = "group"
+	fileGroupTypeWellKnown = "wellknown"
+)
+
 type IsiVolume struct {
 	Name         string `json:"name"`
 	AttributeMap []struct {
@@ -213,4 +219,181 @@ type IsiCopySnapshotResp struct {
 		Target   string `json:"target"`
 	} `json:"copy_errors"`
 	Success bool `json:"success"`
+}
+
+// IsiAccessItemFileGroup Specifies the persona of the file group.
+type IsiAccessItemFileGroup struct {
+	// Specifies the serialized form of a persona, which can be 'UID:0', 'USER:name', 'GID:0', 'GROUP:wheel', or 'SID:S-1-1'.
+	Id string `json:"id,omitempty"`
+	// Specifies the persona name, which must be combined with a type.
+	Name string `json:"name,omitempty"`
+	// Specifies the type of persona, which must be combined with a name. Values can be user, group or wellknown
+	Type string `json:"type,omitempty"`
+}
+
+// IsiAuthMemberItem Specifies the persona of the group member. Member can be user or group.
+type IsiAuthMemberItem struct {
+	Id   *int32  `json:"id,omitempty"`
+	Name *string `json:"name,omitempty"`
+	Type string  `json:"type"`
+}
+
+type IsiUser struct {
+	// Specifies the distinguished name for the user.
+	Dn string `json:"dn"`
+	// Specifies the DNS domain.
+	DnsDomain string `json:"dns_domain"`
+	// Specifies the domain that the object is part of.
+	Domain string `json:"domain"`
+	// Specifies an email address.
+	Email string `json:"email"`
+	// True, if the authenticated user is enabled.
+	Enabled bool `json:"enabled"`
+	// True, if the authenticated user has expired.
+	Expired bool `json:"expired"`
+	// Specifies the Unix Epoch time at which the authenticated user will expire.
+	Expiry int32 `json:"expiry"`
+	// Specifies the GECOS value, which is usually the full name.
+	Gecos string `json:"gecos"`
+	// True, if the GID was generated.
+	GeneratedGid bool `json:"generated_gid"`
+	// True, if the UID was generated.
+	GeneratedUid bool `json:"generated_uid"`
+	// True, if the UPN was generated.
+	GeneratedUpn bool                   `json:"generated_upn"`
+	Gid          IsiAccessItemFileGroup `json:"gid"`
+	// Specifies a home directory for the user.
+	HomeDirectory string `json:"home_directory"`
+	// Specifies the user or group ID.
+	Id string `json:"id"`
+	// If true, indicates that the account is locked.
+	Locked bool `json:"locked"`
+	// Specifies the maximum time in seconds allowed before the password expires.
+	MaxPasswordAge int32 `json:"max_password_age"`
+	// Specifies the groups that this user or group are members of.
+	MemberOf            []IsiAccessItemFileGroup `json:"member_of"`
+	Name                string                   `json:"name"`
+	OnDiskGroupIdentity IsiAccessItemFileGroup   `json:"on_disk_group_identity"`
+	OnDiskUserIdentity  IsiAccessItemFileGroup   `json:"on_disk_user_identity"`
+	// If true, the password has expired.
+	PasswordExpired bool `json:"password_expired"`
+	// If true, the password is allowed to expire.
+	PasswordExpires bool `json:"password_expires"`
+	// Specifies the time in Unix Epoch seconds that the password will expire.
+	PasswordExpiry int32 `json:"password_expiry"`
+	// Specifies the last time the password was set.
+	PasswordLastSet int32                  `json:"password_last_set"`
+	PrimaryGroupSid IsiAccessItemFileGroup `json:"primary_group_sid"`
+	// Prompts the user to change their password at the next login.
+	PromptPasswordChange bool `json:"prompt_password_change"`
+	// Specifies the authentication provider that the object belongs to.
+	Provider string `json:"provider"`
+	// Specifies a user or group name.
+	SamAccountName string `json:"sam_account_name"`
+	// Specifies a path to the shell for the user.
+	Shell string                 `json:"shell"`
+	Sid   IsiAccessItemFileGroup `json:"sid"`
+	// Specifies the object type.
+	Type string                 `json:"type"`
+	Uid  IsiAccessItemFileGroup `json:"uid"`
+	// Specifies a principal name for the user.
+	Upn string `json:"upn"`
+	// Specifies whether the password for the user can be changed.
+	UserCanChangePassword bool `json:"user_can_change_password"`
+}
+
+type IsiUserReq struct {
+	// Specifies an email address for the user.
+	Email *string `json:"email,omitempty"`
+	// If true, the authenticated user is enabled.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Specifies the Unix Epoch time when the auth user will expire.
+	Expiry *int32 `json:"expiry,omitempty"`
+	// Specifies the GECOS value, which is usually the full name.
+	Gecos *string `json:"gecos,omitempty"`
+	// Specifies a home directory for the user.
+	HomeDirectory *string `json:"home_directory,omitempty"`
+	// Specifies a user name.
+	Name string `json:"name"`
+	// Changes the password for the user.
+	Password *string `json:"password,omitempty"`
+	// If true, the password should expire.
+	PasswordExpires *bool                   `json:"password_expires,omitempty"`
+	PrimaryGroup    *IsiAccessItemFileGroup `json:"primary_group,omitempty"`
+	// If true, prompts the user to change their password at the next login.
+	PromptPasswordChange *bool `json:"prompt_password_change,omitempty"`
+	// Specifies the shell for the user.
+	Shell *string `json:"shell,omitempty"`
+	// Specifies a numeric user identifier.
+	Uid *int32 `json:"uid,omitempty"`
+	// If true, the user account should be unlocked.
+	Unlock *bool `json:"unlock,omitempty"`
+}
+
+type IsiUpdateUserReq struct {
+	// Specifies an email address for the user.
+	Email *string `json:"email,omitempty"`
+	// If true, the authenticated user is enabled.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Specifies the Unix Epoch time when the auth user will expire.
+	Expiry *int32 `json:"expiry,omitempty"`
+	// Specifies the GECOS value, which is usually the full name.
+	Gecos *string `json:"gecos,omitempty"`
+	// Specifies a home directory for the user.
+	HomeDirectory *string `json:"home_directory,omitempty"`
+	// Changes the password for the user.
+	Password *string `json:"password,omitempty"`
+	// If true, the password should expire.
+	PasswordExpires *bool                   `json:"password_expires,omitempty"`
+	PrimaryGroup    *IsiAccessItemFileGroup `json:"primary_group,omitempty"`
+	// If true, prompts the user to change their password at the next login.
+	PromptPasswordChange *bool `json:"prompt_password_change,omitempty"`
+	// Specifies the shell for the user.
+	Shell *string `json:"shell,omitempty"`
+	// Specifies a numeric user identifier.
+	Uid *int32 `json:"uid,omitempty"`
+	// If true, the user account should be unlocked.
+	Unlock *bool `json:"unlock,omitempty"`
+}
+
+type isiUserListResp struct {
+	Users []*IsiUser `json:"users,omitempty"`
+}
+
+type IsiUserListRespResume struct {
+	Resume string     `json:"resume,omitempty"`
+	Users  []*IsiUser `json:"users,omitempty"`
+}
+
+// IsiRolePrivilegeItem Specifies the system-defined privilege that may be granted to users.
+type IsiRolePrivilegeItem struct {
+	// Specifies the ID of the privilege.
+	Id string `json:"id"`
+	// Specifies the name of the privilege.
+	Name *string `json:"name,omitempty"`
+	// True, if the privilege is read-only.
+	ReadOnly *bool `json:"read_only,omitempty"`
+}
+
+type IsiRole struct {
+	// Specifies the description of the role.
+	Description string `json:"description"`
+	// Specifies the users or groups that have this role.
+	Members []IsiAccessItemFileGroup `json:"members"`
+	// Specifies the name of the role.
+	Name string `json:"name"`
+	// Specifies the privileges granted by this role.
+	Privileges []IsiRolePrivilegeItem `json:"privileges"`
+	// Specifies the ID of the role.
+	Id string `json:"id"`
+}
+
+type isiRoleListResp struct {
+	Roles []*IsiRole `json:"roles,omitempty"`
+}
+
+type IsiRoleListRespResume struct {
+	Resume string     `json:"resume,omitempty"`
+	Roles  []*IsiRole `json:"roles,omitempty"`
+	Total  *int32     `json:"total,omitempty"`
 }

@@ -121,3 +121,27 @@ func assertNotNil(t *testing.T, i interface{}) {
 		t.FailNow()
 	}
 }
+
+func assertFalse(t *testing.T, b bool) {
+	if !assert.False(t, b) {
+		t.FailNow()
+	}
+}
+
+func assertTrue(t *testing.T, b bool) {
+	if !assert.True(t, b) {
+		t.FailNow()
+	}
+}
+
+func assertEqual(t *testing.T, expected, actual interface{}) {
+	if !assert.Equal(t, expected, actual) {
+		t.FailNow()
+	}
+}
+
+func assertNotEqual(t *testing.T, expected, actual interface{}) {
+	if !assert.NotEqual(t, expected, actual) {
+		t.FailNow()
+	}
+}
