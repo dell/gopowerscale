@@ -15,7 +15,9 @@ limitations under the License.
 */
 package goisilon
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestGetStatistics(*testing.T) {
 	keyArray := []string{"ifs.bytes.avail", "ifs.bytes.total"}
@@ -48,4 +50,46 @@ func TestGetLocalSerial(t *testing.T) {
 	}
 	println(localSerial)
 
+}
+
+func TestGetClusterConfig(t *testing.T) {
+	config, err := client.GetClusterConfig(defaultCtx)
+	assertNoError(t, err)
+	assertNotNil(t, config.OnefsVersion)
+	assertNotNil(t, config.Timezone)
+}
+
+func TestGetClusterIdentity(t *testing.T) {
+	identity, err := client.GetClusterIdentity(defaultCtx)
+	assertNoError(t, err)
+	assertNotNil(t, identity)
+	assertNotNil(t, identity.Name)
+}
+
+func TestGetClusterAcs(t *testing.T) {
+	acs, err := client.GetClusterAcs(defaultCtx)
+	assertNoError(t, err)
+	assertNotNil(t, acs)
+}
+
+func TestGetClusterInternalNetworks(t *testing.T) {
+	networks, err := client.GetClusterInternalNetworks(defaultCtx)
+	assertNoError(t, err)
+	assertNotNil(t, networks)
+}
+
+func TestGetClusterNodes(t *testing.T) {
+	nodes, err := client.GetClusterNodes(defaultCtx)
+	assertNoError(t, err)
+	assertNotNil(t, nodes)
+	assertNotEqual(t, int(*nodes.Total), 0)
+}
+
+func TestGetClusterNode(t *testing.T) {
+	var nodeID = 1
+	nodes, err := client.GetClusterNode(defaultCtx, nodeID)
+	assertNoError(t, err)
+	assertNotNil(t, nodes)
+	assertEqual(t, int(*nodes.Total), 1)
+	assertLen(t, nodes.Nodes, 1)
 }
