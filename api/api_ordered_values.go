@@ -17,8 +17,10 @@ package api
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/url"
+	"reflect"
 	"strings"
 )
 
@@ -359,4 +361,28 @@ func shouldEscape(c byte) bool {
 	}
 	// Everything else must be escaped.
 	return true
+}
+
+// StructToOrderedValues returns ordered value
+func StructToOrderedValues(s interface{}) OrderedValues {
+	v := reflect.ValueOf(s)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	t := v.Type()
+	var data [][][]byte
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		if tag := f.Tag.Get("json"); tag != "" {
+			// Parameter field is pointer
+			if v.Field(i).IsNil() {
+				continue
+			}
+			if strings.HasSuffix(tag, ",omitempty") {
+				tag = tag[:len(tag)-len(",omitempty")]
+			}
+			data = append(data, [][]byte{[]byte(tag), []byte(fmt.Sprintf("%v", v.Field(i).Elem().Interface()))})
+		}
+	}
+	return data
 }

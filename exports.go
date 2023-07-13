@@ -18,6 +18,8 @@ package goisilon
 import (
 	"context"
 	"errors"
+	apiv4 "github.com/dell/goisilon/api/v4"
+	"github.com/dell/goisilon/openapi"
 
 	api "github.com/dell/goisilon/api"
 	"github.com/dell/goisilon/api/common/utils"
@@ -1153,4 +1155,48 @@ func (c *Client) GetExportWithPathAndZone(
 // GetExportByIDWithZone gets the export by export id and access zone
 func (c *Client) GetExportByIDWithZone(ctx context.Context, id int, zone string) (Export, error) {
 	return apiv2.GetExportByIDWithZone(ctx, c.API, id, zone)
+}
+
+// ListAllExportsWithStructParams lists all the exports with parameters
+func (c *Client) ListAllExportsWithStructParams(ctx context.Context, params apiv4.ListV4NfsExportsParams) ([]openapi.V2NfsExportExtended, error) {
+	var result []openapi.V2NfsExportExtended
+	exports, err := apiv4.ListNfsExports(ctx, params, c.API)
+	result = exports.Exports
+	if err != nil {
+		return nil, err
+	}
+	for exports.Resume != nil {
+		resumeParam := apiv4.ListV4NfsExportsParams{Resume: exports.Resume}
+		exports, err = apiv4.ListNfsExports(ctx, resumeParam, c.API)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, exports.Exports...)
+	}
+	return result, nil
+}
+
+// ListExportsWithStructParams lists all the exports with parameters
+func (c *Client) ListExportsWithStructParams(ctx context.Context, params apiv4.ListV4NfsExportsParams) (*openapi.V2NfsExports, error) {
+	return apiv4.ListNfsExports(ctx, params, c.API)
+}
+
+// GetExportWithStructParams list specific export with parameters
+func (c *Client) GetExportWithStructParams(ctx context.Context, params apiv4.GetV2NfsExportRequest) (*openapi.V2NfsExportsExtended, error) {
+	return apiv4.GetNfsExport(ctx, params, c.API)
+}
+
+// CreateExportWithStructParams create export with parameters
+func (c *Client) CreateExportWithStructParams(ctx context.Context, params apiv4.CreateV4NfsExportRequest) (*openapi.Createv3EventEventResponse, error) {
+	return apiv4.CreateNfsExport(ctx, params, c.API)
+}
+
+// DeleteExportWithStructParams delete export with parameters
+func (c *Client) DeleteExportWithStructParams(ctx context.Context, params apiv4.DeleteV4NfsExportRequest) error {
+	return apiv4.DeleteNfsExport(ctx, params, c.API)
+}
+
+// UpdateExportWithStructParams update export with parameters
+func (c *Client) UpdateExportWithStructParams(ctx context.Context, params apiv4.UpdateV4NfsExportRequest) error {
+	return apiv4.UpdateNfsExport(ctx, params, c.API)
 }
