@@ -397,3 +397,62 @@ type IsiRoleListRespResume struct {
 	Roles  []*IsiRole `json:"roles,omitempty"`
 	Total  *int32     `json:"total,omitempty"`
 }
+
+// IsiGroup Specifies configuration properties for a group.
+type IsiGroup struct {
+	// Specifies the distinguished name for the user.
+	Dn string `json:"dn"`
+	// Specifies the DNS domain.
+	DnsDomain string `json:"dns_domain"`
+	// Specifies the domain that the object is part of.
+	Domain string `json:"domain"`
+	// If true, the GID was generated.
+	GeneratedGid bool                   `json:"generated_gid"`
+	Gid          IsiAccessItemFileGroup `json:"gid"`
+	// Specifies the user or group ID.
+	Id string `json:"id"`
+	// Specifies the groups that this user or group are members of.
+	MemberOf []IsiAccessItemFileGroup `json:"member_of"`
+	// Specifies a user or group name.
+	Name string `json:"name"`
+	// ObjectHistory []V1AuthGroupObjectHistoryItem `json:"object_history,omitempty"`
+	// Specifies the authentication provider that the object belongs to.
+	Provider string `json:"provider"`
+	// Specifies a user or group name.
+	SamAccountName string                 `json:"sam_account_name"`
+	Sid            IsiAccessItemFileGroup `json:"sid"`
+	// Specifies the object type.
+	Type string `json:"type"`
+}
+
+// IsiGroupReq Specifies the configuration properties for a group.
+type IsiGroupReq struct {
+	// Specifies the numeric group identifier.
+	Gid *int32 `json:"gid,omitempty"`
+	// Specifies the members of the group.
+	Members []IsiAccessItemFileGroup `json:"members,omitempty"`
+	// Specifies the group name.
+	Name string `json:"name"`
+}
+
+// IsiUpdateGroupReq Specifies the configuration properties for a group.
+type IsiUpdateGroupReq struct {
+	// Specifies the numeric group identifier.
+	Gid int32 `json:"gid,omitempty"`
+}
+
+type IsiGroupMemberListRespResume struct {
+	Members []*IsiAccessItemFileGroup `json:"members,omitempty"`
+	Resume  string                    `json:"resume,omitempty"`
+}
+
+type isiGroupListResp struct {
+	Groups []*IsiGroup `json:"groups,omitempty"`
+}
+
+type IsiGroupListRespResume struct {
+	// Provide this token as the 'resume' query argument to continue listing results.
+	Groups []*IsiGroup `json:"groups,omitempty"`
+	// Provide this token as the 'resume' query argument to continue listing results.
+	Resume string `json:"resume,omitempty"`
+}

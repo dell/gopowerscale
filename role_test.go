@@ -24,7 +24,7 @@ import (
 
 // Test GetAllRoles() and GetRolesWithFilter()
 func TestRoleGet(t *testing.T) {
-	// Get roles witl filter
+	// Get roles with filter
 	queryResolveNames := true
 	var queryLimit int32 = 1000
 

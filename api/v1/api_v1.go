@@ -35,6 +35,8 @@ const (
 	userPath            = "platform/1/auth/users"
 	rolePath            = "platform/1/auth/roles"
 	roleMemberPath      = "platform/1/auth/roles/%s/members"
+	groupPath           = "platform/1/auth/groups"
+	groupMemberPath     = "platform/1/auth/groups/%s/members"
 )
 
 var (
