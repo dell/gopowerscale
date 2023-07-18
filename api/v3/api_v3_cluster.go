@@ -17,6 +17,7 @@ package v3
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/dell/goisilon/api"
@@ -97,4 +98,54 @@ func GetIsiClusterConfig(
 	}
 
 	return &clusterConfigResp, nil
+}
+
+// GetIsiClusterIdentity queries the config information of OneFS cluster
+func GetIsiClusterIdentity(
+	ctx context.Context,
+	client api.Client) (clusterConfig *IsiClusterIdentity, err error) {
+
+	// PAPI call: GET https://1.2.3.4:8080/platform/3/cluster/identity
+	// This will return the login information.
+	var clusterIdentityResp IsiClusterIdentity
+	err = client.Get(ctx, clusterIdentityPath, "", nil, nil, &clusterIdentityResp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &clusterIdentityResp, nil
+}
+
+// GetIsiClusterNodes list the nodes on this cluster
+func GetIsiClusterNodes(
+	ctx context.Context,
+	client api.Client) (clusterNodes *IsiClusterNodes, err error) {
+
+	// PAPI call: GET https://1.2.3.4:8080/platform/3/cluster/nodes
+	// This will return list of the node information
+	var clusterNodesResp IsiClusterNodes
+	err = client.Get(ctx, clusterNodesPath, "", nil, nil, &clusterNodesResp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &clusterNodesResp, nil
+}
+
+// GetIsiClusterNode retrieves the node information based on node ID
+func GetIsiClusterNode(
+	ctx context.Context,
+	client api.Client,
+	nodeID int) (clusterNodes *IsiClusterNodes, err error) {
+
+	// PAPI call: GET https://1.2.3.4:8080/platform/3/cluster/nodes/{v3ClusterNodeId}
+	// This will return list of the node information with only one node
+	var clusterNodesResp IsiClusterNodes
+	clusterNodePath := fmt.Sprintf("%s/%d", clusterNodesPath, nodeID)
+	err = client.Get(ctx, clusterNodePath, "", nil, nil, &clusterNodesResp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &clusterNodesResp, nil
 }

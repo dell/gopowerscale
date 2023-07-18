@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022 Dell Inc, or its subsidiaries.
+Copyright (c) 2023 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,21 +13,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package v3
 
-import (
-	"os"
-	"strconv"
-)
+package v14
 
 const (
-	namespacePath       = "namespace"
-	clusterConfigPath   = "platform/3/cluster/config"
-	clusterIdentityPath = "platform/3/cluster/identity"
-	clusterNodesPath    = "platform/3/cluster/nodes"
-)
-
-var (
-	debug, _   = strconv.ParseBool(os.Getenv("GOISILON_DEBUG"))
-	colonBytes = []byte{byte(':')}
+	clusterAcsPath = "platform/14/cluster/acs"
 )
