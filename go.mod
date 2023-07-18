@@ -4,8 +4,8 @@ go 1.20
 
 require (
 	github.com/akutz/gournal v0.5.0
-	github.com/sirupsen/logrus v1.9.0
-	github.com/stretchr/testify v1.8.2
+	github.com/sirupsen/logrus v1.9.3
+	github.com/stretchr/testify v1.8.4
 )
 
 require (
