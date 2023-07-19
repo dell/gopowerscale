@@ -24,7 +24,7 @@ import (
 
 // Test GetAllUsers() and GetUsersWithFilter()
 func TestUserGet(t *testing.T) {
-	// Get users witl filter
+	// Get users with filter
 	queryNamePrefix := "admin"
 	queryCached := false
 	queryResolveNames := false
