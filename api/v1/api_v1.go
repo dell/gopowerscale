@@ -26,23 +26,35 @@ import (
 )
 
 const (
-	namespacePath       = "namespace"
-	exportsPath         = "platform/1/protocols/nfs/exports"
-	quotaPath           = "platform/1/quota/quotas"
-	snapshotsPath       = "platform/1/snapshot/snapshots"
-	volumesnapshotsPath = "/ifs/.snapshot"
-	zonesPath           = "platform/1/zones"
-	userPath            = "platform/1/auth/users"
-	rolePath            = "platform/1/auth/roles"
-	roleMemberPath      = "platform/1/auth/roles/%s/members"
-	groupPath           = "platform/1/auth/groups"
-	groupMemberPath     = "platform/1/auth/groups/%s/members"
+	namespacePath = "namespace"
+	exportsPath   = "platform/1/protocols/nfs/exports"
+	quotaPath     = "platform/1/quota/quotas"
+	snapshotsPath = "platform/1/snapshot/snapshots"
+	//volumesnapshotsPath = "/ifs/nitesh/.snapshot"
+	zonesPath       = "platform/1/zones"
+	userPath        = "platform/1/auth/users"
+	rolePath        = "platform/1/auth/roles"
+	roleMemberPath  = "platform/1/auth/roles/%s/members"
+	groupPath       = "platform/1/auth/groups"
+	groupMemberPath = "platform/1/auth/groups/%s/members"
 )
 
 var (
 	debug, _ = strconv.ParseBool(os.Getenv("GOISILON_DEBUG"))
 )
 
+func GetVolumesnapshotPathInitial(accessZone string) string {
+	var initial string
+	if accessZone != "System" {
+		// array of strings.
+		str := []string{"/ifs", accessZone}
+		//ifs/<csizone>
+		initial = strings.Join(str, "/")
+	} else {
+		initial = "/ifs"
+	}
+	return initial
+}
 func realNamespacePath(client api.Client) string {
 	return path.Join(namespacePath, client.VolumesPath())
 }
@@ -51,15 +63,19 @@ func realexportsPath(client api.Client) string {
 	return path.Join(exportsPath, client.VolumesPath())
 }
 
-func realVolumeSnapshotPath(client api.Client, name string) string {
+func realVolumeSnapshotPath(client api.Client, name, accessZone string) string {
 	parts := strings.SplitN(realNamespacePath(client), "/ifs", 2)
-	return path.Join(parts[0], volumesnapshotsPath, name, parts[1])
+	initial := GetVolumesnapshotPathInitial(accessZone)
+	volumesnapshotPath := strings.Join([]string{initial, ".snapshot"}, "/")
+	return path.Join(parts[0], volumesnapshotPath, name, parts[1])
 }
 
 // GetAbsoluteSnapshotPath get the absolute path of a snapshot
-func GetAbsoluteSnapshotPath(c api.Client, snapshotName, volumeName string) string {
+func GetAbsoluteSnapshotPath(c api.Client, snapshotName, volumeName, accessZone string) string {
+	initial := GetVolumesnapshotPathInitial(accessZone)
+	volumesnapshotPath := strings.Join([]string{initial, ".snapshot"}, "/")
 	absoluteVolumePath := c.VolumePath(volumeName)
-	return path.Join(volumesnapshotsPath, snapshotName, strings.TrimLeft(absoluteVolumePath, "/ifs/"))
+	return path.Join(volumesnapshotPath, snapshotName, strings.TrimLeft(absoluteVolumePath, initial))
 }
 
 // GetRealNamespacePathWithIsiPath gets the real namespace path by the combination of namespace and isiPath
@@ -69,9 +85,11 @@ func GetRealNamespacePathWithIsiPath(isiPath string) string {
 
 // GetRealVolumeSnapshotPathWithIsiPath gets the real volume snapshot path by using
 // the isiPath in the parameter rather than use the default one in the client object
-func GetRealVolumeSnapshotPathWithIsiPath(isiPath string, name string) string {
-	parts := strings.SplitN(GetRealNamespacePathWithIsiPath(isiPath), "/ifs", 2)
-	return path.Join(parts[0], volumesnapshotsPath, name, parts[1])
+func GetRealVolumeSnapshotPathWithIsiPath(isiPath string, name string, accessZone string) string {
+	sep := GetVolumesnapshotPathInitial(accessZone)
+	parts := strings.SplitN(GetRealNamespacePathWithIsiPath(isiPath), sep, 2)
+	Volumesnapshotpath := strings.Join([]string{sep, ".snapshot"}, "/")
+	return path.Join(parts[0], Volumesnapshotpath, name, parts[1])
 }
 
 // getAuthMemberId reutrns actual auth id, which can be 'UID:0', 'USER:name', 'GID:0', 'GROUP:wheel',

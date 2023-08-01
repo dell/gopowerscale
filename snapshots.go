@@ -119,7 +119,7 @@ func (c *Client) RemoveSnapshot(
 // CopySnapshot copies all files/directories in a snapshot to a new directory.
 func (c *Client) CopySnapshot(
 	ctx context.Context,
-	sourceID int64, sourceName, destinationName string) (Volume, error) {
+	sourceID int64, sourceName, accessZone, destinationName string) (Volume, error) {
 
 	snapshot, err := c.GetSnapshot(ctx, sourceID, sourceName)
 	if err != nil {
@@ -131,7 +131,7 @@ func (c *Client) CopySnapshot(
 
 	_, err = api.CopyIsiSnapshot(
 		ctx, c.API, snapshot.Name,
-		path.Base(snapshot.Path), destinationName)
+		path.Base(snapshot.Path), destinationName, accessZone)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func (c *Client) CopySnapshotWithIsiPath(
 	ctx context.Context,
 	isiPath, snapshotSourceVolumeIsiPath string,
 	sourceID int64,
-	sourceName, destinationName string) (Volume, error) {
+	sourceName, destinationName string, accessZone string) (Volume, error) {
 
 	snapshot, err := c.GetIsiSnapshotByIdentity(ctx, strconv.FormatInt(sourceID, 10))
 	if err != nil {
@@ -156,7 +156,7 @@ func (c *Client) CopySnapshotWithIsiPath(
 
 	resp, err := api.CopyIsiSnapshotWithIsiPath(
 		ctx, c.API, isiPath, snapshotSourceVolumeIsiPath, snapshot.Name,
-		path.Base(snapshot.Path), destinationName)
+		path.Base(snapshot.Path), destinationName, accessZone)
 
 	//The response will be null on success of the snapshot creation otherwise it will return the response with a success state equal to false and with details
 	if resp != nil && !resp.Success && resp.Errors != nil {
@@ -196,7 +196,7 @@ func (c *Client) IsSnapshotExistent(
 
 // GetSnapshotFolderSize returns the total size of a snapshot folder
 func (c *Client) GetSnapshotFolderSize(ctx context.Context,
-	isiPath, name string) (int64, error) {
+	isiPath, name string, accessZone string) (int64, error) {
 
 	snapshot, err := c.GetIsiSnapshotByIdentity(ctx, name)
 	if err != nil {
@@ -206,7 +206,7 @@ func (c *Client) GetSnapshotFolderSize(ctx context.Context,
 		return 0, fmt.Errorf("Snapshot doesn't exist: '%s'", name)
 	}
 
-	folder, err := api.GetIsiSnapshotFolderWithSize(ctx, c.API, isiPath, name, path.Base(snapshot.Path))
+	folder, err := api.GetIsiSnapshotFolderWithSize(ctx, c.API, isiPath, name, path.Base(snapshot.Path), accessZone)
 	if err != nil {
 		return 0, err
 	}
@@ -221,7 +221,7 @@ func (c *Client) GetSnapshotFolderSize(ctx context.Context,
 // GetSnapshotIsiPath returns the snapshot directory path
 func (c *Client) GetSnapshotIsiPath(
 	ctx context.Context,
-	isiPath, snapshotId string) (string, error) {
+	isiPath, snapshotId string, accessZone string) (string, error) {
 
 	snapshot, err := c.GetIsiSnapshotByIdentity(ctx, snapshotId)
 	if err != nil {
@@ -231,7 +231,7 @@ func (c *Client) GetSnapshotIsiPath(
 		return "", fmt.Errorf("Snapshot doesn't exist for snapshot id: (%s)", snapshotId)
 	}
 
-	snapshotPath := api.GetRealVolumeSnapshotPathWithIsiPath(isiPath, snapshot.Name)
+	snapshotPath := api.GetRealVolumeSnapshotPathWithIsiPath(isiPath, snapshot.Name, accessZone)
 	snapshotPath = path.Join(snapshotPath, path.Base(snapshot.Path))
 
 	parts := strings.SplitN(snapshotPath, namespacePath, 2)
