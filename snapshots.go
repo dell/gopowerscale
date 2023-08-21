@@ -28,6 +28,7 @@ import (
 )
 
 const namespacePath = "namespace"
+const snapShot = ".snapshot"
 
 // SnapshotList represents a list of Isilon snapshots.
 type SnapshotList []*api.IsiSnapshot
@@ -129,9 +130,14 @@ func (c *Client) CopySnapshot(
 		return nil, fmt.Errorf("Snapshot doesn't exist: (%d, %s)", sourceID, sourceName)
 	}
 
+	zone, err := api.GetZoneByName(ctx, c.API, accessZone)
+	if err != nil {
+		panic(err)
+	}
+
 	_, err = api.CopyIsiSnapshot(
 		ctx, c.API, snapshot.Name,
-		path.Base(snapshot.Path), destinationName, accessZone)
+		path.Base(snapshot.Path), destinationName, zone.Path, accessZone)
 	if err != nil {
 		return nil, err
 	}
@@ -231,13 +237,22 @@ func (c *Client) GetSnapshotIsiPath(
 		return "", fmt.Errorf("Snapshot doesn't exist for snapshot id: (%s)", snapshotId)
 	}
 
-	snapshotPath := api.GetRealVolumeSnapshotPathWithIsiPath(isiPath, snapshot.Name, accessZone)
-	snapshotPath = path.Join(snapshotPath, path.Base(snapshot.Path))
-
-	parts := strings.SplitN(snapshotPath, namespacePath, 2)
-	if len(parts) < 2 {
-		return "", fmt.Errorf("Snapshot doesn't exist for snapshot id: (%s)", snapshotId)
+	//get zone base path
+	zone, err := api.GetZoneByName(ctx, c.API, accessZone)
+	if err != nil {
+		panic(err)
 	}
 
-	return parts[1], nil
+	snapshotPath := api.GetRealVolumeSnapshotPathWithIsiPath(isiPath, zone.Path, snapshot.Name, accessZone)
+	snapshotPath = path.Join(snapshotPath, path.Base(snapshot.Path))
+	//If isi path is different then zone path
+	if strings.Compare(zone.Path, isiPath) != 0 {
+		parts := strings.SplitN(snapshotPath, namespacePath, 2)
+		if len(parts) < 2 {
+			return "", fmt.Errorf("Snapshot doesn't exist for snapshot id: (%s)", snapshotId)
+		}
+		return parts[1], nil
+	} else {
+		return path.Join(zone.Path, snapShot, snapshot.Name, path.Base(snapshot.Path)), nil
+	}
 }

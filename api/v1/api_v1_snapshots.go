@@ -102,14 +102,14 @@ func CreateIsiSnapshot(
 func CopyIsiSnapshot(
 	ctx context.Context,
 	client api.Client,
-	sourceSnapshotName, sourceVolume, destinationName string, accessZone string) (resp *IsiVolume, err error) {
+	sourceSnapshotName, sourceVolume, destinationName string, zonePath, accessZone string) (resp *IsiVolume, err error) {
 	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/destination_volume_name?merge=True
 	//             x-isi-ifs-copy-source: /path/to/snapshot/volumes/source_volume_name
 
 	headers := map[string]string{
 		"x-isi-ifs-copy-source": path.Join(
 			"/",
-			realVolumeSnapshotPath(client, sourceSnapshotName, accessZone),
+			realVolumeSnapshotPath(client, sourceSnapshotName, zonePath, accessZone),
 			sourceVolume),
 	}
 
@@ -127,10 +127,15 @@ func CopyIsiSnapshotWithIsiPath(
 	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/destination_volume_name?merge=True
 	//             x-isi-ifs-copy-source: /path/to/snapshot/volumes/source_volume_name
 	//             x-isi-ifs-mode-mask: preserve
+	zone, err := GetZoneByName(ctx, client, accessZone)
+	if err != nil {
+		panic(err)
+	}
+
 	headers := map[string]string{
 		"x-isi-ifs-copy-source": path.Join(
 			"/",
-			GetRealVolumeSnapshotPathWithIsiPath(snapshotSourceVolumeIsiPath, sourceSnapshotName, accessZone),
+			GetRealVolumeSnapshotPathWithIsiPath(snapshotSourceVolumeIsiPath, zone.Path, sourceSnapshotName, accessZone),
 			sourceVolume),
 		"x-isi-ifs-mode-mask": "preserve",
 	}
@@ -158,9 +163,14 @@ func GetIsiSnapshotFolderWithSize(
 	isiPath, name, volume string, accessZone string) (resp *getIsiVolumeSizeResp, err error) {
 
 	// PAPI call: GET https://1.2.3.4:8080/namespace/path/to/snapshot?detail=size&max-depth=-1
+	zone, err := GetZoneByName(ctx, client, accessZone)
+	if err != nil {
+		panic(err)
+	}
+
 	err = client.Get(
 		ctx,
-		GetRealVolumeSnapshotPathWithIsiPath(isiPath, name, accessZone),
+		GetRealVolumeSnapshotPathWithIsiPath(isiPath, zone.Path, name, accessZone),
 		volume,
 		sizeQS,
 		nil,

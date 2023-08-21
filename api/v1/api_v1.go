@@ -26,12 +26,12 @@ import (
 )
 
 const (
-	namespacePath = "namespace"
-	exportsPath   = "platform/1/protocols/nfs/exports"
-	quotaPath     = "platform/1/quota/quotas"
-	snapshotsPath = "platform/1/snapshot/snapshots"
-	//volumesnapshotsPath = "/ifs/nitesh/.snapshot"
+	namespacePath   = "namespace"
+	exportsPath     = "platform/1/protocols/nfs/exports"
+	quotaPath       = "platform/1/quota/quotas"
+	snapshotsPath   = "platform/1/snapshot/snapshots"
 	zonesPath       = "platform/1/zones"
+	snapShot        = ".snapshot"
 	userPath        = "platform/1/auth/users"
 	rolePath        = "platform/1/auth/roles"
 	roleMemberPath  = "platform/1/auth/roles/%s/members"
@@ -43,18 +43,6 @@ var (
 	debug, _ = strconv.ParseBool(os.Getenv("GOISILON_DEBUG"))
 )
 
-func GetVolumesnapshotPathInitial(accessZone string) string {
-	var initial string
-	if accessZone != "System" {
-		// array of strings.
-		str := []string{"/ifs", accessZone}
-		//ifs/<csizone>
-		initial = strings.Join(str, "/")
-	} else {
-		initial = "/ifs"
-	}
-	return initial
-}
 func realNamespacePath(client api.Client) string {
 	return path.Join(namespacePath, client.VolumesPath())
 }
@@ -63,19 +51,23 @@ func realexportsPath(client api.Client) string {
 	return path.Join(exportsPath, client.VolumesPath())
 }
 
-func realVolumeSnapshotPath(client api.Client, name, accessZone string) string {
-	parts := strings.SplitN(realNamespacePath(client), "/ifs", 2)
-	initial := GetVolumesnapshotPathInitial(accessZone)
-	volumesnapshotPath := strings.Join([]string{initial, ".snapshot"}, "/")
-	return path.Join(parts[0], volumesnapshotPath, name, parts[1])
+func realVolumeSnapshotPath(client api.Client, name, zonePath, accessZone string) string {
+	//Isi path is different from zone path
+	volumeSnapshotPath := strings.Join([]string{zonePath, snapShot}, "/")
+	if strings.Compare(zonePath, client.VolumesPath()) != 0 {
+		parts := strings.SplitN(realNamespacePath(client), "/ifs", 2)
+		return path.Join(parts[0], volumeSnapshotPath, name, parts[1])
+	} else {
+		return path.Join(volumeSnapshotPath, name)
+	}
+
 }
 
 // GetAbsoluteSnapshotPath get the absolute path of a snapshot
-func GetAbsoluteSnapshotPath(c api.Client, snapshotName, volumeName, accessZone string) string {
-	initial := GetVolumesnapshotPathInitial(accessZone)
-	volumesnapshotPath := strings.Join([]string{initial, ".snapshot"}, "/")
+func GetAbsoluteSnapshotPath(c api.Client, snapshotName, volumeName, zonePath string) string {
+	volumeSnapshotPath := strings.Join([]string{zonePath, snapShot}, "/")
 	absoluteVolumePath := c.VolumePath(volumeName)
-	return path.Join(volumesnapshotPath, snapshotName, strings.TrimLeft(absoluteVolumePath, initial))
+	return path.Join(volumeSnapshotPath, snapshotName, strings.TrimLeft(absoluteVolumePath, "/ifs/"))
 }
 
 // GetRealNamespacePathWithIsiPath gets the real namespace path by the combination of namespace and isiPath
@@ -85,11 +77,20 @@ func GetRealNamespacePathWithIsiPath(isiPath string) string {
 
 // GetRealVolumeSnapshotPathWithIsiPath gets the real volume snapshot path by using
 // the isiPath in the parameter rather than use the default one in the client object
-func GetRealVolumeSnapshotPathWithIsiPath(isiPath string, name string, accessZone string) string {
-	sep := GetVolumesnapshotPathInitial(accessZone)
-	parts := strings.SplitN(GetRealNamespacePathWithIsiPath(isiPath), sep, 2)
-	Volumesnapshotpath := strings.Join([]string{sep, ".snapshot"}, "/")
-	return path.Join(parts[0], Volumesnapshotpath, name, parts[1])
+func GetRealVolumeSnapshotPathWithIsiPath(isiPath, zonePath, name, accessZone string) string {
+	volumeSnapshotPath := strings.Join([]string{zonePath, snapShot}, "/")
+	if accessZone == "System" {
+		parts := strings.SplitN(GetRealNamespacePathWithIsiPath(isiPath), "/ifs", 2)
+		return path.Join(parts[0], volumeSnapshotPath, name, parts[1])
+	} else {
+		//if Isi path is different then zone path get remaining isiPath
+		_, remainIsiPath, found := strings.Cut(isiPath, zonePath)
+		if found {
+			return path.Join(namespacePath, zonePath, snapShot, name, remainIsiPath)
+		} else {
+			return path.Join(namespacePath, zonePath, snapShot, name)
+		}
+	}
 }
 
 // getAuthMemberId reutrns actual auth id, which can be 'UID:0', 'USER:name', 'GID:0', 'GROUP:wheel',
