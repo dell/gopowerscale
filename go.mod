@@ -1,6 +1,6 @@
 module github.com/dell/goisilon
 
-go 1.20
+go 1.21
 
 require (
 	github.com/akutz/gournal v0.5.0

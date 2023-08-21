@@ -132,7 +132,7 @@ func (c *Client) CopySnapshot(
 
 	zone, err := api.GetZoneByName(ctx, c.API, accessZone)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	_, err = api.CopyIsiSnapshot(
@@ -234,18 +234,18 @@ func (c *Client) GetSnapshotIsiPath(
 		return "", err
 	}
 	if snapshot == nil {
-		return "", fmt.Errorf("Snapshot doesn't exist for snapshot id: (%s)", snapshotId)
+		return "", fmt.Errorf("Snapshot doesn't exist for snapshot id: (%s) and access Zone (%s)", snapshotId, accessZone)
 	}
 
 	//get zone base path
 	zone, err := api.GetZoneByName(ctx, c.API, accessZone)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	snapshotPath := api.GetRealVolumeSnapshotPathWithIsiPath(isiPath, zone.Path, snapshot.Name, accessZone)
 	snapshotPath = path.Join(snapshotPath, path.Base(snapshot.Path))
-	//If isi path is different then zone path
+	//If isi path is different then zone base path i.e. isi path contains multiple directories
 	if strings.Compare(zone.Path, isiPath) != 0 {
 		parts := strings.SplitN(snapshotPath, namespacePath, 2)
 		if len(parts) < 2 {

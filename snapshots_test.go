@@ -86,10 +86,10 @@ func TestSnapshotsGet(t *testing.T) {
 		panic(fmt.Sprintf("Incorrect number of new snapshots.  Expected: 2 Actual: %d\n", len(snapshotMap)))
 	}
 	if _, found := snapshotMap[testSnapshot1.Id]; found == false {
-		panic(fmt.Sprintf("testSnapshot1 was not in the snapshot list\n"))
+		panic("testSnapshot1 was not in the snapshot list\n")
 	}
 	if _, found := snapshotMap[testSnapshot2.Id]; found == false {
-		panic(fmt.Sprintf("testSnapshot2 was not in the snapshot list\n"))
+		panic("testSnapshot2 was not in the snapshot list\n")
 	}
 
 }
@@ -172,10 +172,10 @@ func TestSnapshotsGetByPath(t *testing.T) {
 		panic(fmt.Sprintf("Incorrect number of new snapshots.  Expected: 2 Actual: %d\n", len(snapshotMap)))
 	}
 	if _, found := snapshotMap[testSnapshot1.Id]; found == false {
-		panic(fmt.Sprintf("testSnapshot1 was not in the snapshot list\n"))
+		panic(("testSnapshot1 was not in the snapshot list\n")
 	}
 	if _, found := snapshotMap[testSnapshot3.Id]; found == false {
-		panic(fmt.Sprintf("testSnapshot3 was not in the snapshot list\n"))
+		panic("testSnapshot3 was not in the snapshot list\n")
 	}
 }
 
@@ -437,14 +437,14 @@ func TestSnapshotGetByIdentity(t *testing.T) {
 
 	snapshot1, err := client.GetIsiSnapshotByIdentity(defaultCtx, snapshotName1)
 	if err != nil {
-		panic(fmt.Sprintf("failed to get testSnapshot1\n"))
+		panic("failed to get testSnapshot1\n")
 	}
 	if snapshot1.Id != testSnapshot1.Id {
 		panic(fmt.Sprintf("testSnapshot1: id %d is incorrect\n", snapshot1.Id))
 	}
 	snapshot2, err := client.GetIsiSnapshotByIdentity(defaultCtx, snapshotName2)
 	if err != nil {
-		panic(fmt.Sprintf("failed to get testSnapshot2\n"))
+		panic("failed to get testSnapshot2\n")
 	}
 	if snapshot2.Id != testSnapshot2.Id {
 		panic(fmt.Sprintf("testSnapshot2: id %d is incorrect\n", snapshot2.Id))

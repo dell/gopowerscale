@@ -115,7 +115,6 @@ func CopyIsiSnapshot(
 
 	// copy the volume
 	err = client.Put(ctx, realNamespacePath(client), destinationName, mergeQS, headers, nil, &resp)
-
 	return resp, err
 }
 
@@ -129,7 +128,7 @@ func CopyIsiSnapshotWithIsiPath(
 	//             x-isi-ifs-mode-mask: preserve
 	zone, err := GetZoneByName(ctx, client, accessZone)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	headers := map[string]string{
@@ -165,7 +164,7 @@ func GetIsiSnapshotFolderWithSize(
 	// PAPI call: GET https://1.2.3.4:8080/namespace/path/to/snapshot?detail=size&max-depth=-1
 	zone, err := GetZoneByName(ctx, client, accessZone)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	err = client.Get(
