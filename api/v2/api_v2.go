@@ -51,7 +51,7 @@ func realVolumeSnapshotPath(c api.Client, name string) string {
 }
 
 // GetAbsoluteSnapshotPath get the absolute path of a snapshot
-func GetAbsoluteSnapshotPath(c api.Client, snapshotName, accessZone, volumeName string) string {
+func GetAbsoluteSnapshotPath(c api.Client, snapshotName, volumeName string) string {
 	absoluteVolumePath := c.VolumePath(volumeName)
-	return path.Join(volumeSnapshotsPath, snapshotName, strings.TrimLeft(absoluteVolumePath, "/ifs"))
+	return path.Join(volumeSnapshotsPath, snapshotName, strings.TrimLeft(absoluteVolumePath, "/ifs/"))
 }
