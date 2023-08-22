@@ -28,6 +28,7 @@ import (
 )
 
 const namespacePath = "namespace"
+const snapShot = ".snapshot"
 
 // SnapshotList represents a list of Isilon snapshots.
 type SnapshotList []*api.IsiSnapshot
@@ -119,7 +120,7 @@ func (c *Client) RemoveSnapshot(
 // CopySnapshot copies all files/directories in a snapshot to a new directory.
 func (c *Client) CopySnapshot(
 	ctx context.Context,
-	sourceID int64, sourceName, destinationName string) (Volume, error) {
+	sourceID int64, sourceName, accessZone, destinationName string) (Volume, error) {
 
 	snapshot, err := c.GetSnapshot(ctx, sourceID, sourceName)
 	if err != nil {
@@ -129,9 +130,14 @@ func (c *Client) CopySnapshot(
 		return nil, fmt.Errorf("Snapshot doesn't exist: (%d, %s)", sourceID, sourceName)
 	}
 
+	zone, err := api.GetZoneByName(ctx, c.API, accessZone)
+	if err != nil {
+		return nil, err
+	}
+
 	_, err = api.CopyIsiSnapshot(
 		ctx, c.API, snapshot.Name,
-		path.Base(snapshot.Path), destinationName)
+		path.Base(snapshot.Path), destinationName, zone.Path, accessZone)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +150,7 @@ func (c *Client) CopySnapshotWithIsiPath(
 	ctx context.Context,
 	isiPath, snapshotSourceVolumeIsiPath string,
 	sourceID int64,
-	sourceName, destinationName string) (Volume, error) {
+	sourceName, destinationName string, accessZone string) (Volume, error) {
 
 	snapshot, err := c.GetIsiSnapshotByIdentity(ctx, strconv.FormatInt(sourceID, 10))
 	if err != nil {
@@ -156,7 +162,7 @@ func (c *Client) CopySnapshotWithIsiPath(
 
 	resp, err := api.CopyIsiSnapshotWithIsiPath(
 		ctx, c.API, isiPath, snapshotSourceVolumeIsiPath, snapshot.Name,
-		path.Base(snapshot.Path), destinationName)
+		path.Base(snapshot.Path), destinationName, accessZone)
 
 	//The response will be null on success of the snapshot creation otherwise it will return the response with a success state equal to false and with details
 	if resp != nil && !resp.Success && resp.Errors != nil {
@@ -196,7 +202,7 @@ func (c *Client) IsSnapshotExistent(
 
 // GetSnapshotFolderSize returns the total size of a snapshot folder
 func (c *Client) GetSnapshotFolderSize(ctx context.Context,
-	isiPath, name string) (int64, error) {
+	isiPath, name string, accessZone string) (int64, error) {
 
 	snapshot, err := c.GetIsiSnapshotByIdentity(ctx, name)
 	if err != nil {
@@ -206,7 +212,7 @@ func (c *Client) GetSnapshotFolderSize(ctx context.Context,
 		return 0, fmt.Errorf("Snapshot doesn't exist: '%s'", name)
 	}
 
-	folder, err := api.GetIsiSnapshotFolderWithSize(ctx, c.API, isiPath, name, path.Base(snapshot.Path))
+	folder, err := api.GetIsiSnapshotFolderWithSize(ctx, c.API, isiPath, name, path.Base(snapshot.Path), accessZone)
 	if err != nil {
 		return 0, err
 	}
@@ -221,23 +227,32 @@ func (c *Client) GetSnapshotFolderSize(ctx context.Context,
 // GetSnapshotIsiPath returns the snapshot directory path
 func (c *Client) GetSnapshotIsiPath(
 	ctx context.Context,
-	isiPath, snapshotId string) (string, error) {
+	isiPath, snapshotId string, accessZone string) (string, error) {
 
 	snapshot, err := c.GetIsiSnapshotByIdentity(ctx, snapshotId)
 	if err != nil {
 		return "", err
 	}
 	if snapshot == nil {
-		return "", fmt.Errorf("Snapshot doesn't exist for snapshot id: (%s)", snapshotId)
+		return "", fmt.Errorf("Snapshot doesn't exist for snapshot id: (%s) and access Zone (%s)", snapshotId, accessZone)
 	}
 
-	snapshotPath := api.GetRealVolumeSnapshotPathWithIsiPath(isiPath, snapshot.Name)
+	//get zone base path
+	zone, err := api.GetZoneByName(ctx, c.API, accessZone)
+	if err != nil {
+		return "", err
+	}
+
+	snapshotPath := api.GetRealVolumeSnapshotPathWithIsiPath(isiPath, zone.Path, snapshot.Name, accessZone)
 	snapshotPath = path.Join(snapshotPath, path.Base(snapshot.Path))
-
-	parts := strings.SplitN(snapshotPath, namespacePath, 2)
-	if len(parts) < 2 {
-		return "", fmt.Errorf("Snapshot doesn't exist for snapshot id: (%s)", snapshotId)
+	//If isi path is different then zone base path i.e. isi path contains multiple directories
+	if strings.Compare(zone.Path, isiPath) != 0 {
+		parts := strings.SplitN(snapshotPath, namespacePath, 2)
+		if len(parts) < 2 {
+			return "", fmt.Errorf("Snapshot doesn't exist for snapshot id: (%s)", snapshotId)
+		}
+		return parts[1], nil
+	} else {
+		return path.Join(zone.Path, snapShot, snapshot.Name, path.Base(snapshot.Path)), nil
 	}
-
-	return parts[1], nil
 }

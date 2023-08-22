@@ -102,20 +102,19 @@ func CreateIsiSnapshot(
 func CopyIsiSnapshot(
 	ctx context.Context,
 	client api.Client,
-	sourceSnapshotName, sourceVolume, destinationName string) (resp *IsiVolume, err error) {
+	sourceSnapshotName, sourceVolume, destinationName string, zonePath, accessZone string) (resp *IsiVolume, err error) {
 	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/destination_volume_name?merge=True
 	//             x-isi-ifs-copy-source: /path/to/snapshot/volumes/source_volume_name
 
 	headers := map[string]string{
 		"x-isi-ifs-copy-source": path.Join(
 			"/",
-			realVolumeSnapshotPath(client, sourceSnapshotName),
+			realVolumeSnapshotPath(client, sourceSnapshotName, zonePath, accessZone),
 			sourceVolume),
 	}
 
 	// copy the volume
 	err = client.Put(ctx, realNamespacePath(client), destinationName, mergeQS, headers, nil, &resp)
-
 	return resp, err
 }
 
@@ -123,14 +122,19 @@ func CopyIsiSnapshot(
 func CopyIsiSnapshotWithIsiPath(
 	ctx context.Context,
 	client api.Client,
-	isiPath, snapshotSourceVolumeIsiPath, sourceSnapshotName, sourceVolume, destinationName string) (resp *IsiCopySnapshotResp, err error) {
+	isiPath, snapshotSourceVolumeIsiPath, sourceSnapshotName, sourceVolume, destinationName string, accessZone string) (resp *IsiCopySnapshotResp, err error) {
 	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/destination_volume_name?merge=True
 	//             x-isi-ifs-copy-source: /path/to/snapshot/volumes/source_volume_name
 	//             x-isi-ifs-mode-mask: preserve
+	zone, err := GetZoneByName(ctx, client, accessZone)
+	if err != nil {
+		return nil, err
+	}
+
 	headers := map[string]string{
 		"x-isi-ifs-copy-source": path.Join(
 			"/",
-			GetRealVolumeSnapshotPathWithIsiPath(snapshotSourceVolumeIsiPath, sourceSnapshotName),
+			GetRealVolumeSnapshotPathWithIsiPath(snapshotSourceVolumeIsiPath, zone.Path, sourceSnapshotName, accessZone),
 			sourceVolume),
 		"x-isi-ifs-mode-mask": "preserve",
 	}
@@ -155,12 +159,17 @@ func RemoveIsiSnapshot(
 func GetIsiSnapshotFolderWithSize(
 	ctx context.Context,
 	client api.Client,
-	isiPath, name, volume string) (resp *getIsiVolumeSizeResp, err error) {
+	isiPath, name, volume string, accessZone string) (resp *getIsiVolumeSizeResp, err error) {
 
 	// PAPI call: GET https://1.2.3.4:8080/namespace/path/to/snapshot?detail=size&max-depth=-1
+	zone, err := GetZoneByName(ctx, client, accessZone)
+	if err != nil {
+		return nil, err
+	}
+
 	err = client.Get(
 		ctx,
-		GetRealVolumeSnapshotPathWithIsiPath(isiPath, name),
+		GetRealVolumeSnapshotPathWithIsiPath(isiPath, zone.Path, name, accessZone),
 		volume,
 		sizeQS,
 		nil,
