@@ -19,14 +19,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/dell/goisilon/api"
 	"path"
+
+	"github.com/dell/goisilon/api"
 )
 
 // GetIsiSnapshots queries a list of all snapshots on the cluster
 func GetIsiSnapshots(
 	ctx context.Context,
-	client api.Client) (resp *getIsiSnapshotsResp, err error) {
+	client api.Client,
+) (resp *getIsiSnapshotsResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/snapshot/snapshots
 	err = client.Get(ctx, snapshotsPath, "", nil, nil, &resp)
 	if err != nil {
@@ -39,7 +41,8 @@ func GetIsiSnapshots(
 func GetIsiSnapshot(
 	ctx context.Context,
 	client api.Client,
-	id int64) (*IsiSnapshot, error) {
+	id int64,
+) (*IsiSnapshot, error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/snapshot/snapshots/123
 	snapshotURL := fmt.Sprintf("%s/%d", snapshotsPath, id)
 	var resp *getIsiSnapshotsResp
@@ -58,7 +61,8 @@ func GetIsiSnapshot(
 func GetIsiSnapshotByIdentity(
 	ctx context.Context,
 	client api.Client,
-	identity string) (*IsiSnapshot, error) {
+	identity string,
+) (*IsiSnapshot, error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/snapshot/snapshots/id|name
 	snapshotURL := fmt.Sprintf("%s/%s", snapshotsPath, identity)
 	var resp *getIsiSnapshotsResp
@@ -76,7 +80,8 @@ func GetIsiSnapshotByIdentity(
 func CreateIsiSnapshot(
 	ctx context.Context,
 	client api.Client,
-	path, name string) (resp *IsiSnapshot, err error) {
+	path, name string,
+) (resp *IsiSnapshot, err error) {
 	// PAPI call: POST https://1.2.3.4:8080/platform/1/snapshot/snapshots
 	//            Content-Type: application/json
 	//            {path: "/path/to/volume"
@@ -102,7 +107,8 @@ func CreateIsiSnapshot(
 func CopyIsiSnapshot(
 	ctx context.Context,
 	client api.Client,
-	sourceSnapshotName, sourceVolume, destinationName string, zonePath, accessZone string) (resp *IsiVolume, err error) {
+	sourceSnapshotName, sourceVolume, destinationName string, zonePath, accessZone string,
+) (resp *IsiVolume, err error) {
 	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/destination_volume_name?merge=True
 	//             x-isi-ifs-copy-source: /path/to/snapshot/volumes/source_volume_name
 
@@ -122,7 +128,8 @@ func CopyIsiSnapshot(
 func CopyIsiSnapshotWithIsiPath(
 	ctx context.Context,
 	client api.Client,
-	isiPath, snapshotSourceVolumeIsiPath, sourceSnapshotName, sourceVolume, destinationName string, accessZone string) (resp *IsiCopySnapshotResp, err error) {
+	isiPath, snapshotSourceVolumeIsiPath, sourceSnapshotName, sourceVolume, destinationName string, accessZone string,
+) (resp *IsiCopySnapshotResp, err error) {
 	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/destination_volume_name?merge=True
 	//             x-isi-ifs-copy-source: /path/to/snapshot/volumes/source_volume_name
 	//             x-isi-ifs-mode-mask: preserve
@@ -147,7 +154,8 @@ func CopyIsiSnapshotWithIsiPath(
 func RemoveIsiSnapshot(
 	ctx context.Context,
 	client api.Client,
-	id int64) error {
+	id int64,
+) error {
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/snapshot/snapshots/123
 	snapshotURL := fmt.Sprintf("%s/%d", snapshotsPath, id)
 	err := client.Delete(ctx, snapshotURL, "", nil, nil, nil)
@@ -159,8 +167,8 @@ func RemoveIsiSnapshot(
 func GetIsiSnapshotFolderWithSize(
 	ctx context.Context,
 	client api.Client,
-	isiPath, name, volume string, accessZone string) (resp *getIsiVolumeSizeResp, err error) {
-
+	isiPath, name, volume string, accessZone string,
+) (resp *getIsiVolumeSizeResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/namespace/path/to/snapshot?detail=size&max-depth=-1
 	zone, err := GetZoneByName(ctx, client, accessZone)
 	if err != nil {

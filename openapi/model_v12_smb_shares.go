@@ -21,7 +21,7 @@ type V12SmbShares struct {
 	// An identifier for a set of shares.
 	Digest *string `json:"digest,omitempty"`
 	// Provide this token as the 'resume' query argument to continue listing results.
-	Resume *string `json:"resume,omitempty"`
+	Resume *string               `json:"resume,omitempty"`
 	Shares []V12SmbShareExtended `json:"shares"`
 	// Total number of items available.
 	Total *int32 `json:"total,omitempty"`

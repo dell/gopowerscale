@@ -25,8 +25,10 @@ import (
 
 var ErrWaitTimeout = errors.New("timed out waiting for the condition")
 
-type WaitWithContextFunc func(ctx context.Context) <-chan struct{}
-type ConditionWithContextFunc func(context.Context) (done bool, err error)
+type (
+	WaitWithContextFunc      func(ctx context.Context) <-chan struct{}
+	ConditionWithContextFunc func(context.Context) (done bool, err error)
+)
 
 func PollImmediateWithContext(ctx context.Context, interval, timeout time.Duration, condition ConditionWithContextFunc) error {
 	return poll(ctx, true, poller(interval, timeout), condition)

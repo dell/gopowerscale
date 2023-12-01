@@ -29,11 +29,13 @@ const (
 )
 
 // SmartQuotas license statuses
-var unlicensed = QuotaLicenseStatus{"Unlicensed"}
-var licensed = QuotaLicenseStatus{"Licensed"}
-var expired = QuotaLicenseStatus{"Expired"}
-var evaluation = QuotaLicenseStatus{"Evaluation"}
-var evaluationExpired = QuotaLicenseStatus{"Evaluation Expired"}
+var (
+	unlicensed        = QuotaLicenseStatus{"Unlicensed"}
+	licensed          = QuotaLicenseStatus{"Licensed"}
+	expired           = QuotaLicenseStatus{"Expired"}
+	evaluation        = QuotaLicenseStatus{"Evaluation"}
+	evaluationExpired = QuotaLicenseStatus{"Evaluation Expired"}
+)
 
 var validQuotaLicenseStatus = [5]QuotaLicenseStatus{unlicensed, licensed, expired, evaluation, evaluationExpired}
 
@@ -49,8 +51,8 @@ type QuotaLicense struct {
 // GetIsiQuotaLicense retrieves the SmartQuotas license info
 func GetIsiQuotaLicense(
 	ctx context.Context,
-	client api.Client) (lic *QuotaLicense, err error) {
-
+	client api.Client,
+) (lic *QuotaLicense, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/5/quota/license
 	// This will return the SmartQuotas license info
 
@@ -65,8 +67,8 @@ func GetIsiQuotaLicense(
 
 func getIsiQuotaLicenseStatus(
 	ctx context.Context,
-	client api.Client) (status string, err error) {
-
+	client api.Client,
+) (status string, err error) {
 	lic, e := GetIsiQuotaLicense(ctx, client)
 
 	if e != nil {
@@ -88,10 +90,9 @@ func getIsiQuotaLicenseStatus(
 
 // IsQuotaLicenseActivated checks if SmartQuotas has been activated (either licensed or in evaluation)
 func IsQuotaLicenseActivated(ctx context.Context,
-	client api.Client) (bool, error) {
-
+	client api.Client,
+) (bool, error) {
 	status, err := getIsiQuotaLicenseStatus(ctx, client)
-
 	if err != nil {
 
 		log.Error(ctx, "error encountered when retrieving SmartQuotas license info, cannot determine whether SmartQuotas is activated. error : '%v'", err)
@@ -104,7 +105,6 @@ func IsQuotaLicenseActivated(ctx context.Context,
 }
 
 func isQuotaLicenseStatusValid(status string) bool {
-
 	isStatusValid := false
 
 	for _, stat := range validQuotaLicenseStatus {
@@ -122,6 +122,5 @@ type QuotaLicenseStatus struct {
 }
 
 func (s *QuotaLicenseStatus) toString() string {
-
 	return s.value
 }

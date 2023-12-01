@@ -21,11 +21,12 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	log "github.com/akutz/gournal"
 	"io"
 	"net/http"
 	"net/http/httputil"
 	"strings"
+
+	log "github.com/akutz/gournal"
 )
 
 func isBinOctetBody(h http.Header) bool {
@@ -40,10 +41,10 @@ func logRequest(ctx context.Context, w io.Writer, req *http.Request, verbose Ver
 
 	switch verbose {
 	case Verbose_Low:
-		//minimal logging, i.e. print request line only
+		// minimal logging, i.e. print request line only
 		fmt.Fprintf(w, "    %s %s %s\r\n", req.Method, req.URL.RequestURI(), req.Proto)
 	default:
-		//full logging, i.e. print full request message content
+		// full logging, i.e. print full request message content
 		buf, _ := httputil.DumpRequest(req, !isBinOctetBody(req.Header))
 		decodedBuf := encryptPassword(buf)
 		WriteIndented(w, decodedBuf)
@@ -63,17 +64,17 @@ func logResponse(ctx context.Context, res *http.Response, verbose VerboseType) {
 
 	switch verbose {
 	case Verbose_Low:
-		//minimal logging, i.e. pirnt status line only
+		// minimal logging, i.e. pirnt status line only
 		fmt.Fprintf(w, "    %s %s\r\n", res.Proto, res.Status)
 	case Verbose_Medium:
-		//print status line + headers
+		// print status line + headers
 		buf, _ = httputil.DumpResponse(res, false)
 	default:
-		//print full response message content
+		// print full response message content
 		buf, _ = httputil.DumpResponse(res, !isBinOctetBody(res.Header))
 	}
 
-	//when DumpResponse gets err, buf will be nil. No message content will be printed
+	// when DumpResponse gets err, buf will be nil. No message content will be printed
 	WriteIndented(w, buf)
 
 	log.Debug(ctx, w.String())

@@ -293,7 +293,6 @@ var hexChars = []byte{
 }
 
 func escapeTo(w io.Writer, s []byte) error {
-
 	var (
 		hexCount   = 0
 		spaceCount = 0

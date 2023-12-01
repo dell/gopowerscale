@@ -75,9 +75,11 @@ const (
 
 const resolveErrorToIgnore = "The policy was not conflicted, so no change was made"
 
-var policyNameArg = []byte("policy_name")
-var sortArg = []byte("sort")
-var reportsPerPolicyArg = []byte("reports_per_policy")
+var (
+	policyNameArg       = []byte("policy_name")
+	sortArg             = []byte("sort")
+	reportsPerPolicyArg = []byte("reports_per_policy")
+)
 
 // Policy contains the CloudIQ policy info.
 type Policy struct {

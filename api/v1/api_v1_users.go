@@ -24,7 +24,6 @@ import (
 
 // GetIsiUser queries the user by user user-id.
 func GetIsiUser(ctx context.Context, client api.Client, userName *string, uid *int32) (user *IsiUser, err error) {
-
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/auth/users/<user-id>
 
 	authUserId, err := getAuthMemberId(fileGroupTypeUser, userName, uid)
@@ -50,8 +49,8 @@ func GetIsiUser(ctx context.Context, client api.Client, userName *string, uid *i
 func GetIsiUserList(ctx context.Context, client api.Client,
 	queryNamePrefix, queryDomain, queryZone, queryProvider *string,
 	queryCached, queryResolveNames, queryMemberOf *bool,
-	queryLimit *int32) (users []*IsiUser, err error) {
-
+	queryLimit *int32,
+) (users []*IsiUser, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/auth/users?limit=&cached=&resolve_names=&query_member_of=&zone=&provider=
 	values := api.OrderedValues{}
 	if queryCached != nil {
@@ -99,7 +98,6 @@ func GetIsiUserList(ctx context.Context, client api.Client,
 
 // getIsiUserListWithResume queries the next page users based on resume token.
 func getIsiUserListWithResume(ctx context.Context, client api.Client, resume string) (users *IsiUserListRespResume, err error) {
-
 	err = client.Get(ctx, userPath, "", api.OrderedValues{{[]byte("resume"), []byte(resume)}}, nil, &users)
 	return
 }
@@ -108,8 +106,8 @@ func getIsiUserListWithResume(ctx context.Context, client api.Client, resume str
 func CreateIsiUser(ctx context.Context, client api.Client, name string,
 	queryForce *bool, queryZone, queryProvider *string,
 	email, homeDirectory, password, primaryGroupName, fullName, shell *string,
-	uid, primaryGroupId, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool) (string, error) {
-
+	uid, primaryGroupId, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool,
+) (string, error) {
 	// PAPI call: POST https://1.2.3.4:8080/platform/1/auth/users?force=&zone=&provider=
 	// 				{
 	//					"email": "str",
@@ -183,8 +181,8 @@ func CreateIsiUser(ctx context.Context, client api.Client, name string,
 func UpdateIsiUser(ctx context.Context, client api.Client, userName *string, uid *int32,
 	queryForce *bool, queryZone, queryProvider *string,
 	email, homeDirectory, password, primaryGroupName, fullName, shell *string,
-	newUid, primaryGroupId, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool) (err error) {
-
+	newUid, primaryGroupId, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool,
+) (err error) {
 	// PAPI call: PUT https://1.2.3.4:8080/platform/1/auth/users/<user-id>?force=&zone=&provider=
 	// 				{
 	//					"email": "str",
@@ -254,7 +252,6 @@ func UpdateIsiUser(ctx context.Context, client api.Client, userName *string, uid
 
 // DeleteIsiUser removes the user by user-id.
 func DeleteIsiUser(ctx context.Context, client api.Client, userName *string, uid *int32) (err error) {
-
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/auth/users/<user-id>
 
 	authUserId, err := getAuthMemberId(fileGroupTypeUser, userName, uid)

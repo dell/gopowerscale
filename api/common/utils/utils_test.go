@@ -27,8 +27,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestIsStringInSlice(t *testing.T) {
-
-	var list = []string{"hello", "world", "jason"}
+	list := []string{"hello", "world", "jason"}
 
 	assert.True(t, IsStringInSlice("world", list))
 	assert.False(t, IsStringInSlice("mary", list))
@@ -36,10 +35,9 @@ func TestIsStringInSlice(t *testing.T) {
 }
 
 func TestRemoveStringFromSlice(t *testing.T) {
+	list := []string{"hello", "world", "jason"}
 
-	var list = []string{"hello", "world", "jason"}
-
-	var result = RemoveStringFromSlice("hello", list)
+	result := RemoveStringFromSlice("hello", list)
 
 	assert.Equal(t, 3, len(list))
 	assert.Equal(t, 2, len(result))
@@ -50,12 +48,11 @@ func TestRemoveStringFromSlice(t *testing.T) {
 }
 
 func TestRemoveStringsFromSlice(t *testing.T) {
+	list := []string{"hello", "world", "jason"}
 
-	var list = []string{"hello", "world", "jason"}
+	filterList := []string{"hello", "there", "chap", "world"}
 
-	var filterList = []string{"hello", "there", "chap", "world"}
-
-	var result = RemoveStringsFromSlice(filterList, list)
+	result := RemoveStringsFromSlice(filterList, list)
 
 	assert.Equal(t, 1, len(result))
 }

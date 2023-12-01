@@ -166,7 +166,7 @@ type IsiClusterNodeDrive struct {
 	// Numerical representation of this drive's bay.
 	Baynum *int32 `json:"baynum,omitempty"`
 	// Number of blocks on this drive.
-	Blocks *int32 `json:"blocks,omitempty"`
+	Blocks *int64 `json:"blocks,omitempty"`
 	// The chassis number which contains this drive.
 	Chassis *int32 `json:"chassis,omitempty"`
 	// This drive's device name.

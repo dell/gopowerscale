@@ -29,7 +29,8 @@ import (
 func Export(
 	ctx context.Context,
 	client api.Client,
-	path string) (err error) {
+	path string,
+) (err error) {
 	// PAPI call: POST https://1.2.3.4:8080/platform/1/protocols/nfs/exports/
 	//            Content-Type: application/json
 	//            {paths: ["/path/to/volume"]}
@@ -38,7 +39,7 @@ func Export(
 		return errors.New("no path set")
 	}
 
-	var data = &ExportPathList{Paths: []string{path}}
+	data := &ExportPathList{Paths: []string{path}}
 	data.MapAll.User = client.User()
 	if group := client.Group(); group != "" {
 		data.MapAll.Groups = append(data.MapAll.Groups, group)
@@ -58,12 +59,13 @@ func Export(
 func SetExportClients(
 	ctx context.Context,
 	client api.Client,
-	Id int, clients []string) (err error) {
+	Id int, clients []string,
+) (err error) {
 	// PAPI call: PUT https://1.2.3.4:8080/platform/1/protocols/nfs/exports/Id
 	//            Content-Type: application/json
 	//            {clients: ["client_ip_address"]}
 
-	var data = &ExportClientList{Clients: clients}
+	data := &ExportClientList{Clients: clients}
 	var resp *postIsiExportResp
 
 	err = client.Put(ctx, exportsPath, strconv.Itoa(Id), nil, nil, data, &resp)
@@ -75,7 +77,8 @@ func SetExportClients(
 func Unexport(
 	ctx context.Context,
 	client api.Client,
-	Id int) (err error) {
+	Id int,
+) (err error) {
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/protocols/nfs/exports/23
 
 	if Id == 0 {
@@ -93,8 +96,8 @@ func Unexport(
 // GetIsiExports queries a list of all exports on the cluster
 func GetIsiExports(
 	ctx context.Context,
-	client api.Client) (resp *getIsiExportsResp, err error) {
-
+	client api.Client,
+) (resp *getIsiExportsResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/protocols/nfs/exports
 	err = client.Get(ctx, exportsPath, "", nil, nil, &resp)
 

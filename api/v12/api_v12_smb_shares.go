@@ -17,6 +17,7 @@ package v12
 
 import (
 	"context"
+
 	"github.com/dell/goisilon/api"
 	"github.com/dell/goisilon/openapi"
 )
@@ -39,8 +40,8 @@ type ListV12SmbSharesParams struct {
 func ListSmbShares(
 	ctx context.Context,
 	params ListV12SmbSharesParams,
-	client api.Client) (*openapi.V12SmbShares, error) {
-
+	client api.Client,
+) (*openapi.V12SmbShares, error) {
 	var resp openapi.V12SmbShares
 	if err := client.Get(
 		ctx,
@@ -49,7 +50,6 @@ func ListSmbShares(
 		api.StructToOrderedValues(params),
 		nil,
 		&resp); err != nil {
-
 		return nil, err
 	}
 
@@ -68,8 +68,8 @@ type GetV12SmbShareParams struct {
 func GetSmbShare(
 	ctx context.Context,
 	params GetV12SmbShareParams,
-	client api.Client) (*openapi.V12SmbSharesExtended, error) {
-
+	client api.Client,
+) (*openapi.V12SmbSharesExtended, error) {
 	var resp openapi.V12SmbSharesExtended
 	if err := client.Get(
 		ctx,
@@ -78,7 +78,6 @@ func GetSmbShare(
 		api.StructToOrderedValues(params),
 		nil,
 		&resp); err != nil {
-
 		return nil, err
 	}
 
@@ -95,8 +94,8 @@ type CreateV12SmbShareRequest struct {
 func CreateSmbShare(
 	ctx context.Context,
 	r CreateV12SmbShareRequest,
-	client api.Client) (*openapi.Createv12SmbShareResponse, error) {
-
+	client api.Client,
+) (*openapi.Createv12SmbShareResponse, error) {
 	var resp openapi.Createv12SmbShareResponse
 	if err := client.Post(
 		ctx,
@@ -105,7 +104,6 @@ func CreateSmbShare(
 		nil,
 		nil, r.V12SmbShare,
 		&resp); err != nil {
-
 		return nil, err
 	}
 
@@ -123,7 +121,8 @@ type UpdateV12SmbShareRequest struct {
 func UpdateSmbShare(
 	ctx context.Context,
 	r UpdateV12SmbShareRequest,
-	client api.Client) error {
+	client api.Client,
+) error {
 	err := client.Put(
 		ctx,
 		sharesPath,
@@ -144,7 +143,8 @@ type DeleteV12SmbShareRequest struct {
 // DeleteSmbShare Delete one export.
 func DeleteSmbShare(
 	ctx context.Context, r DeleteV12SmbShareRequest,
-	client api.Client) error {
+	client api.Client,
+) error {
 	err := client.Delete(
 		ctx,
 		sharesPath,

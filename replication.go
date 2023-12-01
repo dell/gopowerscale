@@ -27,13 +27,17 @@ import (
 	apiv11 "github.com/dell/goisilon/api/v11"
 )
 
-const defaultPoll = 5 * time.Second
-const defaultTimeout = 10 * time.Minute // set high timeout, we expect to be canceled via context before
+const (
+	defaultPoll    = 5 * time.Second
+	defaultTimeout = 10 * time.Minute // set high timeout, we expect to be canceled via context before
+)
 
-const retryInterval = 15 * time.Second
-const maxRetries = 20 // with 15 sec, it is 4 retries per min. For 5 minutes, it is 20 retries
-const retryablePolicyError = "is in an error state. Please resolve it and retry"
-const retryableReportError = "A new quota domain that has not finished QuotaScan has been found"
+const (
+	retryInterval        = 15 * time.Second
+	maxRetries           = 20 // with 15 sec, it is 4 retries per min. For 5 minutes, it is 20 retries
+	retryablePolicyError = "is in an error state. Please resolve it and retry"
+	retryableReportError = "A new quota domain that has not finished QuotaScan has been found"
+)
 
 const (
 	RESYNC_PREP            apiv11.JOB_ACTION              = "resync_prep"
@@ -331,7 +335,6 @@ func (c *Client) WaitForTargetPolicyCondition(ctx context.Context, policyName st
 }
 
 func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
-
 	// get all running
 	// if running - wait for it and succeed
 	// if no running - start new - wait for it and succeed
@@ -412,7 +415,6 @@ func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
 		}
 		return nil
 	}
-
 }
 
 func (c *Client) GetJobsByPolicyName(ctx context.Context, policyName string) ([]apiv11.Job, error) {

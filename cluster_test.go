@@ -49,7 +49,6 @@ func TestGetLocalSerial(t *testing.T) {
 		panic(err)
 	}
 	println(localSerial)
-
 }
 
 func TestGetClusterConfig(t *testing.T) {
@@ -86,7 +85,7 @@ func TestGetClusterNodes(t *testing.T) {
 }
 
 func TestGetClusterNode(t *testing.T) {
-	var nodeID = 1
+	nodeID := 1
 	nodes, err := client.GetClusterNode(defaultCtx, nodeID)
 	assertNoError(t, err)
 	assertNotNil(t, nodes)

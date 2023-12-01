@@ -27,8 +27,10 @@ import (
 	api "github.com/dell/goisilon/api/v1"
 )
 
-const namespacePath = "namespace"
-const snapShot = ".snapshot"
+const (
+	namespacePath = "namespace"
+	snapShot      = ".snapshot"
+)
 
 // SnapshotList represents a list of Isilon snapshots.
 type SnapshotList []*api.IsiSnapshot
@@ -48,8 +50,8 @@ func (c *Client) GetSnapshots(ctx context.Context) (SnapshotList, error) {
 
 // GetSnapshotsByPath returns a list of snapshots covering the supplied path.
 func (c *Client) GetSnapshotsByPath(
-	ctx context.Context, path string) (SnapshotList, error) {
-
+	ctx context.Context, path string,
+) (SnapshotList, error) {
 	snapshots, err := api.GetIsiSnapshots(ctx, c.API)
 	if err != nil {
 		return nil, err
@@ -66,8 +68,8 @@ func (c *Client) GetSnapshotsByPath(
 
 // GetSnapshot returns a snapshot matching id, or if that is not found, matching name
 func (c *Client) GetSnapshot(
-	ctx context.Context, id int64, name string) (Snapshot, error) {
-
+	ctx context.Context, id int64, name string,
+) (Snapshot, error) {
 	// if we have an id, use it to find the snapshot
 	snapshot, err := api.GetIsiSnapshot(ctx, c.API, id)
 	if err == nil {
@@ -95,20 +97,22 @@ func (c *Client) GetSnapshot(
 
 // CreateSnapshot creates a snapshot called name of the given path.
 func (c *Client) CreateSnapshot(
-	ctx context.Context, volName, snapshotName string) (Snapshot, error) {
+	ctx context.Context, volName, snapshotName string,
+) (Snapshot, error) {
 	return api.CreateIsiSnapshot(ctx, c.API, c.API.VolumePath(volName), snapshotName)
 }
 
 // CreateSnapshotWithPath creates a snapshot by snapshot name and the path of volume.
 func (c *Client) CreateSnapshotWithPath(
-	ctx context.Context, path, snapshotName string) (Snapshot, error) {
+	ctx context.Context, path, snapshotName string,
+) (Snapshot, error) {
 	return api.CreateIsiSnapshot(ctx, c.API, path, snapshotName)
 }
 
 // RemoveSnapshot removes the snapshot by id, or failing that, the snapshot matching name.
 func (c *Client) RemoveSnapshot(
-	ctx context.Context, id int64, name string) error {
-
+	ctx context.Context, id int64, name string,
+) error {
 	snapshot, err := c.GetSnapshot(ctx, id, name)
 	if err != nil {
 		return err
@@ -120,8 +124,8 @@ func (c *Client) RemoveSnapshot(
 // CopySnapshot copies all files/directories in a snapshot to a new directory.
 func (c *Client) CopySnapshot(
 	ctx context.Context,
-	sourceID int64, sourceName, accessZone, destinationName string) (Volume, error) {
-
+	sourceID int64, sourceName, accessZone, destinationName string,
+) (Volume, error) {
 	snapshot, err := c.GetSnapshot(ctx, sourceID, sourceName)
 	if err != nil {
 		return nil, err
@@ -150,8 +154,8 @@ func (c *Client) CopySnapshotWithIsiPath(
 	ctx context.Context,
 	isiPath, snapshotSourceVolumeIsiPath string,
 	sourceID int64,
-	sourceName, destinationName string, accessZone string) (Volume, error) {
-
+	sourceName, destinationName string, accessZone string,
+) (Volume, error) {
 	snapshot, err := c.GetIsiSnapshotByIdentity(ctx, strconv.FormatInt(sourceID, 10))
 	if err != nil {
 		return nil, err
@@ -164,12 +168,12 @@ func (c *Client) CopySnapshotWithIsiPath(
 		ctx, c.API, isiPath, snapshotSourceVolumeIsiPath, snapshot.Name,
 		path.Base(snapshot.Path), destinationName, accessZone)
 
-	//The response will be null on success of the snapshot creation otherwise it will return the response with a success state equal to false and with details
+	// The response will be null on success of the snapshot creation otherwise it will return the response with a success state equal to false and with details
 	if resp != nil && !resp.Success && resp.Errors != nil {
 
 		var copySnapError bytes.Buffer
 		for _, errMes := range resp.Errors {
-			//Extracting the  error message from the JSON array
+			// Extracting the  error message from the JSON array
 			copySnapError.WriteString("Error Source = " + errMes.Source + "," + "Message = " + errMes.Message + "," + "," + "Source = " + errMes.Source + "," + "Target = " + errMes.Target + " \n")
 		}
 		err = errors.New(copySnapError.String())
@@ -186,24 +190,24 @@ func (c *Client) CopySnapshotWithIsiPath(
 // GetIsiSnapshotByIdentity query a snapshot by ID or name
 // param identity string: name or id
 func (c *Client) GetIsiSnapshotByIdentity(
-	ctx context.Context, identity string) (Snapshot, error) {
-
+	ctx context.Context, identity string,
+) (Snapshot, error) {
 	return api.GetIsiSnapshotByIdentity(ctx, c.API, identity)
 }
 
 // IsSnapshotExistent checks if a snapshot already exists
 // param identity string: name or id
 func (c *Client) IsSnapshotExistent(
-	ctx context.Context, identity string) bool {
-
+	ctx context.Context, identity string,
+) bool {
 	snapshot, _ := api.GetIsiSnapshotByIdentity(ctx, c.API, identity)
 	return snapshot != nil
 }
 
 // GetSnapshotFolderSize returns the total size of a snapshot folder
 func (c *Client) GetSnapshotFolderSize(ctx context.Context,
-	isiPath, name string, accessZone string) (int64, error) {
-
+	isiPath, name string, accessZone string,
+) (int64, error) {
 	snapshot, err := c.GetIsiSnapshotByIdentity(ctx, name)
 	if err != nil {
 		return 0, err
@@ -227,8 +231,8 @@ func (c *Client) GetSnapshotFolderSize(ctx context.Context,
 // GetSnapshotIsiPath returns the snapshot directory path
 func (c *Client) GetSnapshotIsiPath(
 	ctx context.Context,
-	isiPath, snapshotId string, accessZone string) (string, error) {
-
+	isiPath, snapshotId string, accessZone string,
+) (string, error) {
 	snapshot, err := c.GetIsiSnapshotByIdentity(ctx, snapshotId)
 	if err != nil {
 		return "", err
@@ -237,7 +241,7 @@ func (c *Client) GetSnapshotIsiPath(
 		return "", fmt.Errorf("Snapshot doesn't exist for snapshot id: (%s) and access Zone (%s)", snapshotId, accessZone)
 	}
 
-	//get zone base path
+	// get zone base path
 	zone, err := api.GetZoneByName(ctx, c.API, accessZone)
 	if err != nil {
 		return "", err
@@ -245,7 +249,7 @@ func (c *Client) GetSnapshotIsiPath(
 
 	snapshotPath := api.GetRealVolumeSnapshotPathWithIsiPath(isiPath, zone.Path, snapshot.Name, accessZone)
 	snapshotPath = path.Join(snapshotPath, path.Base(snapshot.Path))
-	//If isi path is different then zone base path i.e. isi path contains multiple directories
+	// If isi path is different then zone base path i.e. isi path contains multiple directories
 	if strings.Compare(zone.Path, isiPath) != 0 {
 		parts := strings.SplitN(snapshotPath, namespacePath, 2)
 		if len(parts) < 2 {

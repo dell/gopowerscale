@@ -26,13 +26,13 @@ import (
 func GetIsiQuota(
 	ctx context.Context,
 	client api.Client,
-	path string) (quota *IsiQuota, err error) {
-
+	path string,
+) (quota *IsiQuota, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/quota/quotas?path=/path/to/volume
 	// This will list the quota by path on the cluster
 
 	var quotaResp isiQuotaListResp
-	var pathWithQueryParam = quotaPath + "?path=" + path
+	pathWithQueryParam := quotaPath + "?path=" + path
 	err = client.Get(ctx, pathWithQueryParam, "", nil, nil, &quotaResp)
 	if err != nil {
 		return nil, err
@@ -49,8 +49,8 @@ func GetIsiQuota(
 // GetAllIsiQuota queries all quotas on the cluster
 func GetAllIsiQuota(
 	ctx context.Context,
-	client api.Client) (quotas []*IsiQuota, err error) {
-
+	client api.Client,
+) (quotas []*IsiQuota, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/quota/quotas
 
 	var quotaResp *IsiQuotaListRespResume
@@ -79,8 +79,8 @@ func GetAllIsiQuota(
 // GetIsiQuotaWithResume queries the next page quotas based on resume token
 func GetIsiQuotaWithResume(
 	ctx context.Context,
-	client api.Client, resume string) (quotas *IsiQuotaListRespResume, err error) {
-
+	client api.Client, resume string,
+) (quotas *IsiQuotaListRespResume, err error) {
 	var quotaResp IsiQuotaListRespResume
 	err = client.Get(ctx, quotaPath, "",
 		api.OrderedValues{
@@ -97,8 +97,8 @@ func GetIsiQuotaWithResume(
 func GetIsiQuotaByID(
 	ctx context.Context,
 	client api.Client,
-	ID string) (quota *IsiQuota, err error) {
-
+	ID string,
+) (quota *IsiQuota, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/quota/quotas/igSJAAEAAAAAAAAAAAAAQH0RAAAAAAAA
 	// This will list the quota by id on the cluster
 
@@ -122,8 +122,8 @@ func GetIsiQuotaByID(
 func CreateIsiQuota(
 	ctx context.Context,
 	client api.Client,
-	path string, container bool, size, softLimit, advisoryLimit, softGracePrd int64) (string, error) {
-
+	path string, container bool, size, softLimit, advisoryLimit, softGracePrd int64,
+) (string, error) {
 	// PAPI call: POST https://1.2.3.4:8080/platform/1/quota/quotas
 	//             { "enforced" : true,
 	//               "include_snapshots" : false,
@@ -136,8 +136,8 @@ func CreateIsiQuota(
 	//                                "soft" : null
 	//                              }
 	//             }
-	//body={'path': '/ifs/data/quotatest', 'thresholds': {'soft_grace': 86400L, 'soft': 1048576L}, 'include_snapshots': False, 'force': False, 'type': 'directory'}
-	//softGrace := 86400U
+	// body={'path': '/ifs/data/quotatest', 'thresholds': {'soft_grace': 86400L, 'soft': 1048576L}, 'include_snapshots': False, 'force': False, 'type': 'directory'}
+	// softGrace := 86400U
 	thresholds := isiThresholdsReq{Advisory: advisoryLimit, Hard: size, Soft: softLimit, SoftGrace: softGracePrd}
 	if advisoryLimit == 0 {
 		thresholds.Advisory = nil
@@ -168,8 +168,8 @@ func CreateIsiQuota(
 func SetIsiQuotaHardThreshold(
 	ctx context.Context,
 	client api.Client,
-	path string, size, softLimit, advisoryLimit,softGracePrd int64) (string, error) {
-
+	path string, size, softLimit, advisoryLimit, softGracePrd int64,
+) (string, error) {
 	return CreateIsiQuota(ctx, client, path, false, size, softLimit, advisoryLimit, softGracePrd)
 }
 
@@ -177,8 +177,8 @@ func SetIsiQuotaHardThreshold(
 func UpdateIsiQuotaHardThreshold(
 	ctx context.Context,
 	client api.Client,
-	path string, size, softLimit, advisoryLimit, softGracePrd int64) (err error) {
-
+	path string, size, softLimit, advisoryLimit, softGracePrd int64,
+) (err error) {
 	// PAPI call: PUT https://1.2.3.4:8080/platform/1/quota/quotas/Id
 	//             { "enforced" : true,
 	//               "thresholds_include_overhead" : false,
@@ -198,7 +198,7 @@ func UpdateIsiQuotaHardThreshold(
 		thresholds.SoftGrace = nil
 	}
 
-	var data = &IsiUpdateQuotaReq{
+	data := &IsiUpdateQuotaReq{
 		Enforced:                  true,
 		ThresholdsIncludeOverhead: false,
 		Thresholds:                thresholds,
@@ -218,8 +218,8 @@ func UpdateIsiQuotaHardThreshold(
 func UpdateIsiQuotaHardThresholdByID(
 	ctx context.Context,
 	client api.Client,
-	ID string, size, softLimit, advisoryLimit, softGracePrd int64) (err error) {
-
+	ID string, size, softLimit, advisoryLimit, softGracePrd int64,
+) (err error) {
 	// PAPI call: PUT https://1.2.3.4:8080/platform/1/quota/quotas/Id
 	//             { "enforced" : true,
 	//               "thresholds_include_overhead" : false,
@@ -238,7 +238,7 @@ func UpdateIsiQuotaHardThresholdByID(
 	if softGracePrd == 0 {
 		thresholds.SoftGrace = nil
 	}
-	var data = &IsiUpdateQuotaReq{
+	data := &IsiUpdateQuotaReq{
 		Enforced:                  true,
 		ThresholdsIncludeOverhead: false,
 		Thresholds:                thresholds,
@@ -249,15 +249,17 @@ func UpdateIsiQuotaHardThresholdByID(
 	return err
 }
 
-var byteArrPath = []byte("path")
-var byteArrID = []byte("id")
+var (
+	byteArrPath = []byte("path")
+	byteArrID   = []byte("id")
+)
 
 // DeleteIsiQuota removes the quota for a directory
 func DeleteIsiQuota(
 	ctx context.Context,
 	client api.Client,
-	path string) (err error) {
-
+	path string,
+) (err error) {
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/quota/quotas?path=/path/to/volume
 	// This will remove a the quota on a volume
 
@@ -274,8 +276,8 @@ func DeleteIsiQuota(
 func DeleteIsiQuotaByID(
 	ctx context.Context,
 	client api.Client,
-	id string) (err error) {
-
+	id string,
+) (err error) {
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/quota/quotas/AABpAQEAAAAAAAAAAAAAQA0AAAAAAAAA
 	// This will remove a the quota on a volume by the quota id
 
@@ -292,8 +294,8 @@ func DeleteIsiQuotaByID(
 func DeleteIsiQuotaByIDWithZone(
 	ctx context.Context,
 	client api.Client,
-	id, zone string) (err error) {
-
+	id, zone string,
+) (err error) {
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/quota/quotas/AABpAQEAAAAAAAAAAAAAQA0AAAAAAAAA
 	// This will remove a the quota on a volume by the quota id
 

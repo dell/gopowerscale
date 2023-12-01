@@ -18,6 +18,7 @@ package goisilon
 import (
 	"context"
 	"errors"
+
 	apiv4 "github.com/dell/goisilon/api/v4"
 	"github.com/dell/goisilon/openapi"
 
@@ -51,8 +52,8 @@ func (c *Client) GetExportByID(ctx context.Context, id int) (Export, error) {
 // GetExportByName returns the first export with a path for the provided
 // volume name.
 func (c *Client) GetExportByName(
-	ctx context.Context, name string) (Export, error) {
-
+	ctx context.Context, name string,
+) (Export, error) {
 	exports, err := apiv2.ExportsList(ctx, c.API)
 	if err != nil {
 		return nil, err
@@ -71,8 +72,8 @@ func (c *Client) GetExportByName(
 // GetExportByNameWithZone returns the first export with a path for the provided
 // volume name in the given zone.
 func (c *Client) GetExportByNameWithZone(
-	ctx context.Context, name, zone string) (Export, error) {
-
+	ctx context.Context, name, zone string,
+) (Export, error) {
 	exports, err := apiv2.ExportsListWithZone(ctx, c.API, zone)
 	if err != nil {
 		return nil, err
@@ -90,7 +91,6 @@ func (c *Client) GetExportByNameWithZone(
 
 // Export the volume with a given name on the cluster
 func (c *Client) Export(ctx context.Context, name string) (int, error) {
-
 	ok, id, err := c.IsExported(ctx, name)
 	if err != nil {
 		return 0, err
@@ -108,7 +108,6 @@ func (c *Client) Export(ctx context.Context, name string) (int, error) {
 
 // ExportWithZone exports the volume with a given name and zone on the cluster
 func (c *Client) ExportWithZone(ctx context.Context, name, zone, description string) (int, error) {
-
 	// Removed the call to c.IsExportedWithZone(ctx, name, zone) to check if the path has already been exported:
 	// 1. the POST /platform/2/protocols/nfs/exports API will return 500 error if the path is already exported, so there won't be false positive
 	// 2. c.IsExportedWithZone(ctx, name, zone) iterates through the full list of exports, which could be expensive in a scaled environment, the potential pagination on the result set could also add to the complexity
@@ -133,8 +132,8 @@ func (c *Client) ExportWithZoneAndPath(ctx context.Context, path, zone, descript
 
 // GetRootMapping returns the root mapping for an Export.
 func (c *Client) GetRootMapping(
-	ctx context.Context, name string) (UserMapping, error) {
-
+	ctx context.Context, name string,
+) (UserMapping, error) {
 	ex, err := c.GetExportByName(ctx, name)
 	if err != nil {
 		return nil, err
@@ -147,8 +146,8 @@ func (c *Client) GetRootMapping(
 
 // GetRootMappingByID returns the root mapping for an Export.
 func (c *Client) GetRootMappingByID(
-	ctx context.Context, id int) (UserMapping, error) {
-
+	ctx context.Context, id int,
+) (UserMapping, error) {
 	ex, err := c.GetExportByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -161,8 +160,8 @@ func (c *Client) GetRootMappingByID(
 
 // EnableRootMapping enables the root mapping for an Export.
 func (c *Client) EnableRootMapping(
-	ctx context.Context, name, user string) error {
-
+	ctx context.Context, name, user string,
+) error {
 	ex, err := c.GetExportByName(ctx, name)
 	if err != nil {
 		return err
@@ -185,8 +184,8 @@ func (c *Client) EnableRootMapping(
 
 // EnableRootMappingByID enables the root mapping for an Export.
 func (c *Client) EnableRootMappingByID(
-	ctx context.Context, id int, user string) error {
-
+	ctx context.Context, id int, user string,
+) error {
 	ex, err := c.GetExportByID(ctx, id)
 	if err != nil {
 		return err
@@ -209,8 +208,8 @@ func (c *Client) EnableRootMappingByID(
 
 // DisableRootMapping disables the root mapping for an Export.
 func (c *Client) DisableRootMapping(
-	ctx context.Context, name string) error {
-
+	ctx context.Context, name string,
+) error {
 	ex, err := c.GetExportByName(ctx, name)
 	if err != nil {
 		return err
@@ -233,8 +232,8 @@ func (c *Client) DisableRootMapping(
 
 // DisableRootMappingByID disables the root mapping for an Export.
 func (c *Client) DisableRootMappingByID(
-	ctx context.Context, id int) error {
-
+	ctx context.Context, id int,
+) error {
 	ex, err := c.GetExportByID(ctx, id)
 	if err != nil {
 		return err
@@ -257,8 +256,8 @@ func (c *Client) DisableRootMappingByID(
 
 // GetNonRootMapping returns the map_non_root mapping for an Export.
 func (c *Client) GetNonRootMapping(
-	ctx context.Context, name string) (UserMapping, error) {
-
+	ctx context.Context, name string,
+) (UserMapping, error) {
 	ex, err := c.GetExportByName(ctx, name)
 	if err != nil {
 		return nil, err
@@ -271,8 +270,8 @@ func (c *Client) GetNonRootMapping(
 
 // GetNonRootMappingByID returns the map_non_root mapping for an Export.
 func (c *Client) GetNonRootMappingByID(
-	ctx context.Context, id int) (UserMapping, error) {
-
+	ctx context.Context, id int,
+) (UserMapping, error) {
 	ex, err := c.GetExportByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -285,8 +284,8 @@ func (c *Client) GetNonRootMappingByID(
 
 // EnableNonRootMapping enables the map_non_root mapping for an Export.
 func (c *Client) EnableNonRootMapping(
-	ctx context.Context, name, user string) error {
-
+	ctx context.Context, name, user string,
+) error {
 	ex, err := c.GetExportByName(ctx, name)
 	if err != nil {
 		return err
@@ -309,8 +308,8 @@ func (c *Client) EnableNonRootMapping(
 
 // EnableNonRootMappingByID enables the map_non_root mapping for an Export.
 func (c *Client) EnableNonRootMappingByID(
-	ctx context.Context, id int, user string) error {
-
+	ctx context.Context, id int, user string,
+) error {
 	ex, err := c.GetExportByID(ctx, id)
 	if err != nil {
 		return err
@@ -333,8 +332,8 @@ func (c *Client) EnableNonRootMappingByID(
 
 // DisableNonRootMapping disables the map_non_root mapping for an Export.
 func (c *Client) DisableNonRootMapping(
-	ctx context.Context, name string) error {
-
+	ctx context.Context, name string,
+) error {
 	ex, err := c.GetExportByName(ctx, name)
 	if err != nil {
 		return err
@@ -357,8 +356,8 @@ func (c *Client) DisableNonRootMapping(
 
 // DisableNonRootMappingByID disables the map_non_root mapping for an Export.
 func (c *Client) DisableNonRootMappingByID(
-	ctx context.Context, id int) error {
-
+	ctx context.Context, id int,
+) error {
 	ex, err := c.GetExportByID(ctx, id)
 	if err != nil {
 		return err
@@ -381,8 +380,8 @@ func (c *Client) DisableNonRootMappingByID(
 
 // GetFailureMapping returns the map_failure mapping for an Export.
 func (c *Client) GetFailureMapping(
-	ctx context.Context, name string) (UserMapping, error) {
-
+	ctx context.Context, name string,
+) (UserMapping, error) {
 	ex, err := c.GetExportByName(ctx, name)
 	if err != nil {
 		return nil, err
@@ -395,8 +394,8 @@ func (c *Client) GetFailureMapping(
 
 // GetFailureMappingByID returns the map_failure mapping for an Export.
 func (c *Client) GetFailureMappingByID(
-	ctx context.Context, id int) (UserMapping, error) {
-
+	ctx context.Context, id int,
+) (UserMapping, error) {
 	ex, err := c.GetExportByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -409,8 +408,8 @@ func (c *Client) GetFailureMappingByID(
 
 // EnableFailureMapping enables the map_failure mapping for an Export.
 func (c *Client) EnableFailureMapping(
-	ctx context.Context, name, user string) error {
-
+	ctx context.Context, name, user string,
+) error {
 	ex, err := c.GetExportByName(ctx, name)
 	if err != nil {
 		return err
@@ -433,8 +432,8 @@ func (c *Client) EnableFailureMapping(
 
 // EnableFailureMappingByID enables the map_failure mapping for an Export.
 func (c *Client) EnableFailureMappingByID(
-	ctx context.Context, id int, user string) error {
-
+	ctx context.Context, id int, user string,
+) error {
 	ex, err := c.GetExportByID(ctx, id)
 	if err != nil {
 		return err
@@ -457,8 +456,8 @@ func (c *Client) EnableFailureMappingByID(
 
 // DisableFailureMapping disables the map_failure mapping for an Export.
 func (c *Client) DisableFailureMapping(
-	ctx context.Context, name string) error {
-
+	ctx context.Context, name string,
+) error {
 	ex, err := c.GetExportByName(ctx, name)
 	if err != nil {
 		return err
@@ -481,8 +480,8 @@ func (c *Client) DisableFailureMapping(
 
 // DisableFailureMappingByID disables the map_failure mapping for an Export.
 func (c *Client) DisableFailureMappingByID(
-	ctx context.Context, id int) error {
-
+	ctx context.Context, id int,
+) error {
 	ex, err := c.GetExportByID(ctx, id)
 	if err != nil {
 		return err
@@ -508,8 +507,8 @@ func setUserMapping(
 	user string,
 	enabled bool,
 	getMapping func(Export) UserMapping,
-	setMapping func(Export, UserMapping)) {
-
+	setMapping func(Export, UserMapping),
+) {
 	m := getMapping(ex)
 	if m == nil {
 		m = &apiv2.UserMapping{
@@ -549,8 +548,8 @@ func setUserMapping(
 
 // GetExportClients returns an Export's clients property.
 func (c *Client) GetExportClients(
-	ctx context.Context, name string) ([]string, error) {
-
+	ctx context.Context, name string,
+) ([]string, error) {
 	ex, err := c.GetExportByName(ctx, name)
 	if err != nil {
 		return nil, err
@@ -566,8 +565,8 @@ func (c *Client) GetExportClients(
 
 // GetExportClientsByID returns an Export's clients property.
 func (c *Client) GetExportClientsByID(
-	ctx context.Context, id int) ([]string, error) {
-
+	ctx context.Context, id int,
+) ([]string, error) {
 	ex, err := c.GetExportByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -583,8 +582,8 @@ func (c *Client) GetExportClientsByID(
 
 // AddExportClients adds to the Export's clients property.
 func (c *Client) AddExportClients(
-	ctx context.Context, name string, clients ...string) error {
-
+	ctx context.Context, name string, clients ...string,
+) error {
 	ex, err := c.GetExportByName(ctx, name)
 	if err != nil {
 		return err
@@ -604,8 +603,8 @@ func (c *Client) AddExportClients(
 
 // AddExportClientsByExportID adds to the Export's clients property.
 func (c *Client) AddExportClientsByExportID(
-	ctx context.Context, id int, clients ...string) error {
-
+	ctx context.Context, id int, clients ...string,
+) error {
 	ex, err := c.GetExportByID(ctx, id)
 	if err != nil {
 		return err
@@ -625,10 +624,9 @@ func (c *Client) AddExportClientsByExportID(
 
 // AddExportClientsByID adds to the Export's clients property.
 func (c *Client) AddExportClientsByID(
-	ctx context.Context, id int, clients []string, ignoreUnresolvableHosts bool) error {
-
+	ctx context.Context, id int, clients []string, ignoreUnresolvableHosts bool,
+) error {
 	export, err := c.GetExportByID(ctx, id)
-
 	if err != nil {
 		return err
 	}
@@ -638,10 +636,9 @@ func (c *Client) AddExportClientsByID(
 
 // AddExportReadOnlyClientsByID adds to the Export's read-only clients property.
 func (c *Client) AddExportReadOnlyClientsByID(
-	ctx context.Context, id int, clients []string, ignoreUnresolvableHosts bool) error {
-
+	ctx context.Context, id int, clients []string, ignoreUnresolvableHosts bool,
+) error {
 	export, err := c.GetExportByID(ctx, id)
-
 	if err != nil {
 		return err
 	}
@@ -651,10 +648,9 @@ func (c *Client) AddExportReadOnlyClientsByID(
 
 // AddExportReadWriteClientsByID adds to the Export's read-write clients property.
 func (c *Client) AddExportReadWriteClientsByID(
-	ctx context.Context, id int, clients []string, ignoreUnresolvableHosts bool) error {
-
+	ctx context.Context, id int, clients []string, ignoreUnresolvableHosts bool,
+) error {
 	export, err := c.GetExportByID(ctx, id)
-
 	if err != nil {
 		return err
 	}
@@ -664,8 +660,8 @@ func (c *Client) AddExportReadWriteClientsByID(
 
 // AddExportClientsByExportIDWithZone adds to the Export's clients with access zone property.
 func (c *Client) AddExportClientsByExportIDWithZone(
-	ctx context.Context, id int, zone string, ignoreUnresolvableHosts bool, clients ...string) error {
-
+	ctx context.Context, id int, zone string, ignoreUnresolvableHosts bool, clients ...string,
+) error {
 	export, err := c.GetExportByIDWithZone(ctx, id, zone)
 	if err != nil {
 		return err
@@ -685,8 +681,8 @@ func (c *Client) AddExportClientsByExportIDWithZone(
 
 // AddExportClientsByIDWithZone adds to the Export's clients property.
 func (c *Client) AddExportClientsByIDWithZone(
-	ctx context.Context, id int, zone string, clients []string, ignoreUnresolvableHosts bool) error {
-
+	ctx context.Context, id int, zone string, clients []string, ignoreUnresolvableHosts bool,
+) error {
 	export, err := c.GetExportByIDWithZone(ctx, id, zone)
 	if err != nil {
 		return err
@@ -696,8 +692,8 @@ func (c *Client) AddExportClientsByIDWithZone(
 
 // AddExportRootClientsByIDWithZone adds to the Export's clients property.
 func (c *Client) AddExportRootClientsByIDWithZone(
-	ctx context.Context, id int, zone string, clients []string, ignoreUnresolvableHosts bool) error {
-
+	ctx context.Context, id int, zone string, clients []string, ignoreUnresolvableHosts bool,
+) error {
 	export, err := c.GetExportByIDWithZone(ctx, id, zone)
 	if err != nil {
 		return err
@@ -707,10 +703,9 @@ func (c *Client) AddExportRootClientsByIDWithZone(
 
 // AddExportReadOnlyClientsByIDWithZone adds to the Export's read-only clients property.
 func (c *Client) AddExportReadOnlyClientsByIDWithZone(
-	ctx context.Context, id int, zone string, clients []string, ignoreUnresolvableHosts bool) error {
-
+	ctx context.Context, id int, zone string, clients []string, ignoreUnresolvableHosts bool,
+) error {
 	export, err := c.GetExportByIDWithZone(ctx, id, zone)
-
 	if err != nil {
 		return err
 	}
@@ -720,10 +715,9 @@ func (c *Client) AddExportReadOnlyClientsByIDWithZone(
 
 // AddExportReadWriteClientsByIDWithZone adds to the Export's read-write clients property.
 func (c *Client) AddExportReadWriteClientsByIDWithZone(
-	ctx context.Context, id int, zone string, clients []string, ignoreUnresolvableHosts bool) error {
-
+	ctx context.Context, id int, zone string, clients []string, ignoreUnresolvableHosts bool,
+) error {
 	export, err := c.GetExportByIDWithZone(ctx, id, zone)
-
 	if err != nil {
 		return err
 	}
@@ -732,9 +726,7 @@ func (c *Client) AddExportReadWriteClientsByIDWithZone(
 }
 
 func (c *Client) exportAddClients(ctx context.Context, export Export, clientsToAdd []string, ignoreUnresolvableHosts bool) error {
-
 	if export == nil {
-
 		return errors.New("Export instance is nil, abort calling exportAddClients")
 	}
 	updatedClients := c.getUpdatedClients(ctx, export.ID, export.Clients, clientsToAdd)
@@ -743,9 +735,7 @@ func (c *Client) exportAddClients(ctx context.Context, export Export, clientsToA
 }
 
 func (c *Client) exportAddRootClients(ctx context.Context, export Export, clientsToAdd []string, ignoreUnresolvableHosts bool) error {
-
 	if export == nil {
-
 		return errors.New("Export instance is nil, abort calling exportAddRootClients")
 	}
 	updatedClients := c.getUpdatedClients(ctx, export.ID, export.RootClients, clientsToAdd)
@@ -754,9 +744,7 @@ func (c *Client) exportAddRootClients(ctx context.Context, export Export, client
 }
 
 func (c *Client) exportAddReadOnlyClients(ctx context.Context, export Export, clientsToAdd []string, ignoreUnresolvableHosts bool) error {
-
 	if export == nil {
-
 		return errors.New("Export instance is nil, abort calling exportAddReadOnlyClients")
 	}
 
@@ -767,9 +755,7 @@ func (c *Client) exportAddReadOnlyClients(ctx context.Context, export Export, cl
 }
 
 func (c *Client) exportAddReadWriteClients(ctx context.Context, export Export, clientsToAdd []string, ignoreUnresolvableHosts bool) error {
-
 	if export == nil {
-
 		return errors.New("Export instance is nil, abort calling exportAddReadWriteClients")
 	}
 	updatedReadWriteClients := c.getUpdatedClients(ctx, export.ID, export.ReadWriteClients, clientsToAdd)
@@ -779,7 +765,6 @@ func (c *Client) exportAddReadWriteClients(ctx context.Context, export Export, c
 }
 
 func (c *Client) getUpdatedClients(ctx context.Context, exportID int, clients *[]string, clientsToAdd []string) *[]string {
-
 	if clients == nil {
 		clients = &clientsToAdd
 	} else {
@@ -793,8 +778,8 @@ func (c *Client) getUpdatedClients(ctx context.Context, exportID int, clients *[
 
 // RemoveExportClientsByID removes the given clients from the Export's clients/read_only_clients/read_write_clients properties.
 func (c *Client) RemoveExportClientsByID(
-	ctx context.Context, id int, clientsToRemove []string, ignoreUnresolvableHosts bool) error {
-
+	ctx context.Context, id int, clientsToRemove []string, ignoreUnresolvableHosts bool,
+) error {
 	export, err := c.GetExportByID(ctx, id)
 	if err != nil {
 		return err
@@ -805,8 +790,8 @@ func (c *Client) RemoveExportClientsByID(
 // RemoveExportClientsByIDWithZone removes the given clients from the
 // Export's clients/read_only_clients/read_write_clients properties in a specified access zone.
 func (c *Client) RemoveExportClientsByIDWithZone(
-	ctx context.Context, id int, zone string, clientsToRemove []string, ignoreUnresolvableHosts bool) error {
-
+	ctx context.Context, id int, zone string, clientsToRemove []string, ignoreUnresolvableHosts bool,
+) error {
 	export, err := c.GetExportByIDWithZone(ctx, id, zone)
 	if err != nil {
 		return err
@@ -816,7 +801,8 @@ func (c *Client) RemoveExportClientsByIDWithZone(
 
 // RemoveExportClientsByName removes the given clients from the Export's clients/read_only_clients/read_write_clients properties.
 func (c *Client) RemoveExportClientsByName(
-	ctx context.Context, name string, clientsToRemove []string, ignoreUnresolvableHosts bool) error {
+	ctx context.Context, name string, clientsToRemove []string, ignoreUnresolvableHosts bool,
+) error {
 	export, err := c.GetExportByName(ctx, name)
 	if err != nil {
 		return err
@@ -828,7 +814,8 @@ func (c *Client) RemoveExportClientsByName(
 // RemoveExportClientsWithPathAndZone removes the given clients from
 // the Export's clients/read_only_clients/read_write_clients/root_clients properties with export path and access zone.
 func (c *Client) RemoveExportClientsWithPathAndZone(
-	ctx context.Context, path, zone string, clientsToRemove []string, ignoreUnresolvableHosts bool) error {
+	ctx context.Context, path, zone string, clientsToRemove []string, ignoreUnresolvableHosts bool,
+) error {
 	export, err := c.GetExportWithPathAndZone(ctx, path, zone)
 	if err != nil {
 		return err
@@ -838,9 +825,7 @@ func (c *Client) RemoveExportClientsWithPathAndZone(
 }
 
 func (c *Client) removeExportClients(ctx context.Context, export Export, clientsToRemove []string, ignoreUnresolvableHosts bool) error {
-
 	if export == nil {
-
 		return errors.New("Export instance is nil, abort calling ExportRemoveClients")
 	}
 
@@ -866,8 +851,8 @@ func (c *Client) removeClients(clientsToRemove []string, sourceClients []string)
 
 // SetExportClients sets the Export's clients property.
 func (c *Client) SetExportClients(
-	ctx context.Context, name string, clients ...string) error {
-
+	ctx context.Context, name string, clients ...string,
+) error {
 	ok, id, err := c.IsExported(ctx, name)
 	if err != nil {
 		return err
@@ -880,36 +865,36 @@ func (c *Client) SetExportClients(
 
 // SetExportClientsByID sets the Export's clients property.
 func (c *Client) SetExportClientsByID(
-	ctx context.Context, id int, clients ...string) error {
-
+	ctx context.Context, id int, clients ...string,
+) error {
 	return apiv2.ExportUpdate(ctx, c.API, &apiv2.Export{ID: id, Clients: &clients})
 }
 
 // SetExportClientsByIDWithZone sets the Export's clients with access zone property.
 func (c *Client) SetExportClientsByIDWithZone(
-	ctx context.Context, id int, zone string, ignoreUnresolvableHosts bool, clients ...string) error {
-
+	ctx context.Context, id int, zone string, ignoreUnresolvableHosts bool, clients ...string,
+) error {
 	return apiv2.ExportUpdateWithZone(ctx, c.API, &apiv2.Export{ID: id, Clients: &clients}, zone, ignoreUnresolvableHosts)
 }
 
 // ClearExportClients sets the Export's clients property to nil.
 func (c *Client) ClearExportClients(
-	ctx context.Context, name string) error {
-
+	ctx context.Context, name string,
+) error {
 	return c.SetExportClients(ctx, name, []string{}...)
 }
 
 // ClearExportClientsByID sets the Export's clients property to nil.
 func (c *Client) ClearExportClientsByID(
-	ctx context.Context, id int) error {
-
+	ctx context.Context, id int,
+) error {
 	return c.SetExportClientsByID(ctx, id, []string{}...)
 }
 
 // GetExportRootClients returns an Export's root_clients property.
 func (c *Client) GetExportRootClients(
-	ctx context.Context, name string) ([]string, error) {
-
+	ctx context.Context, name string,
+) ([]string, error) {
 	ex, err := c.GetExportByName(ctx, name)
 	if err != nil {
 		return nil, err
@@ -925,8 +910,8 @@ func (c *Client) GetExportRootClients(
 
 // GetExportRootClientsByID returns an Export's clients property.
 func (c *Client) GetExportRootClientsByID(
-	ctx context.Context, id int) ([]string, error) {
-
+	ctx context.Context, id int,
+) ([]string, error) {
 	ex, err := c.GetExportByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -942,8 +927,8 @@ func (c *Client) GetExportRootClientsByID(
 
 // AddExportRootClients adds to the Export's root_clients property.
 func (c *Client) AddExportRootClients(
-	ctx context.Context, name string, clients ...string) error {
-
+	ctx context.Context, name string, clients ...string,
+) error {
 	ex, err := c.GetExportByName(ctx, name)
 	if err != nil {
 		return err
@@ -963,8 +948,8 @@ func (c *Client) AddExportRootClients(
 
 // AddExportRootClientsByID adds to the Export's root_clients property.
 func (c *Client) AddExportRootClientsByID(
-	ctx context.Context, id int, clients ...string) error {
-
+	ctx context.Context, id int, clients ...string,
+) error {
 	ex, err := c.GetExportByID(ctx, id)
 	if err != nil {
 		return err
@@ -984,8 +969,8 @@ func (c *Client) AddExportRootClientsByID(
 
 // SetExportRootClients sets the Export's root_clients property.
 func (c *Client) SetExportRootClients(
-	ctx context.Context, name string, clients ...string) error {
-
+	ctx context.Context, name string, clients ...string,
+) error {
 	ok, id, err := c.IsExported(ctx, name)
 	if err != nil {
 		return err
@@ -999,30 +984,30 @@ func (c *Client) SetExportRootClients(
 
 // SetExportRootClientsByID sets the Export's clients property.
 func (c *Client) SetExportRootClientsByID(
-	ctx context.Context, id int, clients ...string) error {
-
+	ctx context.Context, id int, clients ...string,
+) error {
 	return apiv2.ExportUpdate(
 		ctx, c.API, &apiv2.Export{ID: id, RootClients: &clients})
 }
 
 // ClearExportRootClients sets the Export's root_clients property to nil.
 func (c *Client) ClearExportRootClients(
-	ctx context.Context, name string) error {
-
+	ctx context.Context, name string,
+) error {
 	return c.SetExportRootClients(ctx, name, []string{}...)
 }
 
 // ClearExportRootClientsByID sets the Export's clients property to nil.
 func (c *Client) ClearExportRootClientsByID(
-	ctx context.Context, id int) error {
-
+	ctx context.Context, id int,
+) error {
 	return c.SetExportRootClientsByID(ctx, id, []string{}...)
 }
 
 // Unexport stops exporting a given volume from the cluster.
 func (c *Client) Unexport(
-	ctx context.Context, name string) error {
-
+	ctx context.Context, name string,
+) error {
 	ok, id, err := c.IsExported(ctx, name)
 	if err != nil {
 		return err
@@ -1035,7 +1020,8 @@ func (c *Client) Unexport(
 
 // UnexportWithZone stops exporting a given volume in the given from the cluster.
 func (c *Client) UnexportWithZone(
-	ctx context.Context, name, zone string) error {
+	ctx context.Context, name, zone string,
+) error {
 	ok, id, err := c.IsExportedWithZone(ctx, name, zone)
 	if err != nil {
 		return err
@@ -1048,23 +1034,23 @@ func (c *Client) UnexportWithZone(
 
 // UnexportByID unexports an Export by its ID.
 func (c *Client) UnexportByID(
-	ctx context.Context, id int) error {
-
+	ctx context.Context, id int,
+) error {
 	return apiv2.Unexport(ctx, c.API, id)
 }
 
 // UnexportByIDWithZone unexports an Export by its ID and zone.
 func (c *Client) UnexportByIDWithZone(
-	ctx context.Context, id int, zone string) error {
-
+	ctx context.Context, id int, zone string,
+) error {
 	return apiv2.UnexportWithZone(ctx, c.API, id, zone)
 }
 
 // IsExported returns a flag and export ID if the provided volume name is
 // already exported.
 func (c *Client) IsExported(
-	ctx context.Context, name string) (bool, int, error) {
-
+	ctx context.Context, name string,
+) (bool, int, error) {
 	export, err := c.GetExportByName(ctx, name)
 	if err != nil {
 		return false, 0, err
@@ -1078,8 +1064,8 @@ func (c *Client) IsExported(
 // IsExportedWithZone returns a flag and export ID if the provided volume name in the
 // specified zone isalready exported.
 func (c *Client) IsExportedWithZone(
-	ctx context.Context, name, zone string) (bool, int, error) {
-
+	ctx context.Context, name, zone string,
+) (bool, int, error) {
 	export, err := c.GetExportByNameWithZone(ctx, name, zone)
 	if err != nil {
 		return false, 0, err
@@ -1092,8 +1078,8 @@ func (c *Client) IsExportedWithZone(
 
 // GetExportsWithParams returns exports based on the parameters
 func (c *Client) GetExportsWithParams(
-	ctx context.Context, params api.OrderedValues) (Exports, error) {
-
+	ctx context.Context, params api.OrderedValues,
+) (Exports, error) {
 	exports, err := apiv2.ExportsListWithParams(ctx, c.API, params)
 	if err != nil {
 		return nil, err
@@ -1104,8 +1090,8 @@ func (c *Client) GetExportsWithParams(
 // GetExportsWithResume returns the next page of exports
 // based on the resume token from the previous call.
 func (c *Client) GetExportsWithResume(
-	ctx context.Context, resume string) (Exports, error) {
-
+	ctx context.Context, resume string,
+) (Exports, error) {
 	exports, err := apiv2.ExportsListWithResume(ctx, c.API, resume)
 	if err != nil {
 		return nil, err
@@ -1116,8 +1102,8 @@ func (c *Client) GetExportsWithResume(
 // GetExportsWithLimit returns a number of exports in the default sequence
 // and the number is the parameter limit.
 func (c *Client) GetExportsWithLimit(
-	ctx context.Context, limit string) (Exports, error) {
-
+	ctx context.Context, limit string,
+) (Exports, error) {
 	exports, err := apiv2.ExportsListWithLimit(ctx, c.API, limit)
 	if err != nil {
 		return nil, err
@@ -1142,13 +1128,15 @@ func (c *Client) ExportPathWithZone(ctx context.Context, path, zone, description
 
 // GetExportWithPath gets the export with target path
 func (c *Client) GetExportWithPath(
-	ctx context.Context, path string) (Export, error) {
+	ctx context.Context, path string,
+) (Export, error) {
 	return apiv2.GetExportWithPath(ctx, c.API, path)
 }
 
 // GetExportWithPathAndZone gets the export with target path and access zone
 func (c *Client) GetExportWithPathAndZone(
-	ctx context.Context, path, zone string) (Export, error) {
+	ctx context.Context, path, zone string,
+) (Export, error) {
 	return apiv2.GetExportWithPathAndZone(ctx, c.API, path, zone)
 }
 

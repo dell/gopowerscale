@@ -27,8 +27,8 @@ type ACL *api.ACL
 // GetVolumeACL returns the ACL for a volume.
 func (c *Client) GetVolumeACL(
 	ctx context.Context,
-	volumeName string) (ACL, error) {
-
+	volumeName string,
+) (ACL, error) {
 	return api.ACLInspect(ctx, c.API, volumeName)
 }
 
@@ -36,17 +36,17 @@ func (c *Client) GetVolumeACL(
 // was used to connect to the API.
 func (c *Client) SetVolumeOwnerToCurrentUser(
 	ctx context.Context,
-	volumeName string) error {
-
+	volumeName string,
+) error {
 	return c.SetVolumeOwner(ctx, volumeName, c.API.User())
 }
 
 // SetVolumeOwner sets the owner for a volume.
 func (c *Client) SetVolumeOwner(
 	ctx context.Context,
-	volumeName, userName string) error {
-
-	mode := api.FileMode(0777)
+	volumeName, userName string,
+) error {
+	mode := api.FileMode(0o777)
 
 	return api.ACLUpdate(
 		ctx,
@@ -68,8 +68,8 @@ func (c *Client) SetVolumeOwner(
 // SetVolumeMode sets the permissions to the specified mode (chmod)
 func (c *Client) SetVolumeMode(
 	ctx context.Context,
-	volumeName string, mode int) error {
-
+	volumeName string, mode int,
+) error {
 	filemode := api.FileMode(mode)
 
 	return api.ACLUpdate(

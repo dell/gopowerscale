@@ -47,7 +47,6 @@ func TestUserGet(t *testing.T) {
 
 // Test GetUserByNameOrUID(), CreateUser(), CreateUserWithOptions() and DeleteUserByNameOrUID()
 func TestUserCreate(t *testing.T) {
-
 	userName := "test_user_create_options"
 	uid := int32(100000)
 	email := "test.dell.com"

@@ -25,7 +25,6 @@ import (
 
 // GetIsiRole queries the role by role-id.
 func GetIsiRole(ctx context.Context, client api.Client, roleId string) (role *IsiRole, err error) {
-
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/auth/roles/<role-id>
 
 	var roleResp *isiRoleListResp
@@ -43,7 +42,6 @@ func GetIsiRole(ctx context.Context, client api.Client, roleId string) (role *Is
 
 // GetIsiRoleList queries all roles on the cluster, filter by limit or resolveNames.
 func GetIsiRoleList(ctx context.Context, client api.Client, queryResolveNames *bool, queryLimit *int32) (roles []*IsiRole, err error) {
-
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/auth/roles?resolve_names=&limit=
 	values := api.OrderedValues{}
 	if queryResolveNames != nil {
@@ -75,14 +73,12 @@ func GetIsiRoleList(ctx context.Context, client api.Client, queryResolveNames *b
 
 // getIsiRoleListWithResume queries the next page roles based on resume token.
 func getIsiRoleListWithResume(ctx context.Context, client api.Client, resume string) (roles *IsiRoleListRespResume, err error) {
-
 	err = client.Get(ctx, rolePath, "", api.OrderedValues{{[]byte("resume"), []byte(resume)}}, nil, &roles)
 	return
 }
 
 // AddIsiRoleMember adds a member to the role, member can be user/group.
 func AddIsiRoleMember(ctx context.Context, client api.Client, roleID string, member IsiAuthMemberItem) error {
-
 	// PAPI call: POST https://1.2.3.4:8080/platform/1/roles/{role-id}/members
 	//					{
 	//					 	"type":"user",
@@ -110,7 +106,6 @@ func AddIsiRoleMember(ctx context.Context, client api.Client, roleID string, mem
 
 // RemoveIsiRoleMember remove a member from the role, member can be user/group.
 func RemoveIsiRoleMember(ctx context.Context, client api.Client, roleID string, member IsiAuthMemberItem) error {
-
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/roles/{role-id}/members/<member-id>
 
 	authMemberId, err := getAuthMemberId(member.Type, member.Name, member.Id)
