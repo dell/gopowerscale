@@ -16,6 +16,7 @@ limitations under the License.
 package v2
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -23,7 +24,6 @@ import (
 	"strconv"
 	"strings"
 
-	"context"
 	"github.com/dell/goisilon/api"
 )
 
@@ -222,8 +222,8 @@ var aclQueryString = api.OrderedValues{{[]byte("acl")}}
 func ACLInspect(
 	ctx context.Context,
 	client api.Client,
-	path string) (*ACL, error) {
-
+	path string,
+) (*ACL, error) {
 	var resp ACL
 
 	if err := client.Get(
@@ -233,7 +233,6 @@ func ACLInspect(
 		aclQueryString,
 		nil,
 		&resp); err != nil {
-
 		return nil, err
 	}
 
@@ -245,8 +244,8 @@ func ACLUpdate(
 	ctx context.Context,
 	client api.Client,
 	path string,
-	acl *ACL) error {
-
+	acl *ACL,
+) error {
 	if err := client.Put(
 		ctx,
 		realNamespacePath(client),
@@ -255,7 +254,6 @@ func ACLUpdate(
 		nil,
 		acl,
 		nil); err != nil {
-
 		return err
 	}
 

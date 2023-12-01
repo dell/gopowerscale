@@ -87,7 +87,6 @@ func TestGroupCreate(t *testing.T) {
 
 // Test GetGroupByNameOrGID(), CreatGroupByName(), UpdateIsiGroupGIDByNameOrUID() and DeleteGroupByNameOrGID()
 func TestGroupUpdate(t *testing.T) {
-
 	groupName := "test_group_create_update"
 	_, err := client.CreatGroupByName(defaultCtx, groupName)
 	defer client.DeleteGroupByNameOrGID(defaultCtx, &groupName, nil)

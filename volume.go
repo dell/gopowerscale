@@ -38,8 +38,8 @@ type VolumeChildrenMap map[string]*apiv2.ContainerChild
 
 // GetVolume returns a specific volume by name or ID
 func (c *Client) GetVolume(
-	ctx context.Context, id, name string) (Volume, error) {
-
+	ctx context.Context, id, name string,
+) (Volume, error) {
 	if id != "" {
 		name = id
 	}
@@ -47,14 +47,14 @@ func (c *Client) GetVolume(
 	if err != nil {
 		return nil, err
 	}
-	var isiVolume = &apiv1.IsiVolume{Name: name, AttributeMap: volume.AttributeMap}
+	isiVolume := &apiv1.IsiVolume{Name: name, AttributeMap: volume.AttributeMap}
 	return isiVolume, nil
 }
 
 // GetVolumeWithIsiPath returns a specific volume by name or ID with isiPath
 func (c *Client) GetVolumeWithIsiPath(
-	ctx context.Context, isiPath, id, name string) (Volume, error) {
-
+	ctx context.Context, isiPath, id, name string,
+) (Volume, error) {
 	if id != "" {
 		name = id
 	}
@@ -62,13 +62,14 @@ func (c *Client) GetVolumeWithIsiPath(
 	if err != nil {
 		return nil, err
 	}
-	var isiVolume = &apiv1.IsiVolume{Name: name, AttributeMap: volume.AttributeMap}
+	isiVolume := &apiv1.IsiVolume{Name: name, AttributeMap: volume.AttributeMap}
 	return isiVolume, nil
 }
 
 // IsVolumeExistent checks whether a volume already exists
 func (c *Client) IsVolumeExistent(
-	ctx context.Context, id, name string) bool {
+	ctx context.Context, id, name string,
+) bool {
 	// Need change here
 	if id != "" {
 		name = id
@@ -87,7 +88,8 @@ func (c *Client) IsVolumeExistent(
 
 // IsVolumeExistentWithIsiPath checks whether a volume already exists with isiPath
 func (c *Client) IsVolumeExistentWithIsiPath(
-	ctx context.Context, isiPath, id, name string) bool {
+	ctx context.Context, isiPath, id, name string,
+) bool {
 	// Need change here
 	if id != "" {
 		name = id
@@ -106,7 +108,6 @@ func (c *Client) IsVolumeExistentWithIsiPath(
 
 // GetVolumes returns a list of volumes
 func (c *Client) GetVolumes(ctx context.Context) ([]Volume, error) {
-
 	volumes, err := apiv1.GetIsiVolumes(ctx, c.API)
 	if err != nil {
 		return nil, err
@@ -121,63 +122,68 @@ func (c *Client) GetVolumes(ctx context.Context) ([]Volume, error) {
 
 // CreateVolume creates a volume
 func (c *Client) CreateVolume(
-	ctx context.Context, name string) (Volume, error) {
+	ctx context.Context, name string,
+) (Volume, error) {
 	_, err := apiv1.CreateIsiVolume(ctx, c.API, name)
 	if err != nil {
 		return nil, err
 	}
 
-	var isiVolume = &apiv1.IsiVolume{Name: name, AttributeMap: nil}
+	isiVolume := &apiv1.IsiVolume{Name: name, AttributeMap: nil}
 	return isiVolume, nil
 }
 
 // CreateVolumeWithIsipath creates a volume with isiPath
 func (c *Client) CreateVolumeWithIsipath(
-	ctx context.Context, isiPath, name, isiVolumePathPermissions string) (Volume, error) {
+	ctx context.Context, isiPath, name, isiVolumePathPermissions string,
+) (Volume, error) {
 	_, err := apiv1.CreateIsiVolumeWithIsiPath(ctx, c.API, isiPath, name, isiVolumePathPermissions)
 	if err != nil {
 		return nil, err
 	}
 
-	var isiVolume = &apiv1.IsiVolume{Name: name, AttributeMap: nil}
+	isiVolume := &apiv1.IsiVolume{Name: name, AttributeMap: nil}
 	return isiVolume, nil
 }
 
 // CreateVolumeWithIsipathMetaData creates a volume with isiPath
 func (c *Client) CreateVolumeWithIsipathMetaData(
-	ctx context.Context, isiPath, name, isiVolumePathPermissions string, metadata map[string]string) (Volume, error) {
+	ctx context.Context, isiPath, name, isiVolumePathPermissions string, metadata map[string]string,
+) (Volume, error) {
 	_, err := apiv1.CreateIsiVolumeWithIsiPathMetaData(ctx, c.API, isiPath, name, isiVolumePathPermissions, metadata)
 	if err != nil {
 		return nil, err
 	}
 
-	var isiVolume = &apiv1.IsiVolume{Name: name, AttributeMap: nil}
+	isiVolume := &apiv1.IsiVolume{Name: name, AttributeMap: nil}
 	return isiVolume, nil
 }
 
 // CreateVolumeNoACL creates a volume without setting ACL
 func (c *Client) CreateVolumeNoACL(
-	ctx context.Context, name string) (Volume, error) {
-
+	ctx context.Context, name string,
+) (Volume, error) {
 	_, err := apiv1.CreateIsiVolumeWithACL(ctx, c.API, name, "0777")
 	if err != nil {
 		return nil, err
 	}
 
-	var isiVolume = &apiv1.IsiVolume{Name: name, AttributeMap: nil}
+	isiVolume := &apiv1.IsiVolume{Name: name, AttributeMap: nil}
 	return isiVolume, nil
 }
 
 // DeleteVolume deletes a volume
 func (c *Client) DeleteVolume(
-	ctx context.Context, name string) error {
+	ctx context.Context, name string,
+) error {
 	_, err := apiv1.DeleteIsiVolume(ctx, c.API, name)
 	return err
 }
 
 // DeleteVolumeWithIsiPath deletes a volume with isiPath
 func (c *Client) DeleteVolumeWithIsiPath(
-	ctx context.Context, isiPath, name string) error {
+	ctx context.Context, isiPath, name string,
+) error {
 	_, err := apiv1.DeleteIsiVolumeWithIsiPath(ctx, c.API, isiPath, name)
 	return err
 }
@@ -199,7 +205,6 @@ func newConcurrentHTTPChan() chan bool {
 // all descendent directories to the current user prior to issuing a delete
 // call.
 func (c *Client) ForceDeleteVolume(ctx context.Context, name string) error {
-
 	var (
 		user       = c.API.User()
 		vpl        = len(c.API.VolumesPath()) + 1
@@ -209,7 +214,7 @@ func (c *Client) ForceDeleteVolume(ctx context.Context, name string) error {
 		setACLWait = &sync.WaitGroup{}
 		setACLChan = newConcurrentHTTPChan()
 		setACLDone = make(chan int)
-		mode       = apiv2.FileMode(0755)
+		mode       = apiv2.FileMode(0o755)
 		acl        = &apiv2.ACL{
 			Action:        &apiv2.PActionTypeReplace,
 			Authoritative: &apiv2.PAuthoritativeTypeMode,
@@ -289,7 +294,8 @@ func (c *Client) ForceDeleteVolume(ctx context.Context, name string) error {
 
 // CopyVolume creates a volume based on an existing volume
 func (c *Client) CopyVolume(
-	ctx context.Context, src, dest string) (Volume, error) {
+	ctx context.Context, src, dest string,
+) (Volume, error) {
 	_, err := apiv1.CopyIsiVolume(ctx, c.API, src, dest)
 	if err != nil {
 		return nil, err
@@ -300,7 +306,8 @@ func (c *Client) CopyVolume(
 
 // CopyVolumeWithIsiPath creates a volume based on an existing volume
 func (c *Client) CopyVolumeWithIsiPath(
-	ctx context.Context, isiPath, src, dest string) (Volume, error) {
+	ctx context.Context, isiPath, src, dest string,
+) (Volume, error) {
 	_, err := apiv1.CopyIsiVolumeWithIsiPath(ctx, c.API, isiPath, src, dest)
 	if err != nil {
 		return nil, err
@@ -311,35 +318,37 @@ func (c *Client) CopyVolumeWithIsiPath(
 
 // ExportVolume exports a volume
 func (c *Client) ExportVolume(
-	ctx context.Context, name string) (int, error) {
-
+	ctx context.Context, name string,
+) (int, error) {
 	return c.Export(ctx, name)
 }
 
 // ExportVolumeWithZone exports a volume in the specified access zone
 func (c *Client) ExportVolumeWithZone(
-	ctx context.Context, name, zone, description string) (int, error) {
+	ctx context.Context, name, zone, description string,
+) (int, error) {
 	return c.ExportWithZone(ctx, name, zone, description)
 }
 
 // ExportVolumeWithZoneAndPath exports a volume in the specified access zone and path
 func (c *Client) ExportVolumeWithZoneAndPath(
-	ctx context.Context, path, zone, description string) (int, error) {
+	ctx context.Context, path, zone, description string,
+) (int, error) {
 	return c.ExportWithZoneAndPath(ctx, path, zone, description)
 }
 
 // UnexportVolume stops exporting a volume
 func (c *Client) UnexportVolume(
-	ctx context.Context, name string) error {
-
+	ctx context.Context, name string,
+) error {
 	return c.Unexport(ctx, name)
 }
 
 // QueryVolumeChildren retrieves a list of all of a volume's descendent files
 // and directories.
 func (c *Client) QueryVolumeChildren(
-	ctx context.Context, name string) (VolumeChildrenMap, error) {
-
+	ctx context.Context, name string,
+) (VolumeChildrenMap, error) {
 	return apiv2.ContainerChildrenMapAll(ctx, c.API, name)
 }
 
@@ -348,8 +357,8 @@ func (c *Client) CreateVolumeDir(
 	ctx context.Context,
 	volumeName, dirPath string,
 	fileMode os.FileMode,
-	overwrite, recursive bool) error {
-
+	overwrite, recursive bool,
+) error {
 	return apiv2.ContainerCreateDir(
 		ctx, c.API, volumeName, dirPath,
 		apiv2.FileMode(fileMode), overwrite, recursive)
@@ -362,8 +371,8 @@ func (c *Client) CreateVolumeDir(
 // Volume-to-Export relationship.
 func (c *Client) GetVolumeExportMap(
 	ctx context.Context,
-	includeRootClients bool) (map[Volume]Export, error) {
-
+	includeRootClients bool,
+) (map[Volume]Export, error) {
 	volumes, err := c.GetVolumes(ctx)
 	if err != nil {
 		return nil, err
@@ -416,8 +425,8 @@ func (c *Client) GetVolumeExportMap(
 
 // GetVolumeSize returns the total size of a snapshot folder
 func (c *Client) GetVolumeSize(ctx context.Context,
-	isiPath, name string) (int64, error) {
-
+	isiPath, name string,
+) (int64, error) {
 	folder, err := apiv1.GetIsiVolumeWithSize(ctx, c.API, isiPath, name)
 	if err != nil {
 		return 0, err

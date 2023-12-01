@@ -32,8 +32,8 @@ const (
 func GetIsiStats(
 	ctx context.Context,
 	client api.Client,
-	keys []string) (resp *IsiStatsResp, err error) {
-
+	keys []string,
+) (resp *IsiStatsResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/3/statistics/current?keys=ifs.bytes.avail
 
 	keysStr := strings.Join(keys, ",")
@@ -54,8 +54,8 @@ func GetIsiStats(
 func GetIsiFloatStats(
 	ctx context.Context,
 	client api.Client,
-	keys []string) (resp *IsiFloatStatsResp, err error) {
-
+	keys []string,
+) (resp *IsiFloatStatsResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/3/statistics/current?keys=ifs.bytes.avail
 
 	keysStr := strings.Join(keys, ",")
@@ -74,7 +74,8 @@ func GetIsiFloatStats(
 
 // IsIOInProgress returns the list of clients currently performing IO on the particular array
 func IsIOInProgress(ctx context.Context,
-	client api.Client) (resp *ExportClientList, err error) {
+	client api.Client,
+) (resp *ExportClientList, err error) {
 	err = client.Get(
 		ctx, string(platfromStatsPath), "summary/client", api.OrderedValues{
 			{[]byte("numeric"), []byte("true")}, // numeric=true returns the response faster since it does not performs reverse lookup and returns IP addresses
@@ -87,8 +88,8 @@ func IsIOInProgress(ctx context.Context,
 // GetIsiClusterConfig queries the config information of OneFS cluster
 func GetIsiClusterConfig(
 	ctx context.Context,
-	client api.Client) (clusterConfig *IsiClusterConfig, err error) {
-
+	client api.Client,
+) (clusterConfig *IsiClusterConfig, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/3/cluster/config
 	// This will return configuration information of the cluster
 	var clusterConfigResp IsiClusterConfig
@@ -103,8 +104,8 @@ func GetIsiClusterConfig(
 // GetIsiClusterIdentity queries the config information of OneFS cluster
 func GetIsiClusterIdentity(
 	ctx context.Context,
-	client api.Client) (clusterConfig *IsiClusterIdentity, err error) {
-
+	client api.Client,
+) (clusterConfig *IsiClusterIdentity, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/3/cluster/identity
 	// This will return the login information.
 	var clusterIdentityResp IsiClusterIdentity
@@ -119,8 +120,8 @@ func GetIsiClusterIdentity(
 // GetIsiClusterNodes list the nodes on this cluster
 func GetIsiClusterNodes(
 	ctx context.Context,
-	client api.Client) (clusterNodes *IsiClusterNodes, err error) {
-
+	client api.Client,
+) (clusterNodes *IsiClusterNodes, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/3/cluster/nodes
 	// This will return list of the node information
 	var clusterNodesResp IsiClusterNodes
@@ -136,8 +137,8 @@ func GetIsiClusterNodes(
 func GetIsiClusterNode(
 	ctx context.Context,
 	client api.Client,
-	nodeID int) (clusterNodes *IsiClusterNodes, err error) {
-
+	nodeID int,
+) (clusterNodes *IsiClusterNodes, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/3/cluster/nodes/{v3ClusterNodeId}
 	// This will return list of the node information with only one node
 	var clusterNodesResp IsiClusterNodes

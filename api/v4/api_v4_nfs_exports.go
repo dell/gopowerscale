@@ -17,6 +17,7 @@ package v4
 
 import (
 	"context"
+
 	"github.com/dell/goisilon/api"
 	"github.com/dell/goisilon/openapi"
 )
@@ -39,8 +40,8 @@ type ListV4NfsExportsParams struct {
 func ListNfsExports(
 	ctx context.Context,
 	params ListV4NfsExportsParams,
-	client api.Client) (*openapi.V2NfsExports, error) {
-
+	client api.Client,
+) (*openapi.V2NfsExports, error) {
 	var resp openapi.V2NfsExports
 	if err := client.Get(
 		ctx,
@@ -49,7 +50,6 @@ func ListNfsExports(
 		api.StructToOrderedValues(params),
 		nil,
 		&resp); err != nil {
-
 		return nil, err
 	}
 
@@ -66,8 +66,8 @@ type GetV2NfsExportRequest struct {
 func GetNfsExport(
 	ctx context.Context,
 	params GetV2NfsExportRequest,
-	client api.Client) (*openapi.V2NfsExportsExtended, error) {
-
+	client api.Client,
+) (*openapi.V2NfsExportsExtended, error) {
 	var resp openapi.V2NfsExportsExtended
 	if err := client.Get(
 		ctx,
@@ -76,7 +76,6 @@ func GetNfsExport(
 		api.StructToOrderedValues(params),
 		nil,
 		&resp); err != nil {
-
 		return nil, err
 	}
 
@@ -96,7 +95,8 @@ type CreateV4NfsExportRequest struct {
 // CreateNfsExport Create one export.
 func CreateNfsExport(
 	ctx context.Context, r CreateV4NfsExportRequest,
-	client api.Client) (*openapi.Createv3EventEventResponse, error) {
+	client api.Client,
+) (*openapi.Createv3EventEventResponse, error) {
 	var resp openapi.Createv3EventEventResponse
 	if err := client.Post(
 		ctx,
@@ -105,7 +105,6 @@ func CreateNfsExport(
 		api.StructToOrderedValues(r),
 		nil, r.V4NfsExport,
 		&resp); err != nil {
-
 		return nil, err
 	}
 
@@ -126,7 +125,8 @@ type UpdateV4NfsExportRequest struct {
 // UpdateNfsExport Update one export.
 func UpdateNfsExport(
 	ctx context.Context, r UpdateV4NfsExportRequest,
-	client api.Client) error {
+	client api.Client,
+) error {
 	err := client.Put(
 		ctx,
 		exportsPath,
@@ -146,7 +146,8 @@ type DeleteV4NfsExportRequest struct {
 // DeleteNfsExport Delete one export.
 func DeleteNfsExport(
 	ctx context.Context, r DeleteV4NfsExportRequest,
-	client api.Client) error {
+	client api.Client,
+) error {
 	err := client.Delete(
 		ctx,
 		exportsPath,

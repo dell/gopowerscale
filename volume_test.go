@@ -158,6 +158,7 @@ func TestVolumeGetCreateMetaData(*testing.T) {
 		panic(fmt.Sprintf("Volume name not set properly.  Expected: (%s) Actual: (%s)\n", volumeName, volume.Name))
 	}
 }
+
 func TestVolumeDelete(*testing.T) {
 	volumeName := "test_remove_volume_name"
 
@@ -253,7 +254,6 @@ func TestVolumeCopy(*testing.T) {
 	if subTestVolume.Name != destinationSubDirectoryPath {
 		panic(fmt.Sprintf("Destination sub directory name not set properly.  Expected: (%s) Actual: (%s)\n", destinationSubDirectoryPath, subTestVolume.Name))
 	}
-
 }
 
 func TestVolumeCopyWithIsiPath(*testing.T) {
@@ -315,7 +315,6 @@ func TestVolumeCopyWithIsiPath(*testing.T) {
 	if subTestVolume.Name != destinationSubDirectoryPath {
 		panic(fmt.Sprintf("Destination sub directory name not set properly.  Expected: (%s) Actual: (%s)\n", destinationSubDirectoryPath, subTestVolume.Name))
 	}
-
 }
 
 func TestVolumeExport(*testing.T) {
@@ -324,7 +323,6 @@ func TestVolumeExport(*testing.T) {
 	if err != nil {
 		panic(err)
 	}
-
 }
 
 func TestVolumeUnexport(*testing.T) {
@@ -333,7 +331,6 @@ func TestVolumeUnexport(*testing.T) {
 	if err != nil {
 		panic(err)
 	}
-
 }
 
 func TestVolumePath(*testing.T) {
@@ -356,7 +353,7 @@ func TestVolumeQueryChildren(t *testing.T) {
 
 	var (
 		ctx = defaultCtx
-		//context.WithValue(defaultCtx, log.LevelKey(), log.InfoLevel)
+		// context.WithValue(defaultCtx, log.LevelKey(), log.InfoLevel)
 
 		err      error
 		volume   Volume
@@ -403,10 +400,10 @@ func TestVolumeQueryChildren(t *testing.T) {
 
 		volChildCount = 9
 
-		newDirMode  = apiv2.FileMode(0755)
-		newFileMode = apiv2.FileMode(0644)
-		badDirMode  = apiv2.FileMode(0700)
-		badFileMode = apiv2.FileMode(0400)
+		newDirMode  = apiv2.FileMode(0o755)
+		newFileMode = apiv2.FileMode(0o644)
+		badDirMode  = apiv2.FileMode(0o700)
+		badFileMode = apiv2.FileMode(0o400)
 
 		newDirACL = &apiv2.ACL{
 			Action:        &apiv2.PActionTypeReplace,
@@ -484,7 +481,8 @@ func TestVolumeQueryChildren(t *testing.T) {
 	defer client.ForceDeleteVolume(ctx, volumeName)
 
 	setACLsWithPaths := func(
-		ctx context.Context, acl *apiv2.ACL, paths ...string) {
+		ctx context.Context, acl *apiv2.ACL, paths ...string,
+	) {
 		for _, p := range paths {
 			assertNoError(
 				t,

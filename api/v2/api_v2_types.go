@@ -42,7 +42,6 @@ func isNilPersona(p *Persona) bool {
 
 // UnmarshalJSON unmarshals a UserMapping from JSON.
 func (um *UserMapping) UnmarshalJSON(data []byte) error {
-
 	if isEmptyJSON(&data) {
 		return nil
 	}
@@ -104,7 +103,6 @@ func (p *Persona) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON unmarshals a Persona from JSON.
 func (p *Persona) UnmarshalJSON(data []byte) error {
-
 	if isEmptyJSON(&data) {
 		return nil
 	}
@@ -150,7 +148,6 @@ func (p *PersonaID) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON unmarshals a PersonaID from JSON.
 func (p *PersonaID) UnmarshalJSON(data []byte) error {
-
 	if isEmptyJSON(&data) {
 		return nil
 	}

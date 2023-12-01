@@ -19,7 +19,7 @@ package openapi
 // V2NfsExports struct for V2NfsExports
 type V2NfsExports struct {
 	// An identifier for a set of exports.
-	Digest *string `json:"digest,omitempty"`
+	Digest  *string               `json:"digest,omitempty"`
 	Exports []V2NfsExportExtended `json:"exports,omitempty"`
 	// Provide this token as the 'resume' query argument to continue listing results.
 	Resume *string `json:"resume,omitempty"`

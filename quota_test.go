@@ -24,7 +24,6 @@ import (
 
 // Test both GetQuota() and SetQuota()
 func TestQuotaGetSet(t *testing.T) {
-
 	volumeName := "test_quota_get_set"
 	quotaSize := int64(1234567)
 	var softLimit, advisoryLimit, softGracePrd int64
@@ -64,7 +63,6 @@ func TestQuotaGetSet(t *testing.T) {
 	if quota.Thresholds.Hard != quotaSize {
 		panic(fmt.Sprintf("Unexpected new quota.  Expected: %d Actual: %d", quotaSize, quota.Thresholds.Hard))
 	}
-
 }
 
 // Test GetAllQuotas()
@@ -79,7 +77,6 @@ func TestAllQuotasGet(t *testing.T) {
 
 // Test UpdateQuota()
 func TestQuotaUpdate(t *testing.T) {
-
 	volumeName := "test_quota_update"
 	quotaSize := int64(1234567)
 	updatedQuotaSize := int64(22345000)
@@ -127,12 +124,10 @@ func TestQuotaUpdate(t *testing.T) {
 	if quota.Thresholds.Hard != updatedQuotaSize {
 		panic(fmt.Sprintf("Updated quota not set properly.  Expected: %d Actual: %d", updatedQuotaSize, quota.Thresholds.Hard))
 	}
-
 }
 
 // Test ClearQuota()
 func TestQuotaClear(t *testing.T) {
-
 	volumeName := "test_quota_clear"
 	quotaSize := int64(1234567)
 	var softLimit, advisoryLimit, softGracePrd int64
@@ -180,7 +175,6 @@ func TestQuotaClear(t *testing.T) {
 
 // Test ClearQuotaByID()
 func TestQuotaClearByID(t *testing.T) {
-
 	volumeName := "test_quota_clear_by_id"
 	quotaSize := int64(1234567)
 	var softLimit, advisoryLimit, softGracePrd int64
@@ -220,7 +214,6 @@ func TestQuotaClearByID(t *testing.T) {
 
 // Test IsQuotaLicenseActivated()
 func TestIsQuotaLicenseActivated(t *testing.T) {
-
 	t.Log("start TestIsQuotaLicenseActivated")
 
 	isActivated, _ := client.IsQuotaLicenseActivated(defaultCtx)
@@ -230,7 +223,6 @@ func TestIsQuotaLicenseActivated(t *testing.T) {
 
 // Test TestQuotaUpdateByID()
 func TestQuotaUpdateByID(t *testing.T) {
-
 	volumeName := "test_quota_update"
 	quotaSize := int64(1234567)
 	updatedQuotaSize := int64(22345000)
@@ -278,5 +270,4 @@ func TestQuotaUpdateByID(t *testing.T) {
 	if quota.Thresholds.Hard != updatedQuotaSize {
 		panic(fmt.Sprintf("Updated quota not set properly.  Expected: %d Actual: %d", updatedQuotaSize, quota.Thresholds.Hard))
 	}
-
 }

@@ -21,6 +21,6 @@ type V1SmbSharePermission struct {
 	// Specifies the file system rights that are allowed or denied.
 	Permission string `json:"permission"`
 	// Determines whether the permission is allowed or denied.
-	PermissionType string `json:"permission_type"`
-	Trustee V1AuthAccessAccessItemFileGroup `json:"trustee"`
+	PermissionType string                          `json:"permission_type"`
+	Trustee        V1AuthAccessAccessItemFileGroup `json:"trustee"`
 }

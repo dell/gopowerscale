@@ -41,17 +41,17 @@ type V2NfsExport struct {
 	// Specifies the default character set encoding of the clients connecting to the export, unless otherwise specified.
 	Encoding *string `json:"encoding,omitempty"`
 	// Specifies the reported maximum number of links to a file. This parameter does not affect server behavior, but is included to accommodate legacy client requirements.
-	LinkMax *int32 `json:"link_max,omitempty"`
-	MapAll *V2NfsExportMapAll `json:"map_all,omitempty"`
+	LinkMax    *int32             `json:"link_max,omitempty"`
+	MapAll     *V2NfsExportMapAll `json:"map_all,omitempty"`
 	MapFailure *V2NfsExportMapAll `json:"map_failure,omitempty"`
 	// True if user mappings query the OneFS user database. When set to false, user mappings only query local authentication.
 	MapFull *bool `json:"map_full,omitempty"`
 	// True if incoming user IDs (UIDs) are mapped to users in the OneFS user database. When set to false, incoming UIDs are applied directly to file operations.
-	MapLookupUid *bool `json:"map_lookup_uid,omitempty"`
-	MapNonRoot *V2NfsExportMapAll `json:"map_non_root,omitempty"`
+	MapLookupUid *bool              `json:"map_lookup_uid,omitempty"`
+	MapNonRoot   *V2NfsExportMapAll `json:"map_non_root,omitempty"`
 	// Determines whether searches for users specified in 'map_all', 'map_root' or 'map_nonroot' are retried if the search fails.
-	MapRetry *bool `json:"map_retry,omitempty"`
-	MapRoot *V2NfsExportMapAll `json:"map_root,omitempty"`
+	MapRetry *bool              `json:"map_retry,omitempty"`
+	MapRoot  *V2NfsExportMapAll `json:"map_root,omitempty"`
 	// Specifies the maximum file size for any file accessed from the export. This parameter does not affect server behavior, but is included to accommodate legacy client requirements.
 	MaxFileSize *int64 `json:"max_file_size,omitempty"`
 	// Specifies the reported maximum length of a file name. This parameter does not affect server behavior, but is included to accommodate legacy client requirements.

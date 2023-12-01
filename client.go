@@ -26,7 +26,6 @@ import (
 
 // Client is an Isilon client.
 type Client struct {
-
 	// API is the underlying OneFS API client.
 	API api.Client
 }
@@ -65,8 +64,8 @@ func NewClientWithArgs(
 	ctx context.Context,
 	endpoint string,
 	insecure bool, verboseLogging uint,
-	user, group, pass, volumesPath string, volumesPathPermissions string, ignoreUnresolvableHosts bool, authType uint8) (*Client, error) {
-
+	user, group, pass, volumesPath string, volumesPathPermissions string, ignoreUnresolvableHosts bool, authType uint8,
+) (*Client, error) {
 	timeout, _ := time.ParseDuration(os.Getenv("GOISILON_TIMEOUT"))
 
 	client, err := api.New(
@@ -78,7 +77,6 @@ func NewClientWithArgs(
 			IgnoreUnresolvableHosts: ignoreUnresolvableHosts,
 			Timeout:                 timeout,
 		})
-
 	if err != nil {
 		return nil, err
 	}

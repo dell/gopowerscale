@@ -74,8 +74,8 @@ func (l *ExportList) UnmarshalJSON(text []byte) error {
 // ExportsList GETs all exports.
 func ExportsList(
 	ctx context.Context,
-	client api.Client) ([]*Export, error) {
-
+	client api.Client,
+) ([]*Export, error) {
 	var resp ExportList
 
 	if err := client.Get(
@@ -85,7 +85,6 @@ func ExportsList(
 		nil,
 		nil,
 		&resp); err != nil {
-
 		return nil, err
 	}
 
@@ -95,8 +94,8 @@ func ExportsList(
 // ExportsListWithZone GETs all exports in the specified zone.
 func ExportsListWithZone(
 	ctx context.Context,
-	client api.Client, zone string) ([]*Export, error) {
-
+	client api.Client, zone string,
+) ([]*Export, error) {
 	var resp ExportList
 
 	if err := client.Get(
@@ -108,7 +107,6 @@ func ExportsListWithZone(
 		},
 		nil,
 		&resp); err != nil {
-
 		return nil, err
 	}
 
@@ -119,8 +117,8 @@ func ExportsListWithZone(
 func ExportInspect(
 	ctx context.Context,
 	client api.Client,
-	id int) (*Export, error) {
-
+	id int,
+) (*Export, error) {
 	var resp ExportList
 
 	if err := client.Get(
@@ -130,7 +128,6 @@ func ExportInspect(
 		nil,
 		nil,
 		&resp); err != nil {
-
 		return nil, err
 	}
 
@@ -145,8 +142,8 @@ func ExportInspect(
 func ExportCreate(
 	ctx context.Context,
 	client api.Client,
-	export *Export) (int, error) {
-
+	export *Export,
+) (int, error) {
 	if export.Paths != nil && len(*export.Paths) == 0 {
 		return 0, errors.New("no path set")
 	}
@@ -161,7 +158,6 @@ func ExportCreate(
 		nil,
 		export,
 		&resp); err != nil {
-
 		return 0, err
 	}
 
@@ -172,8 +168,8 @@ func ExportCreate(
 func ExportCreateWithZone(
 	ctx context.Context,
 	client api.Client,
-	export *Export, zone string) (int, error) {
-
+	export *Export, zone string,
+) (int, error) {
 	if export.Paths != nil && len(*export.Paths) == 0 {
 		return 0, errors.New("no path set")
 	}
@@ -193,7 +189,6 @@ func ExportCreateWithZone(
 		nil,
 		export,
 		&resp); err != nil {
-
 		return 0, err
 	}
 
@@ -204,8 +199,8 @@ func ExportCreateWithZone(
 func ExportUpdate(
 	ctx context.Context,
 	client api.Client,
-	export *Export) error {
-
+	export *Export,
+) error {
 	return client.Put(
 		ctx,
 		exportsPath,
@@ -221,8 +216,8 @@ func ExportUpdateWithZone(
 	ctx context.Context,
 	client api.Client,
 	export *Export,
-	zone string, ignoreUnresolvableHosts bool) error {
-
+	zone string, ignoreUnresolvableHosts bool,
+) error {
 	args := api.OrderedValues{
 		{[]byte("zone"), []byte(zone)},
 	}
@@ -248,8 +243,8 @@ func ExportUpdateWithZone(
 func ExportDelete(
 	ctx context.Context,
 	client api.Client,
-	id int) error {
-
+	id int,
+) error {
 	return client.Delete(
 		ctx,
 		exportsPath,
@@ -263,8 +258,8 @@ func ExportDelete(
 func ExportDeleteWithZone(
 	ctx context.Context,
 	client api.Client,
-	id int, zone string) error {
-
+	id int, zone string,
+) error {
 	args := api.OrderedValues{
 		{[]byte("zone"), []byte(zone)},
 	}
@@ -283,8 +278,8 @@ func SetExportClients(
 	ctx context.Context,
 	client api.Client,
 	id int,
-	addrs ...string) error {
-
+	addrs ...string,
+) error {
 	return ExportUpdate(ctx, client, &Export{ID: id, Clients: &addrs})
 }
 
@@ -293,8 +288,8 @@ func SetExportRootClients(
 	ctx context.Context,
 	client api.Client,
 	id int,
-	addrs ...string) error {
-
+	addrs ...string,
+) error {
 	return ExportUpdate(ctx, client, &Export{ID: id, RootClients: &addrs})
 }
 
@@ -302,8 +297,8 @@ func SetExportRootClients(
 func Unexport(
 	ctx context.Context,
 	client api.Client,
-	id int) error {
-
+	id int,
+) error {
 	return ExportDelete(ctx, client, id)
 }
 
@@ -311,15 +306,16 @@ func Unexport(
 func UnexportWithZone(
 	ctx context.Context,
 	client api.Client,
-	id int, zone string) error {
-
+	id int, zone string,
+) error {
 	return ExportDeleteWithZone(ctx, client, id, zone)
 }
 
 // ExportsListWithResume GETs the next page of exports based on the resume token from the previous call.
 func ExportsListWithResume(
 	ctx context.Context,
-	client api.Client, resume string) (*Exports, error) {
+	client api.Client, resume string,
+) (*Exports, error) {
 	var resp Exports
 
 	if err := client.Get(
@@ -331,7 +327,6 @@ func ExportsListWithResume(
 		},
 		nil,
 		&resp); err != nil {
-
 		return nil, err
 	}
 
@@ -341,7 +336,8 @@ func ExportsListWithResume(
 // ExportsListWithLimit GETs a number of exports in the default sequence and the number is the parameter limit.
 func ExportsListWithLimit(
 	ctx context.Context,
-	client api.Client, limit string) (*Exports, error) {
+	client api.Client, limit string,
+) (*Exports, error) {
 	var resp Exports
 
 	if err := client.Get(
@@ -353,7 +349,6 @@ func ExportsListWithLimit(
 		},
 		nil,
 		&resp); err != nil {
-
 		return nil, err
 	}
 
@@ -363,7 +358,8 @@ func ExportsListWithLimit(
 // ExportsListWithParams GETs exports based on the parmapeters.
 func ExportsListWithParams(
 	ctx context.Context,
-	client api.Client, params api.OrderedValues) (*Exports, error) {
+	client api.Client, params api.OrderedValues,
+) (*Exports, error) {
 	var resp Exports
 
 	if err := client.Get(
@@ -373,7 +369,6 @@ func ExportsListWithParams(
 		params,
 		nil,
 		&resp); err != nil {
-
 		return nil, err
 	}
 
@@ -384,7 +379,8 @@ func ExportsListWithParams(
 func GetExportWithPath(
 	ctx context.Context,
 	client api.Client,
-	path string) (*Export, error) {
+	path string,
+) (*Export, error) {
 	var resp ExportList
 	if err := client.Get(
 		ctx,
@@ -395,7 +391,6 @@ func GetExportWithPath(
 		},
 		nil,
 		&resp); err != nil {
-
 		return nil, err
 	}
 	if len(resp) == 0 {
@@ -409,7 +404,8 @@ func GetExportWithPath(
 func GetExportWithPathAndZone(
 	ctx context.Context,
 	client api.Client,
-	path, zone string) (*Export, error) {
+	path, zone string,
+) (*Export, error) {
 	var resp ExportList
 	if zone == "" {
 		zone = "System"
@@ -424,7 +420,6 @@ func GetExportWithPathAndZone(
 		},
 		nil,
 		&resp); err != nil {
-
 		return nil, err
 	}
 	if len(resp) == 0 {
@@ -439,7 +434,8 @@ func GetExportByIDWithZone(
 	ctx context.Context,
 	client api.Client,
 	id int,
-	zone string) (*Export, error) {
+	zone string,
+) (*Export, error) {
 	var resp ExportList
 	if err := client.Get(
 		ctx,

@@ -46,8 +46,8 @@ func (c *Client) GetAllGroups(ctx context.Context) (GroupList, error) {
 func (c *Client) GetGroupsWithFilter(ctx context.Context,
 	queryNamePrefix, queryDomain, queryZone, queryProvider *string,
 	queryCached, queryResolveNames, queryMemberOf *bool,
-	queryLimit *int32) (GroupList, error) {
-
+	queryLimit *int32,
+) (GroupList, error) {
 	return api.GetIsiGroupList(ctx, c.API, queryNamePrefix, queryDomain, queryZone, queryProvider, queryCached, queryResolveNames, queryMemberOf, queryLimit)
 }
 
@@ -79,7 +79,8 @@ func (c *Client) CreatGroupByName(ctx context.Context, name string) (string, err
 // Optional filter: force, zone and provider.
 func (c *Client) CreateGroupWithOptions(
 	ctx context.Context, name string, gid *int32, members []api.IsiAuthMemberItem,
-	queryForce *bool, queryZone, queryProvider *string) (string, error) {
+	queryForce *bool, queryZone, queryProvider *string,
+) (string, error) {
 	return api.CreateIsiGroup(ctx, c.API, name, gid, members, queryForce, queryZone, queryProvider)
 }
 
@@ -87,7 +88,8 @@ func (c *Client) CreateGroupWithOptions(
 // Required: newGid,
 // Optional filter: zone and provider.
 func (c *Client) UpdateIsiGroupGIDByNameOrUID(
-	ctx context.Context, name *string, gid *int32, newGid int32, queryZone, queryProvider *string) error {
+	ctx context.Context, name *string, gid *int32, newGid int32, queryZone, queryProvider *string,
+) error {
 	return api.UpdateIsiGroupGID(ctx, c.API, name, gid, newGid, queryZone, queryProvider)
 }
 

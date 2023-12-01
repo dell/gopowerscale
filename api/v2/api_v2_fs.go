@@ -16,6 +16,7 @@ limitations under the License.
 package v2
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -23,7 +24,6 @@ import (
 	"strings"
 	"sync"
 
-	"context"
 	"github.com/dell/goisilon/api"
 )
 
@@ -145,8 +145,8 @@ func ContainerChildrenGetQuery(
 	containerPath string,
 	limit, maxDepth int,
 	objectType, sortDir string,
-	sort, detail []string) (<-chan *ContainerChild, <-chan error) {
-
+	sort, detail []string,
+) (<-chan *ContainerChild, <-chan error) {
 	var (
 		ec  = make(chan error)
 		cc  = make(chan *ContainerChild)
@@ -212,8 +212,8 @@ func ContainerChildrenGetQuery(
 func ContainerChildrenGetAll(
 	ctx context.Context,
 	client api.Client,
-	containerPath string) ([]*ContainerChild, error) {
-
+	containerPath string,
+) ([]*ContainerChild, error) {
 	var children []*ContainerChild
 
 	cc, ec := ContainerChildrenGetQuery(
@@ -246,8 +246,8 @@ func ContainerChildrenGetAll(
 func ContainerChildrenMapAll(
 	ctx context.Context,
 	client api.Client,
-	containerPath string) (map[string]*ContainerChild, error) {
-
+	containerPath string,
+) (map[string]*ContainerChild, error) {
 	resp, err := ContainerChildrenGetAll(ctx, client, containerPath)
 	if err != nil {
 		return nil, err
@@ -269,8 +269,8 @@ func ContainerChildrenPostQuery(
 	client api.Client,
 	containerPath string,
 	limit, maxDepth int,
-	query *ContainerQuery) ([]*ContainerChild, error) {
-
+	query *ContainerQuery,
+) ([]*ContainerChild, error) {
 	var resp ContainerChildList
 
 	if err := client.Post(
@@ -285,7 +285,6 @@ func ContainerChildrenPostQuery(
 		nil,
 		query,
 		&resp); err != nil {
-
 		return nil, err
 	}
 
@@ -311,8 +310,8 @@ func ContainerCreateDir(
 	client api.Client,
 	containerPath, dirName string,
 	fileMode FileMode,
-	overwrite, recursive bool) error {
-
+	overwrite, recursive bool,
+) error {
 	var params api.OrderedValues
 	if overwrite && recursive {
 		params = contCreateTTQueryString
@@ -352,8 +351,8 @@ func ContainerCreateFile(
 	fileSize int,
 	fileMode FileMode,
 	fileHndl io.ReadCloser,
-	overwrite bool) error {
-
+	overwrite bool,
+) error {
 	var params api.OrderedValues
 	if !overwrite {
 		params = overwriteFalseQueryString
@@ -378,8 +377,8 @@ func ContainerChildDelete(
 	ctx context.Context,
 	client api.Client,
 	childPath string,
-	recursive bool) error {
-
+	recursive bool,
+) error {
 	var params api.OrderedValues
 	if recursive {
 		params = recursiveTrueQueryString

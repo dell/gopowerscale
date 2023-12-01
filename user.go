@@ -43,8 +43,8 @@ func (c *Client) GetAllUsers(ctx context.Context) (UserList, error) {
 func (c *Client) GetUsersWithFilter(ctx context.Context,
 	queryNamePrefix, queryDomain, queryZone, queryProvider *string,
 	queryCached, queryResolveNames, queryMemberOf *bool,
-	queryLimit *int32) (UserList, error) {
-
+	queryLimit *int32,
+) (UserList, error) {
 	return api.GetIsiUserList(ctx, c.API, queryNamePrefix, queryDomain, queryZone, queryProvider, queryCached, queryResolveNames, queryMemberOf, queryLimit)
 }
 
@@ -60,7 +60,8 @@ func (c *Client) CreateUserByName(ctx context.Context, name string) (string, err
 func (c *Client) CreateUserWithOptions(
 	ctx context.Context, name string, uid *int32, queryForce *bool, queryZone, queryProvider *string,
 	email, homeDirectory, password, fullName, shell, primaryGroupName *string,
-	primaryGroupId, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool) (string, error) {
+	primaryGroupId, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool,
+) (string, error) {
 	return api.CreateIsiUser(
 		ctx, c.API, name,
 		queryForce, queryZone, queryProvider,
@@ -76,8 +77,8 @@ func (c *Client) UpdateUserByNameOrUID(
 	ctx context.Context, name *string, uid *int32,
 	queryForce *bool, queryZone, queryProvider *string,
 	email, homeDirectory, password, fullName, shell, primaryGroupName *string,
-	newUid, primaryGroupId, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool) error {
-
+	newUid, primaryGroupId, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool,
+) error {
 	return api.UpdateIsiUser(
 		ctx, c.API, name, uid,
 		queryForce, queryZone, queryProvider,

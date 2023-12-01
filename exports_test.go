@@ -18,11 +18,12 @@ package goisilon
 import (
 	"context"
 	"fmt"
-	apiv4 "github.com/dell/goisilon/api/v4"
-	"github.com/dell/goisilon/openapi"
 	"sort"
 	"strconv"
 	"testing"
+
+	apiv4 "github.com/dell/goisilon/api/v4"
+	"github.com/dell/goisilon/openapi"
 
 	log "github.com/akutz/gournal"
 	"github.com/dell/goisilon/api"
@@ -231,8 +232,8 @@ func testUserMapping(
 	volumeName string,
 	getMap func(ctx context.Context, id int) (UserMapping, error),
 	enaMap func(ctx context.Context, id int, user string) error,
-	disMap func(ctx context.Context, id int) error) {
-
+	disMap func(ctx context.Context, id int) error,
+) {
 	var (
 		err      error
 		exportID int
@@ -318,7 +319,6 @@ func TestExportClientsAdd(t *testing.T) {
 }
 
 func TestAddExportClientsByID(t *testing.T) {
-
 	// Add the test exports
 	volumeName1 := "test_get_exports1"
 	vol, err := client.CreateVolume(defaultCtx, volumeName1)
@@ -350,9 +350,9 @@ func TestAddExportClientsByID(t *testing.T) {
 }
 
 func testAddExportClientsByID(t *testing.T, exportID int, export Export, addExportClientsByID func(
-	ctx context.Context, id int, clients []string, ignoreUnresolvableHosts bool) error) {
-
-	var clientsToAdd = []string{"192.168.1.110", "192.168.1.110", "192.168.1.111", "192.168.1.112", "192.168.1.113"}
+	ctx context.Context, id int, clients []string, ignoreUnresolvableHosts bool) error,
+) {
+	clientsToAdd := []string{"192.168.1.110", "192.168.1.110", "192.168.1.111", "192.168.1.112", "192.168.1.113"}
 
 	log.Debug(defaultCtx, "add '%v' to '%v' for export '%d'", clientsToAdd, *export.Clients, exportID)
 
@@ -361,12 +361,10 @@ func testAddExportClientsByID(t *testing.T, exportID int, export Export, addExpo
 }
 
 func TestRemoveExportClientsByID(t *testing.T) {
-
 	testRemoveExportClients(t, client.RemoveExportClientsByID, nil)
 }
 
 func TestRemoveExportClientsByName(t *testing.T) {
-
 	testRemoveExportClients(t, nil, client.RemoveExportClientsByName)
 	volumeName1 := "test_get_exports1"
 	// make sure we clean up when we're done
@@ -376,8 +374,8 @@ func TestRemoveExportClientsByName(t *testing.T) {
 
 func testRemoveExportClients(t *testing.T,
 	removeExportClientsByIDFunc func(ctx context.Context, id int, clientsToRemove []string, ignoreUnresolvableHosts bool) error,
-	removeExportClientsByNameFunc func(ctx context.Context, name string, clientsToRemove []string, ignoreUnresolvableHosts bool) error) {
-
+	removeExportClientsByNameFunc func(ctx context.Context, name string, clientsToRemove []string, ignoreUnresolvableHosts bool) error,
+) {
 	volumeName1 := "test_get_exports1"
 
 	exportID := exportForClient
@@ -386,7 +384,7 @@ func testRemoveExportClients(t *testing.T,
 
 	fmt.Printf("export '%d' has \n%-20v: '%v'\n%-20v: '%v'\n%-20v: '%v'\n", exportID, "clients", *export.Clients, "read_only_cilents", *export.ReadOnlyClients, "read_write_cilents", *export.ReadWriteClients)
 
-	var clientsToRemove = []string{"192.168.1.110", "192.168.1.110", "192.168.1.111", "192.168.1.116", "k8s-node-1.lab.acme.com"}
+	clientsToRemove := []string{"192.168.1.110", "192.168.1.110", "192.168.1.111", "192.168.1.116", "k8s-node-1.lab.acme.com"}
 
 	log.Debug(defaultCtx, "remove '%v' from '%v' for export '%d'", clientsToRemove, *export.Clients, exportID)
 
@@ -462,8 +460,8 @@ func testExportClientsGet(
 	t *testing.T,
 	volumeName string,
 	getClients func(ctx context.Context, id int) ([]string, error),
-	setClients func(ctx context.Context, id int, clients ...string) error) {
-
+	setClients func(ctx context.Context, id int, clients ...string) error,
+) {
 	var (
 		err            error
 		exportID       int
@@ -505,8 +503,8 @@ func testExportClientsSet(
 	t *testing.T,
 	volumeName string,
 	getClients func(ctx context.Context, e Export) []string,
-	setClients func(ctx context.Context, id int, clients ...string) error) {
-
+	setClients func(ctx context.Context, id int, clients ...string) error,
+) {
 	var (
 		err            error
 		export         Export
@@ -562,8 +560,8 @@ func testExportClientsAdd(
 	volumeName string,
 	getClients func(ctx context.Context, e Export) []string,
 	setClients func(ctx context.Context, id int, clients ...string) error,
-	addClients func(ctx context.Context, id int, clients ...string) error) {
-
+	addClients func(ctx context.Context, id int, clients ...string) error,
+) {
 	var (
 		err            error
 		export         Export
@@ -637,8 +635,8 @@ func testExportClientsClear(
 	volumeName string,
 	getClients func(ctx context.Context, e Export) []string,
 	setClients func(ctx context.Context, id int, clients ...string) error,
-	nilClients func(ctx context.Context, id int) error) {
-
+	nilClients func(ctx context.Context, id int) error,
+) {
 	var (
 		err            error
 		export         Export

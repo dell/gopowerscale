@@ -24,7 +24,8 @@ import (
 // GetZoneByName returns a specific access zone which matches the name parsed in
 func GetZoneByName(ctx context.Context,
 	client api.Client,
-	name string) (*IsiZone, error) {
+	name string,
+) (*IsiZone, error) {
 	var resp getIsiZonesResp
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/zones/zone
 	err := client.Get(ctx, zonesPath, name, nil, nil, &resp)

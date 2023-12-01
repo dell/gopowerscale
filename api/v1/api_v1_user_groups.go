@@ -25,7 +25,6 @@ import (
 
 // GetIsiGroup queries the group by group-id.
 func GetIsiGroup(ctx context.Context, client api.Client, groupName *string, gid *int32) (group *IsiGroup, err error) {
-
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/auth/groups/<group-id>
 
 	authGroupId, err := getAuthMemberId(fileGroupTypeGroup, groupName, gid)
@@ -51,8 +50,8 @@ func GetIsiGroup(ctx context.Context, client api.Client, groupName *string, gid 
 func GetIsiGroupList(ctx context.Context, client api.Client,
 	queryNamePrefix, queryDomain, queryZone, queryProvider *string,
 	queryCached, queryResolveNames, queryMemberOf *bool,
-	queryLimit *int32) (groups []*IsiGroup, err error) {
-
+	queryLimit *int32,
+) (groups []*IsiGroup, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/auth/groups?limit=&domain=&cached=&resolve_names=&query_member_of=&zone=&provider=&filter=
 	values := api.OrderedValues{}
 	if queryCached != nil {
@@ -101,14 +100,12 @@ func GetIsiGroupList(ctx context.Context, client api.Client,
 
 // getIsiGroupListWithResume queries the next page groups based on resume token.
 func getIsiGroupListWithResume(ctx context.Context, client api.Client, resume string) (groups *IsiGroupListRespResume, err error) {
-
 	err = client.Get(ctx, groupPath, "", api.OrderedValues{{[]byte("resume"), []byte(resume)}}, nil, &groups)
 	return
 }
 
 // GetIsiGroupMembers retrieves the members of a group.
 func GetIsiGroupMembers(ctx context.Context, client api.Client, groupName *string, gid *int32) (members []*IsiAccessItemFileGroup, err error) {
-
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/groups/{group-id}/members
 
 	authGroupId, err := getAuthMemberId(fileGroupTypeGroup, groupName, gid)
@@ -137,14 +134,12 @@ func GetIsiGroupMembers(ctx context.Context, client api.Client, groupName *strin
 
 // getIsiGroupMemberListWithResume queries the next page group members based on resume token.
 func getIsiGroupMemberListWithResume(ctx context.Context, client api.Client, groupId, resume string) (members *IsiGroupMemberListRespResume, err error) {
-
 	err = client.Get(ctx, fmt.Sprintf(groupMemberPath, groupId), "", api.OrderedValues{{[]byte("resume"), []byte(resume)}}, nil, &members)
 	return
 }
 
 // AddIsiGroupMember adds a member to the group, member can be a user/group.
 func AddIsiGroupMember(ctx context.Context, client api.Client, groupName *string, gid *int32, member IsiAuthMemberItem) error {
-
 	// PAPI call: POST https://1.2.3.4:8080/platform/1/groups/{group-id}/members
 	//					{
 	//					 	"type":"user",
@@ -175,7 +170,6 @@ func AddIsiGroupMember(ctx context.Context, client api.Client, groupName *string
 
 // RemoveIsiGroupMember remove a member from the group, member can be user/group.
 func RemoveIsiGroupMember(ctx context.Context, client api.Client, groupName *string, gid *int32, member IsiAuthMemberItem) error {
-
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/groups/{group-id}/members/<member-id>
 
 	authGroupId, err := getAuthMemberId(fileGroupTypeGroup, groupName, gid)
@@ -194,8 +188,8 @@ func RemoveIsiGroupMember(ctx context.Context, client api.Client, groupName *str
 // CreateIsiGroup creates a new group.
 func CreateIsiGroup(ctx context.Context, client api.Client,
 	name string, gid *int32, members []IsiAuthMemberItem,
-	queryForce *bool, queryZone, queryProvider *string) (string, error) {
-
+	queryForce *bool, queryZone, queryProvider *string,
+) (string, error) {
 	// PAPI call: POST https://1.2.3.4:8080/platform/1/auth/groups?force=&zone=&provider=
 	// 				{
 	// 					"gid": "int",
@@ -260,8 +254,8 @@ func CreateIsiGroup(ctx context.Context, client api.Client,
 
 // UpdateIsiGroupGID updates the group's gid.
 func UpdateIsiGroupGID(ctx context.Context, client api.Client, groupName *string, gid *int32, newGid int32,
-	queryZone, queryProvider *string) (err error) {
-
+	queryZone, queryProvider *string,
+) (err error) {
 	// PAPI call: PUT https://1.2.3.4:8080/platform/1/auth/groups/<group-id>?force=true&zone=&provider=
 	// 				{
 	// 					"gid": int
@@ -288,7 +282,6 @@ func UpdateIsiGroupGID(ctx context.Context, client api.Client, groupName *string
 
 // DeleteIsiGroup removes the group by group-id.
 func DeleteIsiGroup(ctx context.Context, client api.Client, groupName *string, gid *int32) (err error) {
-
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/auth/groups/<group-id>
 	authGroupId, err := getAuthMemberId(fileGroupTypeGroup, groupName, gid)
 	if err != nil {

@@ -38,6 +38,7 @@ func TestExportEncodeJSON(t *testing.T) {
 	}
 	t.Log(s)
 }
+
 func TestExportDecodeJSON(t *testing.T) {
 	j := `{"id":3,"clients":[]}`
 	var ex Export
@@ -73,11 +74,9 @@ func TestPersonaIDTypeMarshal(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, PersonaIDTypeUser, pidt)
-
 }
 
 func TestPersonaIDMarshal(t *testing.T) {
-
 	pid := &PersonaID{
 		ID:   "akutz",
 		Type: PersonaIDTypeUser,

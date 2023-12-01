@@ -60,7 +60,6 @@ var (
 
 // Client is an API client.
 type Client interface {
-
 	// Do sends an HTTP request to the OneFS API.
 	Do(
 		ctx context.Context,
@@ -214,8 +213,8 @@ func New(
 	ctx context.Context,
 	hostname, username, password, groupname string,
 	verboseLogging uint, authType uint8,
-	opts *ClientOptions) (Client, error) {
-
+	opts *ClientOptions,
+) (Client, error) {
 	if hostname == "" || username == "" || password == "" {
 		return nil, errNewClient
 	}
@@ -318,8 +317,8 @@ func (c *client) Get(
 	ctx context.Context,
 	path, id string,
 	params OrderedValues, headers map[string]string,
-	resp interface{}) error {
-
+	resp interface{},
+) error {
 	return c.executeWithRetryAuthenticate(
 		ctx, http.MethodGet, path, id, params, headers, nil, resp)
 }
@@ -328,8 +327,8 @@ func (c *client) Post(
 	ctx context.Context,
 	path, id string,
 	params OrderedValues, headers map[string]string,
-	body, resp interface{}) error {
-
+	body, resp interface{},
+) error {
 	return c.executeWithRetryAuthenticate(
 		ctx, http.MethodPost, path, id, params, headers, body, resp)
 }
@@ -338,8 +337,8 @@ func (c *client) Put(
 	ctx context.Context,
 	path, id string,
 	params OrderedValues, headers map[string]string,
-	body, resp interface{}) error {
-
+	body, resp interface{},
+) error {
 	return c.executeWithRetryAuthenticate(
 		ctx, http.MethodPut, path, id, params, headers, body, resp)
 }
@@ -348,8 +347,8 @@ func (c *client) Delete(
 	ctx context.Context,
 	path, id string,
 	params OrderedValues, headers map[string]string,
-	resp interface{}) error {
-
+	resp interface{},
+) error {
 	return c.executeWithRetryAuthenticate(
 		ctx, http.MethodDelete, path, id, params, headers, nil, resp)
 }
@@ -358,8 +357,8 @@ func (c *client) Do(
 	ctx context.Context,
 	method, path, id string,
 	params OrderedValues,
-	body, resp interface{}) error {
-
+	body, resp interface{},
+) error {
 	return c.executeWithRetryAuthenticate(ctx, method, path, id, params, nil, body, resp)
 }
 
@@ -375,8 +374,8 @@ func (c *client) DoWithHeaders(
 	ctx context.Context,
 	method, uri, id string,
 	params OrderedValues, headers map[string]string,
-	body, resp interface{}) error {
-
+	body, resp interface{},
+) error {
 	res, _, err := c.DoAndGetResponseBody(
 		ctx, method, uri, id, params, headers, body)
 	if err != nil {
@@ -412,8 +411,8 @@ func (c *client) DoAndGetResponseBody(
 	ctx context.Context,
 	method, uri, id string,
 	params OrderedValues, headers map[string]string,
-	body interface{}) (*http.Response, bool, error) {
-
+	body interface{},
+) (*http.Response, bool, error) {
 	var (
 		err                   error
 		req                   *http.Request
@@ -617,7 +616,7 @@ func parseJSONError(r *http.Response) error {
 func (c *client) authenticate(ctx context.Context, username string, password string, endpoint string) error {
 	headers := make(map[string]string, 1)
 	headers[headerKeyContentType] = headerValContentTypeJSON
-	var data = &setupConnection{Services: []string{"platform", "namespace"}, Username: username, Password: password}
+	data := &setupConnection{Services: []string{"platform", "namespace"}, Username: username, Password: password}
 	resp, _, err := c.DoAndGetResponseBody(ctx, http.MethodPost, "/session/1/session", "", nil, headers, data)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Authentication error: %v", err))
@@ -699,8 +698,7 @@ func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri s
 }
 
 func FetchValueIndexForKey(l string, match string, sep string) (int, int, int) {
-
-	var startIndex, endIndex = -1, -1
+	startIndex, endIndex := -1, -1
 	if strings.Contains(l, match) {
 		startIndex = strings.Index(l, match)
 		if startIndex != -1 && sep != "" {

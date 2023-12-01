@@ -101,4 +101,3 @@ type V12SmbShareExtended struct {
 	// Numeric ID of the access zone which contains this SMB share
 	Zid int32 `json:"zid"`
 }
-

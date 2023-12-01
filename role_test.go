@@ -44,7 +44,6 @@ func TestRoleGet(t *testing.T) {
 
 // Test GetRoleByID(), AddRoleMember(), RemoveRoleMember() and IsRoleMemberOf()
 func TestRoleMemberAdd(t *testing.T) {
-
 	roleId := "SystemAdmin"
 	userName := "test_user_roleMember"
 
@@ -95,7 +94,7 @@ func TestRoleMemberAdd(t *testing.T) {
 	}
 	assertFalse(t, isRoleMember)
 
-	//add/remove role member by uid
+	// add/remove role member by uid
 	uid, err := strconv.ParseInt(user.Uid.Id[4:], 10, 32)
 	uid32 := int32(uid)
 	if err != nil {

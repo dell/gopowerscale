@@ -17,7 +17,6 @@ package utils
 
 // IsStringInSlice checks if a string is an element of a string slice
 func IsStringInSlice(str string, list []string) bool {
-
 	for _, b := range list {
 		if b == str {
 			return true
@@ -29,7 +28,6 @@ func IsStringInSlice(str string, list []string) bool {
 
 // IsStringInSlices checks if a string is an element of a any of the string slices
 func IsStringInSlices(str string, list ...[]string) bool {
-
 	for _, strs := range list {
 		if IsStringInSlice(str, strs) {
 			return true
@@ -41,7 +39,6 @@ func IsStringInSlices(str string, list ...[]string) bool {
 
 // RemoveStringFromSlice returns a slice that is a copy of the input "list" slice with the input "str" string removed
 func RemoveStringFromSlice(str string, list []string) []string {
-
 	result := make([]string, 0)
 
 	for _, v := range list {
@@ -55,11 +52,9 @@ func RemoveStringFromSlice(str string, list []string) []string {
 
 // RemoveStringsFromSlice generates a slice that is a copy of the input "list" slice with elements from the input "strs" slice removed
 func RemoveStringsFromSlice(filters []string, list []string) []string {
-
 	result := make([]string, 0)
 
 	for _, str := range list {
-
 		if !IsStringInSlice(str, filters) {
 			result = append(result, str)
 		}

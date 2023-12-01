@@ -16,8 +16,8 @@ limitations under the License.
 package goisilon
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 

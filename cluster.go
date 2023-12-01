@@ -24,22 +24,26 @@ import (
 )
 
 // Stats is Isilon statistics data structure .
-type Stats *apiv3.IsiStatsResp
-type FloatStats *apiv3.IsiFloatStatsResp
-type Clients *apiv3.ExportClientList
+type (
+	Stats      *apiv3.IsiStatsResp
+	FloatStats *apiv3.IsiFloatStatsResp
+	Clients    *apiv3.ExportClientList
+)
 
 // ClusterConfig represents the configuration of cluster in k8s (namespace API).
-type ClusterConfig *apiv3.IsiClusterConfig
-type ClusterIdentity *apiv3.IsiClusterIdentity
-type ClusterNodes *apiv3.IsiClusterNodes
-type ClusterAcs *apiv14.IsiClusterAcs
-type ClusterInternalNetworks *apiv7.IsiClusterInternalNetworks
+type (
+	ClusterConfig           *apiv3.IsiClusterConfig
+	ClusterIdentity         *apiv3.IsiClusterIdentity
+	ClusterNodes            *apiv3.IsiClusterNodes
+	ClusterAcs              *apiv14.IsiClusterAcs
+	ClusterInternalNetworks *apiv7.IsiClusterInternalNetworks
+)
 
 // GetStatistics returns statistics from Isilon. Keys indicate type of statistics expected
 func (c *Client) GetStatistics(
 	ctx context.Context,
-	keys []string) (Stats, error) {
-
+	keys []string,
+) (Stats, error) {
 	stats, err := apiv3.GetIsiStats(ctx, c.API, keys)
 	if err != nil {
 		return nil, err
@@ -51,8 +55,8 @@ func (c *Client) GetStatistics(
 // GetFloatStatistics returns float statistics from Isilon. Keys indicate type of statistics expected
 func (c *Client) GetFloatStatistics(
 	ctx context.Context,
-	keys []string) (FloatStats, error) {
-
+	keys []string,
+) (FloatStats, error) {
 	stats, err := apiv3.GetIsiFloatStats(ctx, c.API, keys)
 	if err != nil {
 		return nil, err
@@ -63,8 +67,8 @@ func (c *Client) GetFloatStatistics(
 
 // IsIOinProgress checks whether a volume on a node has IO in progress
 func (c *Client) IsIOInProgress(
-	ctx context.Context) (Clients, error) {
-
+	ctx context.Context,
+) (Clients, error) {
 	// query the volume without using the metadata parameter, use whether an error (typically, JSONError instance with "404 Not Found" status code) is returned to indicate whether the volume already exists.
 	clientList, err := apiv3.IsIOInProgress(ctx, c.API)
 	if err != nil {

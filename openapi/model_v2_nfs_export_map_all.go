@@ -19,9 +19,9 @@ package openapi
 // V2NfsExportMapAll Specifies the users and groups to which non-root and root clients are mapped.
 type V2NfsExportMapAll struct {
 	// True if the user mapping is applied.
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled      *bool                            `json:"enabled,omitempty"`
 	PrimaryGroup *V1AuthAccessAccessItemFileGroup `json:"primary_group,omitempty"`
 	// Specifies persona properties for the secondary user group. A persona consists of either a type and name, or an ID.
 	SecondaryGroups []V2NfsExportMapAllSecondaryGroupsInner `json:"secondary_groups,omitempty"`
-	User *V1AuthAccessAccessItemFileGroup `json:"user,omitempty"`
+	User            *V1AuthAccessAccessItemFileGroup        `json:"user,omitempty"`
 }

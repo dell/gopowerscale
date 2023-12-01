@@ -223,9 +223,9 @@ func TestParseQuery(t *testing.T) {
 
 func TestStructToOrderedValues(t *testing.T) {
 	type TestStruct struct {
-		TestString *string `json:"test_string,omitempty"`
-		TestInt    *int    `json:"test_int,omitempty"`
-		TestBool   *bool   `json:"test_bool,omitempty"`
+		TestString   *string `json:"test_string,omitempty"`
+		TestInt      *int    `json:"test_int,omitempty"`
+		TestBool     *bool   `json:"test_bool,omitempty"`
 		IgnoredField string
 	}
 	testString := "A"

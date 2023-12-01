@@ -91,11 +91,9 @@ func TestSnapshotsGet(t *testing.T) {
 	if _, found := snapshotMap[testSnapshot2.Id]; found == false {
 		panic("testSnapshot2 was not in the snapshot list\n")
 	}
-
 }
 
 func TestSnapshotsGetByPath(t *testing.T) {
-
 	snapshotPath1 := "test_snapshots_get_by_path_volume_1"
 	snapshotPath2 := "test_snapshots_get_by_path_volume_2"
 	snapshotName1 := "test_snapshots_get_by_path_snapshot_1"
@@ -180,7 +178,6 @@ func TestSnapshotsGetByPath(t *testing.T) {
 }
 
 func TestSnapshotCreate(t *testing.T) {
-
 	snapshotPath := "test_snapshot_create_volume"
 	snapshotName := "test_snapshot_create_snapshot"
 
@@ -224,7 +221,6 @@ func TestSnapshotCreate(t *testing.T) {
 }
 
 func TestSnapshotRemove(t *testing.T) {
-
 	snapshotPath := "test_snapshot_remove_volume"
 	snapshotName := "test_snapshot_remove_snapshot"
 
@@ -262,7 +258,6 @@ func TestSnapshotRemove(t *testing.T) {
 }
 
 func TestSnapshotCopy(t *testing.T) {
-
 	accessZone := "System"
 	sourceSnapshotPath := "test_snapshot_copy_src_volume"
 	sourceSnapshotName := "test_snapshot_copy_src_snapshot"
@@ -335,7 +330,6 @@ func TestSnapshotCopy(t *testing.T) {
 }
 
 func TestSnapshotCopyWithIsiPath(t *testing.T) {
-
 	sourceSnapshotPath := "test_snapshot_copy_src_volume"
 	sourceSnapshotName := "test_snapshot_copy_src_snapshot"
 	destinationVolume := "test_snapshot_copy_dst_volume"
@@ -409,7 +403,6 @@ func TestSnapshotCopyWithIsiPath(t *testing.T) {
 }
 
 func TestSnapshotGetByIdentity(t *testing.T) {
-
 	snapshotPath := "test_snapshots_get_volume"
 	snapshotName1 := "test_snapshots_get_snapshot_0"
 	snapshotName2 := "test_snapshots_get_snapshot_1"
@@ -453,7 +446,6 @@ func TestSnapshotGetByIdentity(t *testing.T) {
 }
 
 func TestSnapshotIsExistent(t *testing.T) {
-
 	snapshotPath := "test_snapshots_exist_volume"
 	snapshotName1 := "test_snapshots_exist_snapshot_0"
 
@@ -483,11 +475,9 @@ func TestSnapshotIsExistent(t *testing.T) {
 	if !client.IsSnapshotExistent(defaultCtx, snapshotName1) {
 		panic(fmt.Sprintf("not found snapshot %s, expected found\n", snapshotName1))
 	}
-
 }
 
 func TestSnapshotExportWithZone(t *testing.T) {
-
 	snapshotPath := "test_snapshots_export_volume"
 	snapshotName1 := "test_snapshots_export_snapshot_0"
 	defaultAccessZone := "System"
@@ -517,7 +507,6 @@ func TestSnapshotExportWithZone(t *testing.T) {
 
 	// unexport snapshot
 	defer client.UnexportByIDWithZone(defaultCtx, id, defaultAccessZone)
-
 }
 
 func TestGetRealVolumeSnapshotPathWithIsiPath(t *testing.T) {
@@ -559,5 +548,4 @@ func TestSnapshotSizeGet(t *testing.T) {
 	if totalSize < 0 {
 		panic(fmt.Sprintf("Snapshot folder size %d is not correct.\n", totalSize))
 	}
-
 }
