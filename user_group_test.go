@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Test GetAllGroups() and GetGroupsWithFilter()
+// // Test GetAllGroups() and GetGroupsWithFilter()
 func TestGroupGet(t *testing.T) {
 	// Get groups with filter
 	queryCached := false

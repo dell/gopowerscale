@@ -17,6 +17,7 @@ package goisilon
 
 import (
 	"testing"
+	"fmt"
 
 	"github.com/stretchr/testify/assert"
 
@@ -34,17 +35,22 @@ func TestGetVolumeACL(t *testing.T) {
 
 	defer client.DeleteVolume(defaultCtx, volume.Name)
 
+	username := client.API.User()
+	user, err := client.GetUserByNameOrUID(defaultCtx, &username, nil)
+	assertNoError(t, err)
+	assertNotNil(t, user)
+
 	acl, err := client.GetVolumeACL(defaultCtx, volume.Name)
 	assertNoError(t, err)
 	assertNotNil(t, acl)
 
 	assertNotNil(t, acl.Owner)
 	assertNotNil(t, acl.Owner.Name)
-	assert.Equal(t, client.API.User(), *acl.Owner.Name)
+	assert.Equal(t, user.Name, *acl.Owner.Name)
 	assertNotNil(t, acl.Owner.Type)
 	assert.Equal(t, api.PersonaTypeUser, *acl.Owner.Type)
 	assertNotNil(t, acl.Owner.ID)
-	assert.Equal(t, "10", acl.Owner.ID.ID)
+	assert.Equal(t, user.OnDiskUserIdentity.Id, fmt.Sprintf("UID:%s", acl.Owner.ID.ID))
 	assert.Equal(t, api.PersonaIDTypeUID, acl.Owner.ID.Type)
 }
 
@@ -59,17 +65,22 @@ func TestSetVolumeOwnerToCurrentUser(t *testing.T) {
 
 	defer client.DeleteVolume(defaultCtx, volume.Name)
 
+	username := client.API.User()
+	user, err := client.GetUserByNameOrUID(defaultCtx, &username, nil)
+	assertNoError(t, err)
+	assertNotNil(t, user)
+
 	acl, err := client.GetVolumeACL(defaultCtx, volume.Name)
 	assertNoError(t, err)
 	assertNotNil(t, acl)
 
 	assertNotNil(t, acl.Owner)
 	assertNotNil(t, acl.Owner.Name)
-	assert.Equal(t, client.API.User(), *acl.Owner.Name)
+	assert.Equal(t, user.Name, *acl.Owner.Name)
 	assertNotNil(t, acl.Owner.Type)
 	assert.Equal(t, api.PersonaTypeUser, *acl.Owner.Type)
 	assertNotNil(t, acl.Owner.ID)
-	assert.Equal(t, "10", acl.Owner.ID.ID)
+	assert.Equal(t, user.OnDiskUserIdentity.Id, fmt.Sprintf("UID:%s", acl.Owner.ID.ID))
 	assert.Equal(t, api.PersonaIDTypeUID, acl.Owner.ID.Type)
 
 	err = client.SetVolumeOwner(defaultCtx, volume.Name, "rexray")

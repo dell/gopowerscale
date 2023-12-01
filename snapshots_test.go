@@ -172,7 +172,7 @@ func TestSnapshotsGetByPath(t *testing.T) {
 		panic(fmt.Sprintf("Incorrect number of new snapshots.  Expected: 2 Actual: %d\n", len(snapshotMap)))
 	}
 	if _, found := snapshotMap[testSnapshot1.Id]; found == false {
-		panic(("testSnapshot1 was not in the snapshot list\n")
+		panic("testSnapshot1 was not in the snapshot list\n")
 	}
 	if _, found := snapshotMap[testSnapshot3.Id]; found == false {
 		panic("testSnapshot3 was not in the snapshot list\n")
@@ -309,7 +309,7 @@ func TestSnapshotCopy(t *testing.T) {
 		panic(err)
 	}
 	copiedVolume, err := client.CopySnapshot(
-		defaultCtx, testSnapshot.Id, testSnapshot.Name, destinationVolume, accessZone)
+		defaultCtx, testSnapshot.Id, testSnapshot.Name, accessZone, destinationVolume)
 	if err != nil {
 		panic(err)
 	}
@@ -340,6 +340,7 @@ func TestSnapshotCopyWithIsiPath(t *testing.T) {
 	sourceSnapshotName := "test_snapshot_copy_src_snapshot"
 	destinationVolume := "test_snapshot_copy_dst_volume"
 	subdirectoryName := "test_snapshot_copy_sub_dir"
+	defaultAccessZone := "System"
 	sourceSubDirectory := fmt.Sprintf("%s/%s", sourceSnapshotPath, subdirectoryName)
 	destinationSubDirectory := fmt.Sprintf("%s/%s", destinationVolume, subdirectoryName)
 
@@ -382,7 +383,7 @@ func TestSnapshotCopyWithIsiPath(t *testing.T) {
 	}
 	newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
 	copiedVolume, err := client.CopySnapshotWithIsiPath(
-		defaultCtx, newIsiPath, newIsiPath, testSnapshot.Id, testSnapshot.Name, destinationVolume)
+		defaultCtx, newIsiPath, newIsiPath, testSnapshot.Id, testSnapshot.Name, destinationVolume, defaultAccessZone)
 	if err != nil {
 		panic(err)
 	}
@@ -523,12 +524,14 @@ func TestGetRealVolumeSnapshotPathWithIsiPath(t *testing.T) {
 	volName := "volFromSnap0"
 	newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
 	accessZone := "System"
-	fmt.Printf(apiv1.GetRealVolumeSnapshotPathWithIsiPath(newIsiPath, volName, accessZone))
+	name := "snapshottest"
+	fmt.Printf(apiv1.GetRealVolumeSnapshotPathWithIsiPath(newIsiPath, volName, name, accessZone))
 }
 
 func TestSnapshotSizeGet(t *testing.T) {
 	snapshotPath := "test_snapshots_get_volume"
 	snapshotName1 := "test_snapshots_get_snapshot_0"
+	accessZone := "System"
 
 	// create the test volume
 	_, err := client.CreateVolume(defaultCtx, snapshotPath)
@@ -549,7 +552,7 @@ func TestSnapshotSizeGet(t *testing.T) {
 
 	newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
 	// get the updated snapshot list
-	totalSize, err := client.GetSnapshotFolderSize(defaultCtx, newIsiPath, snapshotName1)
+	totalSize, err := client.GetSnapshotFolderSize(defaultCtx, newIsiPath, snapshotName1, accessZone)
 	if err != nil {
 		panic(err)
 	}
