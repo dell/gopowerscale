@@ -184,7 +184,7 @@ type Error struct {
 	Message string `json:"message"`
 }
 
-// JSONError is an JSON response with one or more errors.
+// JSONError is a JSON response with one or more errors.
 type JSONError struct {
 	StatusCode int
 	Err        []Error `json:"errors"`
@@ -620,7 +620,7 @@ func parseJSONHTMLError(r *http.Response) error {
 			return err
 		}
 		jsonErr.StatusCode = r.StatusCode
-		if jsonErr.Err[0].Message == "" {
+		if len(jsonErr.Err) > 0 && jsonErr.Err[0].Message == "" {
 			jsonErr.Err[0].Message = r.Status
 		}
 		return jsonErr
@@ -632,9 +632,12 @@ func parseJSONHTMLError(r *http.Response) error {
 			return err
 		}
 		htmlError.StatusCode = r.StatusCode
-		htmlError.Message = doc.Find("h1").Text()
 
-		if strings.TrimSpace(htmlError.Message) == "" {
+		if h1 := doc.Find("h1"); h1 != nil {
+			htmlError.Message = h1.Text()
+		}
+
+		if strings.TrimSpace(htmlError.Message) == "" && doc.Find("title") != nil {
 			htmlError.Message = doc.Find("title").Text()
 		}
 		return htmlError
