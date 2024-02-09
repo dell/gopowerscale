@@ -34,6 +34,7 @@ import (
 	log "github.com/akutz/gournal"
 	"github.com/sirupsen/logrus"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/dell/goisilon/api/json"
 )
 
@@ -187,6 +188,12 @@ type Error struct {
 type JSONError struct {
 	StatusCode int
 	Err        []Error `json:"errors"`
+}
+
+// HTMLError is an HTML response with one or more errors.
+type HTMLError struct {
+	StatusCode int
+	Message    string
 }
 
 // ClientOptions are options for the API client.
@@ -401,7 +408,7 @@ func (c *client) DoWithHeaders(
 			return err
 		}
 	default:
-		return parseJSONError(res)
+		return parseJSONHTMLError(res)
 	}
 
 	return nil
@@ -573,6 +580,10 @@ func (err *JSONError) Error() string {
 	return err.Err[0].Message
 }
 
+func (err *HTMLError) Error() string {
+	return err.Message
+}
+
 func (c *client) SetAuthToken(cookie string) {
 	c.sessionCredentials.sessionCookies = cookie
 }
@@ -597,18 +608,43 @@ func (c *client) GetReferer() string {
 	return c.sessionCredentials.referer
 }
 
-func parseJSONError(r *http.Response) error {
-	jsonError := &JSONError{}
-	if err := json.NewDecoder(r.Body).Decode(jsonError); err != nil {
-		return err
-	}
+func parseJSONHTMLError(r *http.Response) error {
+	// check the content type of the response
+	contentType := r.Header.Get("Content-Type")
+	switch {
+	case strings.HasPrefix(contentType, "application/json"):
+		jsonErr := &JSONError{}
+		// decode JSON error response
+		err := json.NewDecoder(r.Body).Decode(jsonErr)
+		if err != nil {
+			return err
+		}
+		jsonErr.StatusCode = r.StatusCode
+		if len(jsonErr.Err) > 0 && jsonErr.Err[0].Message == "" {
+			jsonErr.Err[0].Message = r.Status
+		}
+		return jsonErr
+	case strings.HasPrefix(contentType, "text/html"):
+		htmlError := &HTMLError{}
+		// decode HTML error response
+		doc, err := goquery.NewDocumentFromReader(r.Body)
+		if err != nil {
+			return err
+		}
+		htmlError.StatusCode = r.StatusCode
 
-	jsonError.StatusCode = r.StatusCode
-	if jsonError.Err[0].Message == "" {
-		jsonError.Err[0].Message = r.Status
-	}
+		if h1 := doc.Find("h1"); h1 != nil {
+			htmlError.Message = h1.Text()
+		}
 
-	return jsonError
+		if strings.TrimSpace(htmlError.Message) == "" && doc.Find("title") != nil {
+			htmlError.Message = doc.Find("title").Text()
+		}
+		return htmlError
+	default:
+		// Unexpected content type
+		return fmt.Errorf("unexpected content type: %s", contentType)
+	}
 }
 
 // Authenticate make a REST API call [/session/1/session] to PowerScale to authenticate the given credentials.
@@ -678,11 +714,11 @@ func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri s
 		log.Debug(ctx, "Execution successful on Method: %v, URI: %v", method, uri)
 		return nil
 	}
-	// check if we need to Re-authenticate
-	if e, ok := err.(*JSONError); ok {
+
+	switch e := err.(type) {
+	case *JSONError:
 		if e.StatusCode == 401 {
 			log.Debug(ctx, "Authentication failed. Trying to re-authenticate")
-			// Authenticate then try again
 			if err := c.authenticate(ctx, c.username, c.password, c.hostname); err != nil {
 				return fmt.Errorf("authentication failure due to: %v", err)
 			}
@@ -690,10 +726,19 @@ func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri s
 		} else {
 			log.Error(ctx, "Error in response. Method:%s URI:%s Error: %v JSON Error: %+v", method, uri, err, e)
 		}
-	} else {
-		log.Error(ctx, "Error is not a type of \"*JSONError\". Error:", err)
+	case *HTMLError:
+		if e.StatusCode == 401 {
+			log.Debug(ctx, "Authentication failed. Trying to re-authenticate")
+			if err := c.authenticate(ctx, c.username, c.password, c.hostname); err != nil {
+				return fmt.Errorf("authentication failure due to: %v", err)
+			}
+			return c.DoWithHeaders(ctx, method, uri, id, params, headers, body, resp)
+		} else {
+			log.Error(ctx, "Error in response. Method:%s URI:%s Error: %v HTML Error: %+v", method, uri, err, e)
+		}
+	default:
+		log.Error(ctx, "Error is not a type of \"*JSONError or *HTMLError\". Error:", err)
 	}
-
 	return err
 }
 
