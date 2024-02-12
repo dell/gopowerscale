@@ -610,21 +610,7 @@ func (c *client) GetReferer() string {
 
 func parseJSONHTMLError(r *http.Response) error {
 	// check the content type of the response
-	contentType := r.Header.Get("Content-Type")
-	switch {
-	case strings.HasPrefix(contentType, "application/json"):
-		jsonErr := &JSONError{}
-		// decode JSON error response
-		err := json.NewDecoder(r.Body).Decode(jsonErr)
-		if err != nil {
-			return err
-		}
-		jsonErr.StatusCode = r.StatusCode
-		if len(jsonErr.Err) > 0 && jsonErr.Err[0].Message == "" {
-			jsonErr.Err[0].Message = r.Status
-		}
-		return jsonErr
-	case strings.HasPrefix(contentType, "text/html"):
+	if r.Header.Get("Content-Type") == "text/html" {
 		htmlError := &HTMLError{}
 		// decode HTML error response
 		doc, err := goquery.NewDocumentFromReader(r.Body)
@@ -641,9 +627,18 @@ func parseJSONHTMLError(r *http.Response) error {
 			htmlError.Message = doc.Find("title").Text()
 		}
 		return htmlError
-	default:
-		// Unexpected content type
-		return fmt.Errorf("unexpected content type: %s", contentType)
+	} else {
+		jsonErr := &JSONError{}
+		// decode JSON error response
+		err := json.NewDecoder(r.Body).Decode(jsonErr)
+		if err != nil {
+			return err
+		}
+		jsonErr.StatusCode = r.StatusCode
+		if len(jsonErr.Err) > 0 && jsonErr.Err[0].Message == "" {
+			jsonErr.Err[0].Message = r.Status
+		}
+		return jsonErr
 	}
 }
 
