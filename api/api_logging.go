@@ -33,7 +33,7 @@ func isBinOctetBody(h http.Header) bool {
 	return h.Get(headerKeyContentType) == headerValContentTypeBinaryOctetStream
 }
 
-func logRequest(ctx context.Context, w io.Writer, req *http.Request, verbose VerboseType) {
+func logRequest(_ context.Context, w io.Writer, req *http.Request, verbose VerboseType) {
 	fmt.Fprintln(w, "")
 	fmt.Fprint(w, "    -------------------------- ")
 	fmt.Fprint(w, "GOISILON HTTP REQUEST")

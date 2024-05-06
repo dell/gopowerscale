@@ -764,7 +764,7 @@ func (c *Client) exportAddReadWriteClients(ctx context.Context, export Export, c
 		ctx, c.API, &apiv2.Export{ID: export.ID, ReadWriteClients: updatedReadWriteClients}, export.Zone, ignoreUnresolvableHosts)
 }
 
-func (c *Client) getUpdatedClients(ctx context.Context, exportID int, clients *[]string, clientsToAdd []string) *[]string {
+func (c *Client) getUpdatedClients(_ context.Context, _ int, clients *[]string, clientsToAdd []string) *[]string {
 	if clients == nil {
 		clients = &clientsToAdd
 	} else {

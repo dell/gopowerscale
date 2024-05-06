@@ -49,15 +49,14 @@ func realexportsPath(client api.Client) string {
 	return path.Join(exportsPath, client.VolumesPath())
 }
 
-func realVolumeSnapshotPath(client api.Client, name, zonePath, accessZone string) string {
+func realVolumeSnapshotPath(client api.Client, name, zonePath, _ string) string {
 	// Isi path is different from zone path
 	volumeSnapshotPath := strings.Join([]string{zonePath, snapshotParentDir}, "/")
 	if strings.Compare(zonePath, client.VolumesPath()) != 0 {
 		parts := strings.SplitN(realNamespacePath(client), "/ifs", 2)
 		return path.Join(parts[0], volumeSnapshotPath, name, parts[1])
-	} else {
-		return path.Join(volumeSnapshotPath, name)
 	}
+	return path.Join(volumeSnapshotPath, name)
 }
 
 // GetAbsoluteSnapshotPath get the absolute path of a snapshot
@@ -79,31 +78,29 @@ func GetRealVolumeSnapshotPathWithIsiPath(isiPath, zonePath, name, accessZone st
 	if accessZone == "System" {
 		parts := strings.SplitN(GetRealNamespacePathWithIsiPath(isiPath), "/ifs", 2)
 		return path.Join(parts[0], volumeSnapshotPath, name, parts[1])
-	} else {
-		// if Isi path is different then zone path get remaining isiPath
-		_, remainIsiPath, found := strings.Cut(isiPath, zonePath)
-		if found {
-			return path.Join(namespacePath, zonePath, snapshotParentDir, name, remainIsiPath)
-		} else {
-			return path.Join(namespacePath, zonePath, snapshotParentDir, name)
-		}
 	}
+	// if Isi path is different then zone path get remaining isiPath
+	_, remainIsiPath, found := strings.Cut(isiPath, zonePath)
+	if found {
+		return path.Join(namespacePath, zonePath, snapshotParentDir, name, remainIsiPath)
+	}
+	return path.Join(namespacePath, zonePath, snapshotParentDir, name)
 }
 
 // getAuthMemberId reutrns actual auth id, which can be 'UID:0', 'USER:name', 'GID:0', 'GROUP:wheel',
 // memberType can be user/group.
-func getAuthMemberId(memberType string, memberName *string, memberId *int32) (authMemberId string, err error) {
+func getAuthMemberId(memberType string, memberName *string, memberId *int32) (authMemberID string, err error) {
 	memberType = strings.ToLower(memberType)
 	if memberType != fileGroupTypeUser && memberType != fileGroupTypeGroup {
 		return "", fmt.Errorf("member type is wrong, only support %s and %s", fileGroupTypeUser, fileGroupTypeGroup)
 	}
 
 	if memberName != nil && *memberName != "" {
-		authMemberId = fmt.Sprintf("%s:%s", strings.ToUpper(memberType), *memberName)
+		authMemberID = fmt.Sprintf("%s:%s", strings.ToUpper(memberType), *memberName)
 	}
 
 	if memberId != nil {
-		authMemberId = fmt.Sprintf("%sID:%d", strings.ToUpper(memberType)[0:1], *memberId)
+		authMemberID = fmt.Sprintf("%sID:%d", strings.ToUpper(memberType)[0:1], *memberId)
 	}
 	return
 }
