@@ -89,7 +89,7 @@ func GetRealVolumeSnapshotPathWithIsiPath(isiPath, zonePath, name, accessZone st
 
 // getAuthMemberId reutrns actual auth id, which can be 'UID:0', 'USER:name', 'GID:0', 'GROUP:wheel',
 // memberType can be user/group.
-func getAuthMemberId(memberType string, memberName *string, memberId *int32) (authMemberID string, err error) {
+func getAuthMemberId(memberType string, memberName *string, memberID *int32) (authMemberID string, err error) {
 	memberType = strings.ToLower(memberType)
 	if memberType != fileGroupTypeUser && memberType != fileGroupTypeGroup {
 		return "", fmt.Errorf("member type is wrong, only support %s and %s", fileGroupTypeUser, fileGroupTypeGroup)
@@ -99,8 +99,8 @@ func getAuthMemberId(memberType string, memberName *string, memberId *int32) (au
 		authMemberID = fmt.Sprintf("%s:%s", strings.ToUpper(memberType), *memberName)
 	}
 
-	if memberId != nil {
-		authMemberID = fmt.Sprintf("%sID:%d", strings.ToUpper(memberType)[0:1], *memberId)
+	if memberID != nil {
+		authMemberID = fmt.Sprintf("%sID:%d", strings.ToUpper(memberType)[0:1], *memberID)
 	}
 	return
 }

@@ -148,7 +148,7 @@ func CreateIsiQuota(
 	if softGracePrd == 0 {
 		thresholds.SoftGrace = nil
 	}
-	var data *IsiQuotaReq = &IsiQuotaReq{
+	var data = &IsiQuotaReq{
 		Enforced:                  true,
 		IncludeSnapshots:          false,
 		Path:                      path,

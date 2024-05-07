@@ -133,8 +133,8 @@ func GetIsiGroupMembers(ctx context.Context, client api.Client, groupName *strin
 }
 
 // getIsiGroupMemberListWithResume queries the next page group members based on resume token.
-func getIsiGroupMemberListWithResume(ctx context.Context, client api.Client, groupId, resume string) (members *IsiGroupMemberListRespResume, err error) {
-	err = client.Get(ctx, fmt.Sprintf(groupMemberPath, groupId), "", api.OrderedValues{{[]byte("resume"), []byte(resume)}}, nil, &members)
+func getIsiGroupMemberListWithResume(ctx context.Context, client api.Client, groupID, resume string) (members *IsiGroupMemberListRespResume, err error) {
+	err = client.Get(ctx, fmt.Sprintf(groupMemberPath, groupID), "", api.OrderedValues{{[]byte("resume"), []byte(resume)}}, nil, &members)
 	return
 }
 
