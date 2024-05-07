@@ -367,54 +367,53 @@ func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
 			return err
 		}
 		return nil
-	} else {
-		jobReq := &apiv11.JobRequest{
-			Id: policyName,
+	}
+	jobReq := &apiv11.JobRequest{
+		Id: policyName,
+	}
+	log.Info(ctx, "found no active sync jobs, starting a new one")
+
+	// workaround for PowerScale KB article
+	// https://www.dell.com/support/kbdoc/en-us/000019414/quotas-on-synciq-source-directories
+	for i := 0; i < maxRetries; i++ {
+		_, err := c.StartSyncIQJob(ctx, jobReq)
+		if err == nil {
+			break
 		}
-		log.Info(ctx, "found no active sync jobs, starting a new one")
-
-		// workaround for PowerScale KB article
-		// https://www.dell.com/support/kbdoc/en-us/000019414/quotas-on-synciq-source-directories
-		for i := 0; i < maxRetries; i++ {
-			_, err := c.StartSyncIQJob(ctx, jobReq)
-			if err == nil {
-				break
-			}
-			if strings.Contains(err.Error(), retryablePolicyError) {
-				if i+1 == maxRetries {
-					return err
-				}
-
-				reports, err := c.GetReportsByPolicyName(ctx, policyName, 1)
-				if err != nil {
-					return fmt.Errorf("error while retrieving reports for failed sync job %s %s", policyName, err.Error())
-				}
-				if !(len(reports.Reports) > 0 && len(reports.Reports[0].Errors) > 0 &&
-					strings.Contains(reports.Reports[0].Errors[0], retryableReportError)) {
-					return fmt.Errorf("found no retryable error in reports for failed sync job %s", policyName)
-				}
-
-				log.Info(ctx, "Sync job failed with error: %s. %v of %v - retrying in %v...",
-					reports.Reports[0].Errors[0], i+1, maxRetries, retryInterval)
-				time.Sleep(retryInterval)
-
-				// Resolve policy with error before retrying
-				err = c.ResolvePolicy(ctx, policyName)
-				if err != nil {
-					return err
-				}
-			} else { // not a retryable error
+		if strings.Contains(err.Error(), retryablePolicyError) {
+			if i+1 == maxRetries {
 				return err
 			}
-		}
 
-		time.Sleep(3 * time.Second)
-		err = c.WaitForNoActiveJobs(ctx, policyName)
-		if err != nil {
+			reports, err := c.GetReportsByPolicyName(ctx, policyName, 1)
+			if err != nil {
+				return fmt.Errorf("error while retrieving reports for failed sync job %s %s", policyName, err.Error())
+			}
+			if !(len(reports.Reports) > 0 && len(reports.Reports[0].Errors) > 0 &&
+				strings.Contains(reports.Reports[0].Errors[0], retryableReportError)) {
+				return fmt.Errorf("found no retryable error in reports for failed sync job %s", policyName)
+			}
+
+			log.Info(ctx, "Sync job failed with error: %s. %v of %v - retrying in %v...",
+				reports.Reports[0].Errors[0], i+1, maxRetries, retryInterval)
+			time.Sleep(retryInterval)
+
+			// Resolve policy with error before retrying
+			err = c.ResolvePolicy(ctx, policyName)
+			if err != nil {
+				return err
+			}
+		} else { // not a retryable error
 			return err
 		}
-		return nil
 	}
+
+	time.Sleep(3 * time.Second)
+	err = c.WaitForNoActiveJobs(ctx, policyName)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *Client) GetJobsByPolicyName(ctx context.Context, policyName string) ([]apiv11.Job, error) {

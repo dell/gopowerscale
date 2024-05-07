@@ -285,10 +285,10 @@ func testUserMapping(
 }
 
 var (
-	getClients = func(ctx context.Context, e Export) []string {
+	getClients = func(_ context.Context, e Export) []string {
 		return *e.Clients
 	}
-	getRootClients = func(ctx context.Context, e Export) []string {
+	getRootClients = func(_ context.Context, e Export) []string {
 		return *e.RootClients
 	}
 )
@@ -707,9 +707,8 @@ func TestGetExportsWithPagination(t *testing.T) {
 	if err != nil {
 		if resume == "" {
 			panic("The last call got the last page")
-		} else {
-			panic(err)
 		}
+		panic(err)
 	}
 	resumeCallID := exports.Exports[0].ID
 
@@ -762,10 +761,10 @@ func TestClient_ExportLifeCycleWithStructParams(t *testing.T) {
 	assertNil(t, err)
 	assert.Equal(t, 1, len(listExports.Exports))
 
-	exportId := strconv.Itoa(int(res.Id))
+	exportID := strconv.Itoa(int(res.Id))
 	// Test getExport
 	getExport, err := client.GetExportWithStructParams(defaultCtx, apiv4.GetV2NfsExportRequest{
-		V2NfsExportId: exportId,
+		V2NfsExportId: exportID,
 	})
 	assertNil(t, err)
 	assert.Equal(t, 1, len(getExport.Exports))
@@ -774,22 +773,22 @@ func TestClient_ExportLifeCycleWithStructParams(t *testing.T) {
 	// Test getExport
 	readOnly := true
 	err = client.UpdateExportWithStructParams(defaultCtx, apiv4.UpdateV4NfsExportRequest{
-		V2NfsExportId: exportId,
+		V2NfsExportId: exportID,
 		V2NfsExport: &openapi.V2NfsExportExtendedExtended{
 			ReadOnly: &readOnly,
 		},
 	})
 	assertNil(t, err)
 	getUpdatedExport, err := client.GetExportWithStructParams(defaultCtx, apiv4.GetV2NfsExportRequest{
-		V2NfsExportId: exportId,
+		V2NfsExportId: exportID,
 	})
 	assert.Equal(t, true, *(getUpdatedExport.Exports[0].ReadOnly))
 
 	// Test delete export
-	err = client.DeleteExportWithStructParams(defaultCtx, apiv4.DeleteV4NfsExportRequest{V2NfsExportId: exportId})
+	err = client.DeleteExportWithStructParams(defaultCtx, apiv4.DeleteV4NfsExportRequest{V2NfsExportId: exportID})
 	assertNil(t, err)
 	_, err = client.GetExportWithStructParams(defaultCtx, apiv4.GetV2NfsExportRequest{
-		V2NfsExportId: exportId,
+		V2NfsExportId: exportID,
 	})
 	assertNotNil(t, err)
 }
