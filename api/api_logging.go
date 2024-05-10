@@ -47,7 +47,7 @@ func logRequest(_ context.Context, w io.Writer, req *http.Request, verbose Verbo
 		// full logging, i.e. print full request message content
 		buf, _ := httputil.DumpRequest(req, !isBinOctetBody(req.Header))
 		decodedBuf := encryptPassword(buf)
-		WriteIndented(w, decodedBuf)
+		_ = WriteIndented(w, decodedBuf)
 		fmt.Fprintln(w)
 	}
 }
@@ -75,7 +75,7 @@ func logResponse(ctx context.Context, res *http.Response, verbose VerboseType) {
 	}
 
 	// when DumpResponse gets err, buf will be nil. No message content will be printed
-	WriteIndented(w, buf)
+	_ = WriteIndented(w, buf)
 
 	log.Debug(ctx, w.String())
 }

@@ -284,7 +284,7 @@ func New(
 	}
 
 	if c.authType == authTypeSessionBased {
-		c.authenticate(ctx, username, password, hostname)
+		_ = c.authenticate(ctx, username, password, hostname)
 	}
 	resp := &apiVerResponse{}
 	if err := c.Get(ctx, "/platform/latest", "", nil, nil, resp); err != nil &&
