@@ -26,7 +26,7 @@ import (
 func GetIsiUser(ctx context.Context, client api.Client, userName *string, uid *int32) (user *IsiUser, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/auth/users/<user-id>
 
-	authUserID, err := getAuthMemberId(fileGroupTypeUser, userName, uid)
+	authUserID, err := getAuthMemberID(fileGroupTypeUser, userName, uid)
 	if err != nil {
 		return
 	}
@@ -203,7 +203,7 @@ func UpdateIsiUser(ctx context.Context, client api.Client, userName *string, uid
 	// 					"uid": "int",
 	// 					"unlock": "bool"
 	//				}
-	authUserID, err := getAuthMemberId(fileGroupTypeUser, userName, uid)
+	authUserID, err := getAuthMemberID(fileGroupTypeUser, userName, uid)
 	if err != nil {
 		return
 	}
@@ -254,7 +254,7 @@ func UpdateIsiUser(ctx context.Context, client api.Client, userName *string, uid
 func DeleteIsiUser(ctx context.Context, client api.Client, userName *string, uid *int32) (err error) {
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/auth/users/<user-id>
 
-	authUserID, err := getAuthMemberId(fileGroupTypeUser, userName, uid)
+	authUserID, err := getAuthMemberID(fileGroupTypeUser, userName, uid)
 	if err != nil {
 		return
 	}

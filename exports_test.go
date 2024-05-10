@@ -686,7 +686,7 @@ func testExportClientsClear(
 	assert.Len(t, getClients(defaultCtx, export), 0)
 }
 
-func TestGetExportsWithPagination(t *testing.T) {
+func TestGetExportsWithPagination(_ *testing.T) {
 	// This test makes assumption that the number of exports is no less than 2
 	limit := "2"
 	params := api.OrderedValues{

@@ -27,7 +27,7 @@ import (
 func GetIsiGroup(ctx context.Context, client api.Client, groupName *string, gid *int32) (group *IsiGroup, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/auth/groups/<group-id>
 
-	authGroupID, err := getAuthMemberId(fileGroupTypeGroup, groupName, gid)
+	authGroupID, err := getAuthMemberID(fileGroupTypeGroup, groupName, gid)
 	if err != nil {
 		return
 	}
@@ -108,7 +108,7 @@ func getIsiGroupListWithResume(ctx context.Context, client api.Client, resume st
 func GetIsiGroupMembers(ctx context.Context, client api.Client, groupName *string, gid *int32) (members []*IsiAccessItemFileGroup, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/groups/{group-id}/members
 
-	authGroupID, err := getAuthMemberId(fileGroupTypeGroup, groupName, gid)
+	authGroupID, err := getAuthMemberID(fileGroupTypeGroup, groupName, gid)
 	if err != nil {
 		return
 	}
@@ -147,7 +147,7 @@ func AddIsiGroupMember(ctx context.Context, client api.Client, groupName *string
 	//						"id":"UID:1522"
 	//					}
 
-	authGroupID, err := getAuthMemberId(fileGroupTypeGroup, groupName, gid)
+	authGroupID, err := getAuthMemberID(fileGroupTypeGroup, groupName, gid)
 	if err != nil {
 		return err
 	}
@@ -172,12 +172,12 @@ func AddIsiGroupMember(ctx context.Context, client api.Client, groupName *string
 func RemoveIsiGroupMember(ctx context.Context, client api.Client, groupName *string, gid *int32, member IsiAuthMemberItem) error {
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/groups/{group-id}/members/<member-id>
 
-	authGroupID, err := getAuthMemberId(fileGroupTypeGroup, groupName, gid)
+	authGroupID, err := getAuthMemberID(fileGroupTypeGroup, groupName, gid)
 	if err != nil {
 		return err
 	}
 
-	authMemberID, err := getAuthMemberId(member.Type, member.Name, member.Id)
+	authMemberID, err := getAuthMemberID(member.Type, member.Name, member.Id)
 	if err != nil {
 		return err
 	}
@@ -272,7 +272,7 @@ func UpdateIsiGroupGID(ctx context.Context, client api.Client, groupName *string
 		values.StringAdd("provider", *queryProvider)
 	}
 
-	authGroupID, err := getAuthMemberId(fileGroupTypeGroup, groupName, gid)
+	authGroupID, err := getAuthMemberID(fileGroupTypeGroup, groupName, gid)
 	if err != nil {
 		return
 	}
@@ -283,7 +283,7 @@ func UpdateIsiGroupGID(ctx context.Context, client api.Client, groupName *string
 // DeleteIsiGroup removes the group by group-id.
 func DeleteIsiGroup(ctx context.Context, client api.Client, groupName *string, gid *int32) (err error) {
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/auth/groups/<group-id>
-	authGroupID, err := getAuthMemberId(fileGroupTypeGroup, groupName, gid)
+	authGroupID, err := getAuthMemberID(fileGroupTypeGroup, groupName, gid)
 	if err != nil {
 		return
 	}

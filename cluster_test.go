@@ -42,7 +42,7 @@ func TestGetFloatStatistics(*testing.T) {
 }
 
 // Test if the local serial can be returned normally
-func TestGetLocalSerial(t *testing.T) {
+func TestGetLocalSerial(_ *testing.T) {
 	// Get local serial
 	localSerial, err := client.GetLocalSerial(defaultCtx)
 	if err != nil {

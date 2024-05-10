@@ -108,7 +108,7 @@ func AddIsiRoleMember(ctx context.Context, client api.Client, roleID string, mem
 func RemoveIsiRoleMember(ctx context.Context, client api.Client, roleID string, member IsiAuthMemberItem) error {
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/roles/{role-id}/members/<member-id>
 
-	authMemberID, err := getAuthMemberId(member.Type, member.Name, member.Id)
+	authMemberID, err := getAuthMemberID(member.Type, member.Name, member.Id)
 	if err != nil {
 		return err
 	}

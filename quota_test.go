@@ -23,7 +23,7 @@ import (
 )
 
 // Test both GetQuota() and SetQuota()
-func TestQuotaGetSet(t *testing.T) {
+func TestQuotaGetSet(_ *testing.T) {
 	volumeName := "test_quota_get_set"
 	quotaSize := int64(1234567)
 	var softLimit, advisoryLimit, softGracePrd int64
@@ -76,7 +76,7 @@ func TestAllQuotasGet(t *testing.T) {
 }
 
 // Test UpdateQuota()
-func TestQuotaUpdate(t *testing.T) {
+func TestQuotaUpdate(_ *testing.T) {
 	volumeName := "test_quota_update"
 	quotaSize := int64(1234567)
 	updatedQuotaSize := int64(22345000)
@@ -127,7 +127,7 @@ func TestQuotaUpdate(t *testing.T) {
 }
 
 // Test ClearQuota()
-func TestQuotaClear(t *testing.T) {
+func TestQuotaClear(_ *testing.T) {
 	volumeName := "test_quota_clear"
 	quotaSize := int64(1234567)
 	var softLimit, advisoryLimit, softGracePrd int64
@@ -174,7 +174,7 @@ func TestQuotaClear(t *testing.T) {
 }
 
 // Test ClearQuotaByID()
-func TestQuotaClearByID(t *testing.T) {
+func TestQuotaClearByID(_ *testing.T) {
 	volumeName := "test_quota_clear_by_id"
 	quotaSize := int64(1234567)
 	var softLimit, advisoryLimit, softGracePrd int64
@@ -222,7 +222,7 @@ func TestIsQuotaLicenseActivated(t *testing.T) {
 }
 
 // Test TestQuotaUpdateByID()
-func TestQuotaUpdateByID(t *testing.T) {
+func TestQuotaUpdateByID(_ *testing.T) {
 	volumeName := "test_quota_update"
 	quotaSize := int64(1234567)
 	updatedQuotaSize := int64(22345000)
