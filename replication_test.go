@@ -292,6 +292,6 @@ func (suite *ReplicationTestSuite) TestReplication() {
 	suite.NoError(err)
 }
 
-func TestReplicationSuite(t *testing.T) {
+func TestReplicationSuite(_ *testing.T) {
 	//	suite.Run(t, new(ReplicationTestSuite))
 }

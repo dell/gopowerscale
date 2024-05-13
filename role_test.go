@@ -44,10 +44,10 @@ func TestRoleGet(t *testing.T) {
 
 // Test GetRoleByID(), AddRoleMember(), RemoveRoleMember() and IsRoleMemberOf()
 func TestRoleMemberAdd(t *testing.T) {
-	roleId := "SystemAdmin"
+	roleID := "SystemAdmin"
 	userName := "test_user_roleMember"
 
-	role, err := client.GetRoleByID(defaultCtx, roleId)
+	role, err := client.GetRoleByID(defaultCtx, roleID)
 	if err != nil {
 		panic(err)
 	}
@@ -68,27 +68,27 @@ func TestRoleMemberAdd(t *testing.T) {
 		Name: &userName,
 	}
 
-	isRoleMember, err := client.IsRoleMemberOf(defaultCtx, roleId, memberUserWithName)
+	isRoleMember, err := client.IsRoleMemberOf(defaultCtx, roleID, memberUserWithName)
 	if err != nil {
 		panic(err)
 	}
 	assertFalse(t, isRoleMember)
 
-	err = client.AddRoleMember(defaultCtx, roleId, memberUserWithName)
+	err = client.AddRoleMember(defaultCtx, roleID, memberUserWithName)
 	if err != nil {
 		panic(err)
 	}
-	isRoleMember, err = client.IsRoleMemberOf(defaultCtx, roleId, memberUserWithName)
+	isRoleMember, err = client.IsRoleMemberOf(defaultCtx, roleID, memberUserWithName)
 	if err != nil {
 		panic(err)
 	}
 	assertTrue(t, isRoleMember)
 
-	err = client.RemoveRoleMember(defaultCtx, roleId, memberUserWithName)
+	err = client.RemoveRoleMember(defaultCtx, roleID, memberUserWithName)
 	if err != nil {
 		panic(err)
 	}
-	isRoleMember, err = client.IsRoleMemberOf(defaultCtx, roleId, memberUserWithName)
+	isRoleMember, err = client.IsRoleMemberOf(defaultCtx, roleID, memberUserWithName)
 	if err != nil {
 		panic(err)
 	}
@@ -100,25 +100,25 @@ func TestRoleMemberAdd(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	memberUserWithUid := api.IsiAuthMemberItem{
+	memberUserWithUID := api.IsiAuthMemberItem{
 		Type: "user",
 		Id:   &uid32,
 	}
-	err = client.AddRoleMember(defaultCtx, roleId, memberUserWithUid)
+	err = client.AddRoleMember(defaultCtx, roleID, memberUserWithUID)
 	if err != nil {
 		panic(err)
 	}
-	isRoleMember, err = client.IsRoleMemberOf(defaultCtx, roleId, memberUserWithUid)
+	isRoleMember, err = client.IsRoleMemberOf(defaultCtx, roleID, memberUserWithUID)
 	if err != nil {
 		panic(err)
 	}
 	assertTrue(t, isRoleMember)
 
-	err = client.RemoveRoleMember(defaultCtx, roleId, memberUserWithUid)
+	err = client.RemoveRoleMember(defaultCtx, roleID, memberUserWithUID)
 	if err != nil {
 		panic(err)
 	}
-	isRoleMember, err = client.IsRoleMemberOf(defaultCtx, roleId, memberUserWithUid)
+	isRoleMember, err = client.IsRoleMemberOf(defaultCtx, roleID, memberUserWithUID)
 	if err != nil {
 		panic(err)
 	}

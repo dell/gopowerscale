@@ -23,7 +23,7 @@ import (
 	apiv1 "github.com/dell/goisilon/api/v1"
 )
 
-func TestSnapshotsGet(t *testing.T) {
+func TestSnapshotsGet(_ *testing.T) {
 	snapshotPath := "test_snapshots_get_volume"
 	snapshotName1 := "test_snapshots_get_snapshot_0"
 	snapshotName2 := "test_snapshots_get_snapshot_1"
@@ -93,7 +93,7 @@ func TestSnapshotsGet(t *testing.T) {
 	}
 }
 
-func TestSnapshotsGetByPath(t *testing.T) {
+func TestSnapshotsGetByPath(_ *testing.T) {
 	snapshotPath1 := "test_snapshots_get_by_path_volume_1"
 	snapshotPath2 := "test_snapshots_get_by_path_volume_2"
 	snapshotName1 := "test_snapshots_get_by_path_snapshot_1"
@@ -177,7 +177,7 @@ func TestSnapshotsGetByPath(t *testing.T) {
 	}
 }
 
-func TestSnapshotCreate(t *testing.T) {
+func TestSnapshotCreate(_ *testing.T) {
 	snapshotPath := "test_snapshot_create_volume"
 	snapshotName := "test_snapshot_create_snapshot"
 
@@ -220,7 +220,7 @@ func TestSnapshotCreate(t *testing.T) {
 	}
 }
 
-func TestSnapshotRemove(t *testing.T) {
+func TestSnapshotRemove(_ *testing.T) {
 	snapshotPath := "test_snapshot_remove_volume"
 	snapshotName := "test_snapshot_remove_snapshot"
 
@@ -257,7 +257,7 @@ func TestSnapshotRemove(t *testing.T) {
 	}
 }
 
-func TestSnapshotCopy(t *testing.T) {
+func TestSnapshotCopy(_ *testing.T) {
 	accessZone := "System"
 	sourceSnapshotPath := "test_snapshot_copy_src_volume"
 	sourceSnapshotName := "test_snapshot_copy_src_snapshot"
@@ -329,7 +329,7 @@ func TestSnapshotCopy(t *testing.T) {
 	}
 }
 
-func TestSnapshotCopyWithIsiPath(t *testing.T) {
+func TestSnapshotCopyWithIsiPath(_ *testing.T) {
 	sourceSnapshotPath := "test_snapshot_copy_src_volume"
 	sourceSnapshotName := "test_snapshot_copy_src_snapshot"
 	destinationVolume := "test_snapshot_copy_dst_volume"
@@ -402,7 +402,7 @@ func TestSnapshotCopyWithIsiPath(t *testing.T) {
 	}
 }
 
-func TestSnapshotGetByIdentity(t *testing.T) {
+func TestSnapshotGetByIdentity(_ *testing.T) {
 	snapshotPath := "test_snapshots_get_volume"
 	snapshotName1 := "test_snapshots_get_snapshot_0"
 	snapshotName2 := "test_snapshots_get_snapshot_1"
@@ -445,7 +445,7 @@ func TestSnapshotGetByIdentity(t *testing.T) {
 	}
 }
 
-func TestSnapshotIsExistent(t *testing.T) {
+func TestSnapshotIsExistent(_ *testing.T) {
 	snapshotPath := "test_snapshots_exist_volume"
 	snapshotName1 := "test_snapshots_exist_snapshot_0"
 
@@ -477,7 +477,7 @@ func TestSnapshotIsExistent(t *testing.T) {
 	}
 }
 
-func TestSnapshotExportWithZone(t *testing.T) {
+func TestSnapshotExportWithZone(_ *testing.T) {
 	snapshotPath := "test_snapshots_export_volume"
 	snapshotName1 := "test_snapshots_export_snapshot_0"
 	defaultAccessZone := "System"
@@ -509,7 +509,7 @@ func TestSnapshotExportWithZone(t *testing.T) {
 	defer client.UnexportByIDWithZone(defaultCtx, id, defaultAccessZone)
 }
 
-func TestGetRealVolumeSnapshotPathWithIsiPath(t *testing.T) {
+func TestGetRealVolumeSnapshotPathWithIsiPath(_ *testing.T) {
 	volName := "volFromSnap0"
 	newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
 	accessZone := "System"
@@ -517,7 +517,7 @@ func TestGetRealVolumeSnapshotPathWithIsiPath(t *testing.T) {
 	fmt.Printf(apiv1.GetRealVolumeSnapshotPathWithIsiPath(newIsiPath, volName, name, accessZone))
 }
 
-func TestSnapshotSizeGet(t *testing.T) {
+func TestSnapshotSizeGet(_ *testing.T) {
 	snapshotPath := "test_snapshots_get_volume"
 	snapshotName1 := "test_snapshots_get_snapshot_0"
 	accessZone := "System"

@@ -231,14 +231,14 @@ func (c *Client) GetSnapshotFolderSize(ctx context.Context,
 // GetSnapshotIsiPath returns the snapshot directory path
 func (c *Client) GetSnapshotIsiPath(
 	ctx context.Context,
-	isiPath, snapshotId string, accessZone string,
+	isiPath, snapshotID string, accessZone string,
 ) (string, error) {
-	snapshot, err := c.GetIsiSnapshotByIdentity(ctx, snapshotId)
+	snapshot, err := c.GetIsiSnapshotByIdentity(ctx, snapshotID)
 	if err != nil {
 		return "", err
 	}
 	if snapshot == nil {
-		return "", fmt.Errorf("Snapshot doesn't exist for snapshot id: (%s) and access Zone (%s)", snapshotId, accessZone)
+		return "", fmt.Errorf("Snapshot doesn't exist for snapshot id: (%s) and access Zone (%s)", snapshotID, accessZone)
 	}
 
 	// get zone base path
@@ -253,10 +253,9 @@ func (c *Client) GetSnapshotIsiPath(
 	if strings.Compare(zone.Path, isiPath) != 0 {
 		parts := strings.SplitN(snapshotPath, namespacePath, 2)
 		if len(parts) < 2 {
-			return "", fmt.Errorf("Snapshot doesn't exist for snapshot id: (%s)", snapshotId)
+			return "", fmt.Errorf("Snapshot doesn't exist for snapshot id: (%s)", snapshotID)
 		}
 		return parts[1], nil
-	} else {
-		return path.Join(zone.Path, snapShot, snapshot.Name, path.Base(snapshot.Path)), nil
 	}
+	return path.Join(zone.Path, snapShot, snapshot.Name, path.Base(snapshot.Path)), nil
 }

@@ -33,7 +33,7 @@ func TestClient_SmbShareWithStructParams(t *testing.T) {
 }
 
 func TestClient_SmbShareLifeCycleWithStructParams(t *testing.T) {
-	trusteeId := "SID:S-1-1-0"
+	trusteeID := "SID:S-1-1-0"
 	trusteeName := "Everyone"
 	trusteeType := "wellknown"
 	shareName := "tf_share"
@@ -45,7 +45,7 @@ func TestClient_SmbShareLifeCycleWithStructParams(t *testing.T) {
 				Permission:     "full",
 				PermissionType: "allow",
 				Trustee: openapi.V1AuthAccessAccessItemFileGroup{
-					Id:   &trusteeId,
+					Id:   &trusteeID,
 					Name: &trusteeName,
 					Type: &trusteeType,
 				},
