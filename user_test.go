@@ -84,11 +84,11 @@ func TestUserUpdate(t *testing.T) {
 
 	email := "test.dell.com"
 	pw := "testPW"
-	newUid := int32(100000)
+	newUID := int32(100000)
 	queryForce := true
-	err = client.UpdateUserByNameOrUID(defaultCtx, &userName, nil, &queryForce, nil, nil, &email, nil, &pw, nil, nil, nil, &newUid, nil, nil, nil, nil, nil, nil)
+	err = client.UpdateUserByNameOrUID(defaultCtx, &userName, nil, &queryForce, nil, nil, &email, nil, &pw, nil, nil, nil, &newUID, nil, nil, nil, nil, nil, nil)
 	assertNoError(t, err)
-	userNew, err := client.GetUserByNameOrUID(defaultCtx, &userName, &newUid)
+	userNew, err := client.GetUserByNameOrUID(defaultCtx, &userName, &newUID)
 	assertNoError(t, err)
 	assertNotNil(t, userNew)
 	assertEqual(t, user.Dn, userNew.Dn)
@@ -96,6 +96,6 @@ func TestUserUpdate(t *testing.T) {
 	assertEqual(t, user.Provider, userNew.Provider)
 	assertEqual(t, email, userNew.Email)
 	assertNotEqual(t, user.Email, userNew.Uid.Id)
-	assertEqual(t, fmt.Sprintf("UID:%d", newUid), userNew.Uid.Id)
+	assertEqual(t, fmt.Sprintf("UID:%d", newUID), userNew.Uid.Id)
 	assertNotEqual(t, user.Uid.Id, userNew.Uid.Id)
 }

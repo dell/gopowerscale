@@ -577,7 +577,7 @@ func stateNul(s *scanner, c byte) int {
 
 // stateError is the state after reaching a syntax error,
 // such as after reading `[1}` or `5.1.2`.
-func stateError(s *scanner, c byte) int {
+func stateError(_ *scanner, _ byte) int {
 	return scanError
 }
 
@@ -616,7 +616,7 @@ func (s *scanner) undo(scanCode int) {
 }
 
 // stateRedo helps implement the scanner's 1-byte undo.
-func stateRedo(s *scanner, c byte) int {
+func stateRedo(s *scanner, _ byte) int {
 	s.redo = false
 	s.step = s.redoState
 	return s.redoCode

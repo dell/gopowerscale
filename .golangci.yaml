@@ -1,14 +1,21 @@
 run:
   timeout: 20m
-  issue-exit-code: 0 # we will change this later
   tests: true
-  skip-dirs-use-default: true
   modules-download-mode: readonly
 
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
   new: false
+  exclude:
+    - "error-naming: error var invalidFileMode should have name of the form errFoo"
+    - "var-naming: struct field"
+    - "var-naming: don't use underscores in Go names"
+    - "var-naming: func parameter"
+    - "var-naming: don't use ALL_CAPS in Go names; use CamelCase"
+    - "var-naming: method parameter"
+    - "var-naming: type"
+    - "unexported-return: exported func"
 
 output:
   print-linter-name: true

@@ -201,7 +201,7 @@ func (v *OrderedValues) Del(key []byte) {
 // using insertion order.
 func (v *OrderedValues) Encode() string {
 	buf := &bytes.Buffer{}
-	v.EncodeTo(buf)
+	_ = v.EncodeTo(buf)
 	return buf.String()
 }
 

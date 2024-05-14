@@ -201,7 +201,7 @@ func (enc *Encoder) Encode(v interface{}) error {
 	// is required if the encoded value was a number,
 	// so that the reader knows there aren't more
 	// digits coming.
-	e.WriteByte('\n')
+	_ = e.WriteByte('\n')
 
 	b := e.Bytes()
 	if enc.indentPrefix != "" || enc.indentValue != "" {

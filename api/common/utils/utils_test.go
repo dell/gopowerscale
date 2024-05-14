@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMain(m *testing.M) {
+func TestMain(_ *testing.M) {
 	fmt.Print("executing TestMain\n")
 }
 

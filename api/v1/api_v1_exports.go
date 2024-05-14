@@ -47,7 +47,6 @@ func Export(
 	var resp *postIsiExportResp
 
 	err = client.Post(ctx, exportsPath, "", nil, nil, data, &resp)
-
 	if err != nil {
 		return err
 	}
@@ -59,7 +58,7 @@ func Export(
 func SetExportClients(
 	ctx context.Context,
 	client api.Client,
-	Id int, clients []string,
+	ID int, clients []string,
 ) (err error) {
 	// PAPI call: PUT https://1.2.3.4:8080/platform/1/protocols/nfs/exports/Id
 	//            Content-Type: application/json
@@ -68,7 +67,7 @@ func SetExportClients(
 	data := &ExportClientList{Clients: clients}
 	var resp *postIsiExportResp
 
-	err = client.Put(ctx, exportsPath, strconv.Itoa(Id), nil, nil, data, &resp)
+	err = client.Put(ctx, exportsPath, strconv.Itoa(ID), nil, nil, data, &resp)
 
 	return err
 }
@@ -77,15 +76,15 @@ func SetExportClients(
 func Unexport(
 	ctx context.Context,
 	client api.Client,
-	Id int,
+	ID int,
 ) (err error) {
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/protocols/nfs/exports/23
 
-	if Id == 0 {
+	if ID == 0 {
 		return errors.New("no path Id set")
 	}
 
-	exportPath := fmt.Sprintf("%s/%d", exportsPath, Id)
+	exportPath := fmt.Sprintf("%s/%d", exportsPath, ID)
 
 	var resp postIsiExportResp
 	err = client.Delete(ctx, exportPath, "", nil, nil, &resp)

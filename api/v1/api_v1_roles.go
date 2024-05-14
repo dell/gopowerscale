@@ -24,11 +24,11 @@ import (
 )
 
 // GetIsiRole queries the role by role-id.
-func GetIsiRole(ctx context.Context, client api.Client, roleId string) (role *IsiRole, err error) {
+func GetIsiRole(ctx context.Context, client api.Client, roleID string) (role *IsiRole, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/auth/roles/<role-id>
 
 	var roleResp *isiRoleListResp
-	if err = client.Get(ctx, rolePath, roleId, nil, nil, &roleResp); err != nil {
+	if err = client.Get(ctx, rolePath, roleID, nil, nil, &roleResp); err != nil {
 		return
 	}
 
@@ -37,7 +37,7 @@ func GetIsiRole(ctx context.Context, client api.Client, roleId string) (role *Is
 		return
 	}
 
-	return nil, fmt.Errorf("role not found: %s", roleId)
+	return nil, fmt.Errorf("role not found: %s", roleID)
 }
 
 // GetIsiRoleList queries all roles on the cluster, filter by limit or resolveNames.
@@ -108,10 +108,10 @@ func AddIsiRoleMember(ctx context.Context, client api.Client, roleID string, mem
 func RemoveIsiRoleMember(ctx context.Context, client api.Client, roleID string, member IsiAuthMemberItem) error {
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/roles/{role-id}/members/<member-id>
 
-	authMemberId, err := getAuthMemberId(member.Type, member.Name, member.Id)
+	authMemberID, err := getAuthMemberID(member.Type, member.Name, member.Id)
 	if err != nil {
 		return err
 	}
 
-	return client.Delete(ctx, fmt.Sprintf(roleMemberPath, roleID), authMemberId, nil, nil, nil)
+	return client.Delete(ctx, fmt.Sprintf(roleMemberPath, roleID), authMemberID, nil, nil, nil)
 }

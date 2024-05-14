@@ -47,7 +47,7 @@ const (
 	defaultVolumesPathPermissions         = "0777"
 	defaultIgnoreUnresolvableHosts        = false
 	headerISISessToken                    = "Cookie"
-	headerISICSRFToken                    = "X-CSRF-Token"
+	headerISICSRFToken                    = "X-CSRF-Token" //nolint:gosec,G101
 	headerISIReferer                      = "Referer"
 	isiSessCsrfToken                      = "Set-Cookie"
 	authTypeBasic                         = 0
@@ -266,7 +266,7 @@ func New(
 		if opts.Insecure {
 			c.http.Transport = &http.Transport{
 				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true,
+					InsecureSkipVerify: true, //nolint:gosec,G402
 				},
 			}
 		} else {
@@ -275,7 +275,7 @@ func New(
 				return nil, err
 			}
 			c.http.Transport = &http.Transport{
-				TLSClientConfig: &tls.Config{
+				TLSClientConfig: &tls.Config{ //nolint:gosec,G402
 					RootCAs:            pool,
 					InsecureSkipVerify: false,
 				},
@@ -284,7 +284,7 @@ func New(
 	}
 
 	if c.authType == authTypeSessionBased {
-		c.authenticate(ctx, username, password, hostname)
+		_ = c.authenticate(ctx, username, password, hostname)
 	}
 	resp := &apiVerResponse{}
 	if err := c.Get(ctx, "/platform/latest", "", nil, nil, resp); err != nil &&
@@ -627,19 +627,18 @@ func parseJSONHTMLError(r *http.Response) error {
 			htmlError.Message = doc.Find("title").Text()
 		}
 		return htmlError
-	} else {
-		jsonErr := &JSONError{}
-		// decode JSON error response
-		err := json.NewDecoder(r.Body).Decode(jsonErr)
-		if err != nil {
-			return err
-		}
-		jsonErr.StatusCode = r.StatusCode
-		if len(jsonErr.Err) > 0 && jsonErr.Err[0].Message == "" {
-			jsonErr.Err[0].Message = r.Status
-		}
-		return jsonErr
 	}
+	jsonErr := &JSONError{}
+	// decode JSON error response
+	err := json.NewDecoder(r.Body).Decode(jsonErr)
+	if err != nil {
+		return err
+	}
+	jsonErr.StatusCode = r.StatusCode
+	if len(jsonErr.Err) > 0 && jsonErr.Err[0].Message == "" {
+		jsonErr.Err[0].Message = r.Status
+	}
+	return jsonErr
 }
 
 // Authenticate make a REST API call [/session/1/session] to PowerScale to authenticate the given credentials.
@@ -650,7 +649,7 @@ func (c *client) authenticate(ctx context.Context, username string, password str
 	data := &setupConnection{Services: []string{"platform", "namespace"}, Username: username, Password: password}
 	resp, _, err := c.DoAndGetResponseBody(ctx, http.MethodPost, "/session/1/session", "", nil, headers, data)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Authentication error: %v", err))
+		return fmt.Errorf("Authentication error: %v", err)
 	}
 
 	if resp != nil {
@@ -669,20 +668,19 @@ func (c *client) authenticate(ctx context.Context, username string, password str
 		case resp.StatusCode == 401:
 			{
 				log.Debug(ctx, "Response Code %v", resp)
-				return errors.New(fmt.Sprintf("Authentication failed. Unable to login to PowerScale. Verify username and password."))
+				return fmt.Errorf("authentication failed. unable to login to powerscale. verify username and password")
 			}
 		default:
-			return errors.New(fmt.Sprintf("Authenticate error. Response:"))
+			return fmt.Errorf("authenticate error. response-")
 		}
 
 		headerRes := strings.Join(resp.Header.Values(isiSessCsrfToken), " ")
 
 		startIndex, endIndex, matchStrLen := FetchValueIndexForKey(headerRes, "isisessid=", ";")
 		if startIndex < 0 || endIndex < 0 {
-			return errors.New(fmt.Sprintf("Session ID not retrieved"))
-		} else {
-			c.SetAuthToken(headerRes[startIndex : startIndex+matchStrLen+endIndex])
+			return fmt.Errorf("Session ID not retrieved")
 		}
+		c.SetAuthToken(headerRes[startIndex : startIndex+matchStrLen+endIndex])
 
 		startIndex, endIndex, matchStrLen = FetchValueIndexForKey(headerRes, "isicsrf=", ";")
 		if startIndex < 0 || endIndex < 0 {

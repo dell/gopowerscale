@@ -18,7 +18,7 @@ package goisilon
 import "testing"
 
 // Test if the zone returns correctly matched the name parsed in
-func TestGetZoneByName(t *testing.T) {
+func TestGetZoneByName(_ *testing.T) {
 	// Get local serial
 	name := "csi0zone"
 	zone, err := client.GetZoneByName(defaultCtx, name)

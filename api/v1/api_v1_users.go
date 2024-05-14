@@ -26,13 +26,13 @@ import (
 func GetIsiUser(ctx context.Context, client api.Client, userName *string, uid *int32) (user *IsiUser, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/auth/users/<user-id>
 
-	authUserId, err := getAuthMemberId(fileGroupTypeUser, userName, uid)
+	authUserID, err := getAuthMemberID(fileGroupTypeUser, userName, uid)
 	if err != nil {
 		return
 	}
 
 	var userListResp *isiUserListResp
-	if err = client.Get(ctx, userPath, authUserId, nil, nil, &userListResp); err != nil {
+	if err = client.Get(ctx, userPath, authUserID, nil, nil, &userListResp); err != nil {
 		return
 	}
 
@@ -41,7 +41,7 @@ func GetIsiUser(ctx context.Context, client api.Client, userName *string, uid *i
 		return
 	}
 
-	return nil, fmt.Errorf("user not found: %s", authUserId)
+	return nil, fmt.Errorf("user not found: %s", authUserID)
 }
 
 // GetIsiUserList queries all users on the cluster,
@@ -203,7 +203,7 @@ func UpdateIsiUser(ctx context.Context, client api.Client, userName *string, uid
 	// 					"uid": "int",
 	// 					"unlock": "bool"
 	//				}
-	authUserId, err := getAuthMemberId(fileGroupTypeUser, userName, uid)
+	authUserID, err := getAuthMemberID(fileGroupTypeUser, userName, uid)
 	if err != nil {
 		return
 	}
@@ -247,17 +247,17 @@ func UpdateIsiUser(ctx context.Context, client api.Client, userName *string, uid
 		Unlock:               unlock,
 	}
 
-	return client.Put(ctx, userPath, authUserId, values, nil, data, nil)
+	return client.Put(ctx, userPath, authUserID, values, nil, data, nil)
 }
 
 // DeleteIsiUser removes the user by user-id.
 func DeleteIsiUser(ctx context.Context, client api.Client, userName *string, uid *int32) (err error) {
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/auth/users/<user-id>
 
-	authUserId, err := getAuthMemberId(fileGroupTypeUser, userName, uid)
+	authUserID, err := getAuthMemberID(fileGroupTypeUser, userName, uid)
 	if err != nil {
 		return
 	}
 
-	return client.Delete(ctx, userPath, authUserId, nil, nil, nil)
+	return client.Delete(ctx, userPath, authUserID, nil, nil, nil)
 }
