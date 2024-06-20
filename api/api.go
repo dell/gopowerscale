@@ -450,7 +450,7 @@ func (c *client) DoAndGetResponseBody(
 	}
 
 	if lid > 0 {
-		ubf.WriteString(id)
+		ubf.WriteString(url.PathEscape(id))
 	}
 
 	// add parameters to the URI
