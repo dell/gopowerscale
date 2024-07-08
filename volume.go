@@ -169,13 +169,14 @@ func (c *Client) CreateVolumeWithIsipathMetaData(
 		return isiVolume, nil
 	}
 
-	volumes, _ := apiv1.GetIsiVolumes(ctx, c.API)
-
-	for _, volume := range volumes.Children {
-		if strings.Contains(volume.Name, name) {
-			log.Debug(ctx, "returned volume: %s", volume.Name)
-			isiVolume := &apiv1.IsiVolume{Name: volume.Name, AttributeMap: nil}
-			return isiVolume, nil
+	volumes, err := apiv1.GetIsiVolumeWithIsiPath(ctx, c.API, isiPath, name)
+	if volumes != nil && err == nil {
+		for _, volume := range volumes.AttributeMap {
+			if strings.Contains(volume.Name, name) {
+				log.Debug(ctx, "returned volume: %s", volume.Name)
+				isiVolume := &apiv1.IsiVolume{Name: volume.Name, AttributeMap: nil}
+				return isiVolume, nil
+			}
 		}
 	}
 
