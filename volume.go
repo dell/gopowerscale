@@ -142,6 +142,11 @@ func (c *Client) CreateVolumeWithIsipath(
 		return nil, err
 	}
 
+	log.Debug(ctx, "ALIKKKKKKKKKKKKKKKKKKK: %s", name)
+	log.Debug(ctx, "volume name: %s", name)
+	log.Debug(ctx, "volResp: %v", volResp)
+	log.Debug(ctx, "volResp.Children[0].Name: %s", volResp.Children[0].Name)
+
 	isiVolume := &apiv1.IsiVolume{Name: volResp.Children[0].Name, AttributeMap: nil}
 	return isiVolume, nil
 }
