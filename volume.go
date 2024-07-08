@@ -124,12 +124,12 @@ func (c *Client) GetVolumes(ctx context.Context) ([]Volume, error) {
 func (c *Client) CreateVolume(
 	ctx context.Context, name string,
 ) (Volume, error) {
-	_, err := apiv1.CreateIsiVolume(ctx, c.API, name)
+	volResp, err := apiv1.CreateIsiVolume(ctx, c.API, name)
 	if err != nil {
 		return nil, err
 	}
 
-	isiVolume := &apiv1.IsiVolume{Name: name, AttributeMap: nil}
+	isiVolume := &apiv1.IsiVolume{Name: volResp.Children[0].Name, AttributeMap: nil}
 	return isiVolume, nil
 }
 
@@ -137,12 +137,12 @@ func (c *Client) CreateVolume(
 func (c *Client) CreateVolumeWithIsipath(
 	ctx context.Context, isiPath, name, isiVolumePathPermissions string,
 ) (Volume, error) {
-	_, err := apiv1.CreateIsiVolumeWithIsiPath(ctx, c.API, isiPath, name, isiVolumePathPermissions)
+	volResp, err := apiv1.CreateIsiVolumeWithIsiPath(ctx, c.API, isiPath, name, isiVolumePathPermissions)
 	if err != nil {
 		return nil, err
 	}
 
-	isiVolume := &apiv1.IsiVolume{Name: name, AttributeMap: nil}
+	isiVolume := &apiv1.IsiVolume{Name: volResp.Children[0].Name, AttributeMap: nil}
 	return isiVolume, nil
 }
 
