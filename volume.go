@@ -163,9 +163,24 @@ func (c *Client) CreateVolumeWithIsipathMetaData(
 	log.Debug(ctx, "ALIKKKKKKKKKKKKKKKKKKK: %s", name)
 	log.Debug(ctx, "volume name: %s", name)
 	log.Debug(ctx, "volResp: %v", volResp)
-	log.Debug(ctx, "volResp.Children[0].Name: %s", volResp.Children[0].Name)
+	if volResp != nil && volResp.Children != nil && len(volResp.Children) > 0 {
+		log.Debug(ctx, "volResp.Children[0].Name: %s", volResp.Children[0].Name)
+		isiVolume := &apiv1.IsiVolume{Name: volResp.Children[0].Name, AttributeMap: nil}
+		return isiVolume, nil
+	}
 
-	isiVolume := &apiv1.IsiVolume{Name: volResp.Children[0].Name, AttributeMap: nil}
+	volumes, _ := apiv1.GetIsiVolumes(ctx, c.API)
+
+	for _, volume := range volumes.Children {
+		if strings.Contains(volume.Name, name) {
+			log.Debug(ctx, "returned volume: %s", volume.Name)
+			isiVolume := &apiv1.IsiVolume{Name: volume.Name, AttributeMap: nil}
+			return isiVolume, nil
+		}
+	}
+
+	log.Debug(ctx, "volume not found returning orignal name: %s", name)
+	isiVolume := &apiv1.IsiVolume{Name: name, AttributeMap: nil}
 	return isiVolume, nil
 }
 
