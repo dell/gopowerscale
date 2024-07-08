@@ -155,12 +155,17 @@ func (c *Client) CreateVolumeWithIsipath(
 func (c *Client) CreateVolumeWithIsipathMetaData(
 	ctx context.Context, isiPath, name, isiVolumePathPermissions string, metadata map[string]string,
 ) (Volume, error) {
-	_, err := apiv1.CreateIsiVolumeWithIsiPathMetaData(ctx, c.API, isiPath, name, isiVolumePathPermissions, metadata)
+	volResp, err := apiv1.CreateIsiVolumeWithIsiPathMetaData(ctx, c.API, isiPath, name, isiVolumePathPermissions, metadata)
 	if err != nil {
 		return nil, err
 	}
 
-	isiVolume := &apiv1.IsiVolume{Name: name, AttributeMap: nil}
+	log.Debug(ctx, "ALIKKKKKKKKKKKKKKKKKKK: %s", name)
+	log.Debug(ctx, "volume name: %s", name)
+	log.Debug(ctx, "volResp: %v", volResp)
+	log.Debug(ctx, "volResp.Children[0].Name: %s", volResp.Children[0].Name)
+
+	isiVolume := &apiv1.IsiVolume{Name: volResp.Children[0].Name, AttributeMap: nil}
 	return isiVolume, nil
 }
 
