@@ -59,12 +59,12 @@ func (c *Client) GetVolumeWithIsiPath(
 		name = id
 	}
 	volumes, err := apiv1.GetIsiVolumeWithIsiPath(ctx, c.API, isiPath, name)
-	log.Debug(ctx, "GetIsiVolumeWithIsiPath volumes: %v", volumes)
 	if err != nil {
 		return nil, err
 	}
 	var arrayVolumeName string
 	for _, volume := range volumes.AttributeMap {
+		log.Debug(ctx, "returned volume: %v", volume)
 		if strings.Contains(volume.Name, name) {
 			log.Debug(ctx, "returned volume: %s", volume.Name)
 			arrayVolumeName = volume.Name
