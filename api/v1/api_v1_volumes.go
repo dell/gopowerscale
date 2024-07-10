@@ -263,6 +263,24 @@ func GetIsiVolumeWithoutMetadataWithIsiPath(
 	return err
 }
 
+// GetIsiVolumeNameWithoutMetadataWithIsiPath is used to check whether a volume exists with isiPath thus the url does not append the metadata parameter.
+func GetIsiVolumeNameWithoutMetadataWithIsiPath(
+	ctx context.Context,
+	client api.Client,
+	isiPath, name string,
+) (resp *getIsiVolumeResp, err error) {
+	// PAPI call: GET https://1.2.3.4:8080/namespace/path/to/volume/
+	err = client.Get(
+		ctx,
+		GetRealNamespacePathWithIsiPath(isiPath),
+		name,
+		nil,
+		nil,
+		&resp)
+
+	return resp, err
+}
+
 // DeleteIsiVolume removes a volume from the cluster
 func DeleteIsiVolume(
 	ctx context.Context,

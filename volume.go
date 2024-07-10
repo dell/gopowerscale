@@ -64,13 +64,37 @@ func (c *Client) GetVolumeWithIsiPath(
 	}
 	var arrayVolumeName string
 	for _, volume := range volumes.AttributeMap {
-		log.Debug(ctx, "returned volume: %v", volume)
+		log.Debug(ctx, "volume name: %s", volume.Name)
+		log.Debug(ctx, "volume value: %v", volume.Value)
 		if strings.Contains(volume.Name, name) {
-			log.Debug(ctx, "returned volume: %s", volume.Name)
+			log.Debug(ctx, "matching volume name: %s", volume.Name)
 			arrayVolumeName = volume.Name
 		}
 	}
 	isiVolume := &apiv1.IsiVolume{Name: arrayVolumeName, AttributeMap: volumes.AttributeMap}
+	return isiVolume, nil
+}
+
+// GetIsiVolumeWithoutMetadata returns a specific volume by name or ID with isiPath
+func (c *Client) GetIsiVolumeNameWithoutMetadata(
+	ctx context.Context, isiPath, id, name string,
+) (Volume, error) {
+	if id != "" {
+		name = id
+	}
+	volumes, err := apiv1.GetIsiVolumeNameWithoutMetadataWithIsiPath(ctx, c.API, isiPath, name)
+	if err != nil {
+		return nil, err
+	}
+	var arrayVolumeName string
+	for _, volume := range volumes.AttributeMap {
+		log.Debug(ctx, "volume name: %s", volume.Name)
+		if strings.Contains(volume.Name, name) {
+			log.Debug(ctx, "matching volume name: %s", volume.Name)
+			arrayVolumeName = volume.Name
+		}
+	}
+	isiVolume := &apiv1.IsiVolume{Name: arrayVolumeName, AttributeMap: nil}
 	return isiVolume, nil
 }
 
@@ -132,12 +156,12 @@ func (c *Client) GetVolumes(ctx context.Context) ([]Volume, error) {
 func (c *Client) CreateVolume(
 	ctx context.Context, name string,
 ) (Volume, error) {
-	volResp, err := apiv1.CreateIsiVolume(ctx, c.API, name)
+	_, err := apiv1.CreateIsiVolume(ctx, c.API, name)
 	if err != nil {
 		return nil, err
 	}
 
-	isiVolume := &apiv1.IsiVolume{Name: volResp.Children[0].Name, AttributeMap: nil}
+	isiVolume := &apiv1.IsiVolume{Name: name, AttributeMap: nil}
 	return isiVolume, nil
 }
 
@@ -145,17 +169,12 @@ func (c *Client) CreateVolume(
 func (c *Client) CreateVolumeWithIsipath(
 	ctx context.Context, isiPath, name, isiVolumePathPermissions string,
 ) (Volume, error) {
-	volResp, err := apiv1.CreateIsiVolumeWithIsiPath(ctx, c.API, isiPath, name, isiVolumePathPermissions)
+	_, err := apiv1.CreateIsiVolumeWithIsiPath(ctx, c.API, isiPath, name, isiVolumePathPermissions)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Debug(ctx, "ALIKKKKKKKKKKKKKKKKKKK: %s", name)
-	log.Debug(ctx, "volume name: %s", name)
-	log.Debug(ctx, "volResp: %v", volResp)
-	log.Debug(ctx, "volResp.Children[0].Name: %s", volResp.Children[0].Name)
-
-	isiVolume := &apiv1.IsiVolume{Name: volResp.Children[0].Name, AttributeMap: nil}
+	isiVolume := &apiv1.IsiVolume{Name: name, AttributeMap: nil}
 	return isiVolume, nil
 }
 
@@ -163,32 +182,11 @@ func (c *Client) CreateVolumeWithIsipath(
 func (c *Client) CreateVolumeWithIsipathMetaData(
 	ctx context.Context, isiPath, name, isiVolumePathPermissions string, metadata map[string]string,
 ) (Volume, error) {
-	volResp, err := apiv1.CreateIsiVolumeWithIsiPathMetaData(ctx, c.API, isiPath, name, isiVolumePathPermissions, metadata)
+	_, err := apiv1.CreateIsiVolumeWithIsiPathMetaData(ctx, c.API, isiPath, name, isiVolumePathPermissions, metadata)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Debug(ctx, "ALIKKKKKKKKKKKKKKKKKKK: %s", name)
-	log.Debug(ctx, "volume name: %s", name)
-	log.Debug(ctx, "volResp: %v", volResp)
-	if volResp != nil && volResp.Children != nil && len(volResp.Children) > 0 {
-		log.Debug(ctx, "volResp.Children[0].Name: %s", volResp.Children[0].Name)
-		isiVolume := &apiv1.IsiVolume{Name: volResp.Children[0].Name, AttributeMap: nil}
-		return isiVolume, nil
-	}
-
-	volumes, err := apiv1.GetIsiVolumeWithIsiPath(ctx, c.API, isiPath, name)
-	if volumes != nil && err == nil {
-		for _, volume := range volumes.AttributeMap {
-			if strings.Contains(volume.Name, name) {
-				log.Debug(ctx, "returned volume: %s", volume.Name)
-				isiVolume := &apiv1.IsiVolume{Name: volume.Name, AttributeMap: nil}
-				return isiVolume, nil
-			}
-		}
-	}
-
-	log.Debug(ctx, "volume not found returning orignal name: %s", name)
 	isiVolume := &apiv1.IsiVolume{Name: name, AttributeMap: nil}
 	return isiVolume, nil
 }
