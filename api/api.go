@@ -558,7 +558,10 @@ func (c *client) DoAndGetResponseBody(
 	if res, err = c.http.Do(req); err != nil {
 		return nil, isDebugLog, err
 	}
-
+	b, _ := io.ReadAll(res.Body)
+	res.Body.Close()
+	log.Debug(ctx, string(b))
+	res.Body = io.NopCloser(bytes.NewBuffer(b))
 	return res, isDebugLog, err
 }
 
