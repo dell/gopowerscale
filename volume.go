@@ -86,6 +86,8 @@ func (c *Client) GetIsiVolumeNameWithoutMetadata(
 	if err != nil {
 		return nil, err
 	}
+	log.Debug(ctx, "GetIsiVolumeNameWithoutMetadataWithIsiPath: %v", volumes.AttributeMap)
+
 	var arrayVolumeName string
 	for _, volume := range volumes.AttributeMap {
 		log.Debug(ctx, "volume name: %s", volume.Name)
