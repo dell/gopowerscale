@@ -47,7 +47,7 @@ const (
 	defaultVolumesPathPermissions         = "0777"
 	defaultIgnoreUnresolvableHosts        = false
 	headerISISessToken                    = "Cookie"
-	headerISICSRFToken                    = "X-CSRF-Token" //nolint:gosec,G101
+	headerISICSRFToken                    = "X-CSRF-Token" // #nosec, G101  False positive since no hard-coded CSRF token
 	headerISIReferer                      = "Referer"
 	isiSessCsrfToken                      = "Set-Cookie"
 	authTypeBasic                         = 0
@@ -266,7 +266,7 @@ func New(
 		if opts.Insecure {
 			c.http.Transport = &http.Transport{
 				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true, //nolint:gosec,G402
+					InsecureSkipVerify: true, // #nosec,G402
 					MinVersion:         tls.VersionTLS12,
 					MaxVersion:         tls.VersionTLS13,
 					CipherSuites:       GetSecuredCipherSuites(),
