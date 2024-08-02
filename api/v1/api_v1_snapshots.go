@@ -24,6 +24,44 @@ import (
 	"github.com/dell/goisilon/api"
 )
 
+// GetAllIsiSnapshots queries a list of all snapshots on the cluster
+func GetAllIsiSnapshots(ctx context.Context,
+	client api.Client,
+) (resp *getIsiSnapshotsResp, err error) {
+	err = client.Get(ctx, snapshotsPath, "", nil, nil, &resp)
+	if err != nil {
+		return nil, err
+	}
+	snapShotList := resp.SnapshotList
+
+	for {
+
+		if resp.Resume == "" {
+			break
+		}
+
+		snapshotQS := api.OrderedValues{
+			{[]byte("resume"), []byte(resp.Resume)},
+		}
+
+		var newResp *getIsiSnapshotsResp
+		err = client.Get(ctx, snapshotsPath, "", snapshotQS, nil, &newResp)
+		if err != nil {
+			return nil, err
+		}
+
+		snapShotList = append(snapShotList, newResp.SnapshotList...)
+		resp = newResp
+	}
+	isiSnapshotResp := &getIsiSnapshotsResp{
+		SnapshotList: snapShotList,
+		Total:        resp.Total,
+		Resume:       resp.Resume,
+	}
+
+	return isiSnapshotResp, nil
+}
+
 // GetIsiSnapshots queries a list of all snapshots on the cluster
 func GetIsiSnapshots(
 	ctx context.Context,
