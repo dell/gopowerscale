@@ -52,7 +52,7 @@ func (c *Client) GetSnapshots(ctx context.Context) (SnapshotList, error) {
 func (c *Client) GetSnapshotsByPath(
 	ctx context.Context, path string,
 ) (SnapshotList, error) {
-	snapshots, err := api.GetAllIsiSnapshots(ctx, c.API)
+	snapshots, err := api.GetIsiSnapshots(ctx, c.API)
 	if err != nil {
 		return nil, err
 	}
