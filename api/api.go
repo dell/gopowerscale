@@ -47,7 +47,7 @@ const (
 	defaultVolumesPathPermissions         = "0777"
 	defaultIgnoreUnresolvableHosts        = false
 	headerISISessToken                    = "Cookie"
-	headerISICSRFToken                    = "X-CSRF-Token" //nolint:gosec,G101
+	headerISICSRFToken                    = "X-CSRF-Token" // #nosec, G101  False positive since no hard-coded CSRF token
 	headerISIReferer                      = "Referer"
 	isiSessCsrfToken                      = "Set-Cookie"
 	authTypeBasic                         = 0
@@ -266,7 +266,10 @@ func New(
 		if opts.Insecure {
 			c.http.Transport = &http.Transport{
 				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true, //nolint:gosec,G402
+					InsecureSkipVerify: true, // #nosec,G402
+					MinVersion:         tls.VersionTLS12,
+					MaxVersion:         tls.VersionTLS13,
+					CipherSuites:       GetSecuredCipherSuites(),
 				},
 			}
 		} else {
@@ -278,6 +281,9 @@ func New(
 				TLSClientConfig: &tls.Config{ //nolint:gosec,G402
 					RootCAs:            pool,
 					InsecureSkipVerify: false,
+					MinVersion:         tls.VersionTLS12,
+					MaxVersion:         tls.VersionTLS13,
+					CipherSuites:       GetSecuredCipherSuites(),
 				},
 			}
 		}
@@ -744,4 +750,13 @@ func FetchValueIndexForKey(l string, match string, sep string) (int, int, int) {
 		}
 	}
 	return startIndex, endIndex, len(match)
+}
+
+// GetSecuredCipherSuites returns a set of secure cipher suites.
+func GetSecuredCipherSuites() (suites []uint16) {
+	securedSuite := tls.CipherSuites()
+	for _, v := range securedSuite {
+		suites = append(suites, v.ID)
+	}
+	return suites
 }

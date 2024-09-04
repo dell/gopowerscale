@@ -34,7 +34,34 @@ func GetIsiSnapshots(
 	if err != nil {
 		return nil, err
 	}
-	return resp, nil
+	snapshotList := resp.SnapshotList
+
+	for {
+		if resp.Resume == "" {
+			break
+		}
+
+		snapshotQS := api.OrderedValues{
+			{[]byte("resume"), []byte(resp.Resume)},
+		}
+
+		var newResp *getIsiSnapshotsResp
+		// PAPI call: GET https://1.2.3.4:8080/platform/1/snapshot/snapshots?resume=<resume token>
+		err := client.Get(ctx, snapshotsPath, "", snapshotQS, nil, &newResp)
+		if err != nil {
+			return nil, err
+		}
+
+		snapshotList = append(snapshotList, newResp.SnapshotList...)
+		resp = newResp
+	}
+
+	isiSnapshotResp := &getIsiSnapshotsResp{
+		SnapshotList: snapshotList,
+		Total:        resp.Total,
+		Resume:       resp.Resume,
+	}
+	return isiSnapshotResp, nil
 }
 
 // GetIsiSnapshot queries an individual snapshot on the cluster
