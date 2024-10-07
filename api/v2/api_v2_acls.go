@@ -194,7 +194,8 @@ func (p *FileMode) UnmarshalText(data []byte) error {
 	if err != nil {
 		return err
 	}
-	*p = FileMode(m)
+	// #nosec G115
+	*p = FileMode(uint32(m))
 	return nil
 }
 

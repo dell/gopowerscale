@@ -96,6 +96,7 @@ func TestRoleMemberAdd(t *testing.T) {
 
 	// add/remove role member by uid
 	uid, err := strconv.ParseInt(user.Uid.Id[4:], 10, 32)
+	// #nosec G115
 	uid32 := int32(uid)
 	if err != nil {
 		panic(err)

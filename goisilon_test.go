@@ -73,6 +73,7 @@ func TestMain(m *testing.M) {
 		log.WithError(err).Panic(defaultCtx, "error fetching environment variable GOISILON_AUTHTYPE")
 	}
 
+	// #nosec G115
 	client, err = NewClientWithArgs(
 		defaultCtx,
 		os.Getenv("GOISILON_ENDPOINT"),
