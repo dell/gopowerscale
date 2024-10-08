@@ -44,6 +44,7 @@ func NewClient(ctx context.Context) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	// #nosec G115
 	return NewClientWithArgs(
 		ctx,
 		os.Getenv("GOISILON_ENDPOINT"),
