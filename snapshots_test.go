@@ -514,7 +514,7 @@ func TestGetRealVolumeSnapshotPathWithIsiPath(_ *testing.T) {
 	newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
 	accessZone := "System"
 	name := "snapshottest"
-	fmt.Printf(apiv1.GetRealVolumeSnapshotPathWithIsiPath(newIsiPath, volName, name, accessZone))
+	fmt.Println(apiv1.GetRealVolumeSnapshotPathWithIsiPath(newIsiPath, volName, name, accessZone))
 }
 
 func TestSnapshotSizeGet(_ *testing.T) {

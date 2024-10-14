@@ -70,7 +70,8 @@ func (c *Client) SetVolumeMode(
 	ctx context.Context,
 	volumeName string, mode int,
 ) error {
-	filemode := api.FileMode(mode)
+	// #nosec G115
+	filemode := api.FileMode(uint32(mode))
 
 	return api.ACLUpdate(
 		ctx,
