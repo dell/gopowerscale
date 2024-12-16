@@ -43,7 +43,7 @@ type V2NfsExportExtended struct {
 	// Specifies the default character set encoding of the clients connecting to the export, unless otherwise specified.
 	Encoding *string `json:"encoding,omitempty"`
 	// Specifies the system-assigned ID for the export. This ID is returned when an export is created through the POST method.
-	Id *int32 `json:"id,omitempty"`
+	ID *int32 `json:"id,omitempty"`
 	// Specifies the reported maximum number of links to a file. This parameter does not affect server behavior, but is included to accommodate legacy client requirements.
 	LinkMax    *int32             `json:"link_max,omitempty"`
 	MapAll     *V2NfsExportMapAll `json:"map_all,omitempty"`
@@ -51,7 +51,7 @@ type V2NfsExportExtended struct {
 	// True if user mappings query the OneFS user database. When set to false, user mappings only query local authentication.
 	MapFull *bool `json:"map_full,omitempty"`
 	// True if incoming user IDs (UIDs) are mapped to users in the OneFS user database. When set to false, incoming UIDs are applied directly to file operations.
-	MapLookupUid *bool              `json:"map_lookup_uid,omitempty"`
+	MapLookupUID *bool              `json:"map_lookup_uid,omitempty"`
 	MapNonRoot   *V2NfsExportMapAll `json:"map_non_root,omitempty"`
 	// Determines whether searches for users specified in 'map_all', 'map_root' or 'map_nonroot' are retried if the search fails.
 	MapRetry *bool              `json:"map_retry,omitempty"`
@@ -81,7 +81,7 @@ type V2NfsExportExtended struct {
 	// Sets the number of directory entries that are prefetched when a 'readdirplus' request is processed. (Deprecated.)
 	ReaddirplusPrefetch *int32 `json:"readdirplus_prefetch,omitempty"`
 	// Limits the size of file identifiers returned by NFSv3+ to 32-bit values (may require remount).
-	Return32bitFileIds *bool `json:"return_32bit_file_ids,omitempty"`
+	Return32bitFileIDs *bool `json:"return_32bit_file_ids,omitempty"`
 	// Clients that have root access to the export.
 	RootClients []string `json:"root_clients,omitempty"`
 	// Specifies the authentication types that are supported for this export.

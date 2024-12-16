@@ -28,7 +28,7 @@ import (
 func GetIsiSnapshots(
 	ctx context.Context,
 	client api.Client,
-) (resp *getIsiSnapshotsResp, err error) {
+) (resp *GetIsiSnapshotsResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/snapshot/snapshots
 	err = client.Get(ctx, snapshotsPath, "", nil, nil, &resp)
 	if err != nil {
@@ -45,7 +45,7 @@ func GetIsiSnapshots(
 			{[]byte("resume"), []byte(resp.Resume)},
 		}
 
-		var newResp *getIsiSnapshotsResp
+		var newResp *GetIsiSnapshotsResp
 		// PAPI call: GET https://1.2.3.4:8080/platform/1/snapshot/snapshots?resume=<resume token>
 		err := client.Get(ctx, snapshotsPath, "", snapshotQS, nil, &newResp)
 		if err != nil {
@@ -56,7 +56,7 @@ func GetIsiSnapshots(
 		resp = newResp
 	}
 
-	isiSnapshotResp := &getIsiSnapshotsResp{
+	isiSnapshotResp := &GetIsiSnapshotsResp{
 		SnapshotList: snapshotList,
 		Total:        resp.Total,
 		Resume:       resp.Resume,
@@ -72,7 +72,7 @@ func GetIsiSnapshot(
 ) (*IsiSnapshot, error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/snapshot/snapshots/123
 	snapshotURL := fmt.Sprintf("%s/%d", snapshotsPath, id)
-	var resp *getIsiSnapshotsResp
+	var resp *GetIsiSnapshotsResp
 	err := client.Get(ctx, snapshotURL, "", nil, nil, &resp)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func GetIsiSnapshotByIdentity(
 ) (*IsiSnapshot, error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/snapshot/snapshots/id|name
 	snapshotURL := fmt.Sprintf("%s/%s", snapshotsPath, identity)
-	var resp *getIsiSnapshotsResp
+	var resp *GetIsiSnapshotsResp
 	err := client.Get(ctx, snapshotURL, "", nil, nil, &resp)
 	if err != nil {
 		return nil, err
@@ -195,7 +195,7 @@ func GetIsiSnapshotFolderWithSize(
 	ctx context.Context,
 	client api.Client,
 	isiPath, name, volume string, accessZone string,
-) (resp *getIsiVolumeSizeResp, err error) {
+) (resp *GetIsiVolumeSizeResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/namespace/path/to/snapshot?detail=size&max-depth=-1
 	zone, err := GetZoneByName(ctx, client, accessZone)
 	if err != nil {

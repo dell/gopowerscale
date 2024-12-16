@@ -58,7 +58,7 @@ func ListSmbShares(
 
 // GetV12SmbShareParams contains smb share params
 type GetV12SmbShareParams struct {
-	V12SmbShareId string
+	V12SmbShareID string
 	Scope         *string `json:"scope,omitempty"`
 	ResolveNames  *bool   `json:"resolve_names,omitempty"`
 	Zone          *string `json:"zone,omitempty"`
@@ -74,7 +74,7 @@ func GetSmbShare(
 	if err := client.Get(
 		ctx,
 		sharesPath,
-		params.V12SmbShareId,
+		params.V12SmbShareID,
 		api.StructToOrderedValues(params),
 		nil,
 		&resp); err != nil {
@@ -112,7 +112,7 @@ func CreateSmbShare(
 
 // UpdateV12SmbShareRequest contains request body
 type UpdateV12SmbShareRequest struct {
-	V12SmbShareId string
+	V12SmbShareID string
 	V12SmbShare   *openapi.V12SmbShareExtendedExtended
 	Zone          *string `json:"zone,omitempty"`
 }
@@ -126,7 +126,7 @@ func UpdateSmbShare(
 	err := client.Put(
 		ctx,
 		sharesPath,
-		r.V12SmbShareId,
+		r.V12SmbShareID,
 		api.StructToOrderedValues(r),
 		nil, r.V12SmbShare,
 		nil)
@@ -136,7 +136,7 @@ func UpdateSmbShare(
 
 // DeleteV12SmbShareRequest contains request params
 type DeleteV12SmbShareRequest struct {
-	V12SmbShareId string
+	V12SmbShareID string
 	Zone          *string `json:"zone,omitempty"`
 }
 
@@ -148,7 +148,7 @@ func DeleteSmbShare(
 	err := client.Delete(
 		ctx,
 		sharesPath,
-		r.V12SmbShareId,
+		r.V12SmbShareID,
 		api.StructToOrderedValues(r),
 		nil, nil)
 

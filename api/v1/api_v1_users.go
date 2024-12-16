@@ -106,7 +106,7 @@ func getIsiUserListWithResume(ctx context.Context, client api.Client, resume str
 func CreateIsiUser(ctx context.Context, client api.Client, name string,
 	queryForce *bool, queryZone, queryProvider *string,
 	email, homeDirectory, password, primaryGroupName, fullName, shell *string,
-	uid, primaryGroupId, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool,
+	uid, primaryGroupID, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool,
 ) (string, error) {
 	// PAPI call: POST https://1.2.3.4:8080/platform/1/auth/users?force=&zone=&provider=
 	// 				{
@@ -141,12 +141,12 @@ func CreateIsiUser(ctx context.Context, client api.Client, name string,
 		values.StringAdd("provider", *queryProvider)
 	}
 	var primaryGroup *IsiAccessItemFileGroup
-	if primaryGroupId != nil || primaryGroupName != nil {
+	if primaryGroupID != nil || primaryGroupName != nil {
 		primaryGroup = &IsiAccessItemFileGroup{
 			Type: "group",
 		}
-		if primaryGroupId != nil {
-			primaryGroup.Id = fmt.Sprintf("GID:%d", primaryGroupId)
+		if primaryGroupID != nil {
+			primaryGroup.ID = fmt.Sprintf("GID:%d", primaryGroupID)
 		}
 		if primaryGroupName != nil {
 			primaryGroup.Name = *primaryGroupName
@@ -165,7 +165,7 @@ func CreateIsiUser(ctx context.Context, client api.Client, name string,
 		PrimaryGroup:         primaryGroup,
 		PromptPasswordChange: promptPasswordChange,
 		Shell:                shell,
-		Uid:                  uid,
+		UID:                  uid,
 		Unlock:               unlock,
 	}
 
@@ -174,14 +174,14 @@ func CreateIsiUser(ctx context.Context, client api.Client, name string,
 		return "", err
 	}
 
-	return userResp.Id, nil
+	return userResp.ID, nil
 }
 
 // UpdateIsiUser updates the user.
 func UpdateIsiUser(ctx context.Context, client api.Client, userName *string, uid *int32,
 	queryForce *bool, queryZone, queryProvider *string,
 	email, homeDirectory, password, primaryGroupName, fullName, shell *string,
-	newUid, primaryGroupId, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool,
+	newUID, primaryGroupId, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool,
 ) (err error) {
 	// PAPI call: PUT https://1.2.3.4:8080/platform/1/auth/users/<user-id>?force=&zone=&provider=
 	// 				{
@@ -225,7 +225,7 @@ func UpdateIsiUser(ctx context.Context, client api.Client, userName *string, uid
 			Type: "group",
 		}
 		if primaryGroupId != nil {
-			primaryGroup.Id = fmt.Sprintf("GID:%d", primaryGroupId)
+			primaryGroup.ID = fmt.Sprintf("GID:%d", primaryGroupId)
 		}
 		if primaryGroupName != nil {
 			primaryGroup.Name = *primaryGroupName
@@ -243,7 +243,7 @@ func UpdateIsiUser(ctx context.Context, client api.Client, userName *string, uid
 		PrimaryGroup:         primaryGroup,
 		PromptPasswordChange: promptPasswordChange,
 		Shell:                shell,
-		Uid:                  newUid,
+		UID:                  newUID,
 		Unlock:               unlock,
 	}
 

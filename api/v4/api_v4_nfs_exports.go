@@ -57,7 +57,7 @@ func ListNfsExports(
 }
 
 type GetV2NfsExportRequest struct {
-	V2NfsExportId string
+	V2NFSExportID string
 	Scope         *string `json:"scope,omitempty"`
 	Zone          *string `json:"zone,omitempty"`
 }
@@ -72,7 +72,7 @@ func GetNfsExport(
 	if err := client.Get(
 		ctx,
 		exportsPath,
-		params.V2NfsExportId,
+		params.V2NFSExportID,
 		api.StructToOrderedValues(params),
 		nil,
 		&resp); err != nil {
@@ -112,7 +112,7 @@ func CreateNfsExport(
 }
 
 type UpdateV4NfsExportRequest struct {
-	V2NfsExportId           string
+	V2NFSExportID           string
 	V2NfsExport             *openapi.V2NfsExportExtendedExtended
 	Force                   *bool   `json:"force,omitempty"`
 	IgnoreUnresolvableHosts *bool   `json:"ignore_unresolvable_hosts,omitempty"`
@@ -130,7 +130,7 @@ func UpdateNfsExport(
 	err := client.Put(
 		ctx,
 		exportsPath,
-		r.V2NfsExportId,
+		r.V2NFSExportID,
 		api.StructToOrderedValues(r),
 		nil, r.V2NfsExport,
 		nil)
@@ -139,7 +139,7 @@ func UpdateNfsExport(
 }
 
 type DeleteV4NfsExportRequest struct {
-	V2NfsExportId string
+	V2NFSExportID string
 	Zone          *string `json:"zone,omitempty"`
 }
 
@@ -151,7 +151,7 @@ func DeleteNfsExport(
 	err := client.Delete(
 		ctx,
 		exportsPath,
-		r.V2NfsExportId,
+		r.V2NFSExportID,
 		api.StructToOrderedValues(r),
 		nil, nil)
 
