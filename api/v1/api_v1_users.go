@@ -181,7 +181,7 @@ func CreateIsiUser(ctx context.Context, client api.Client, name string,
 func UpdateIsiUser(ctx context.Context, client api.Client, userName *string, uid *int32,
 	queryForce *bool, queryZone, queryProvider *string,
 	email, homeDirectory, password, primaryGroupName, fullName, shell *string,
-	newUID, primaryGroupId, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool,
+	newUID, primaryGroupID, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool,
 ) (err error) {
 	// PAPI call: PUT https://1.2.3.4:8080/platform/1/auth/users/<user-id>?force=&zone=&provider=
 	// 				{
@@ -220,12 +220,12 @@ func UpdateIsiUser(ctx context.Context, client api.Client, userName *string, uid
 	}
 
 	var primaryGroup *IsiAccessItemFileGroup
-	if primaryGroupId != nil || primaryGroupName != nil {
+	if primaryGroupID != nil || primaryGroupName != nil {
 		primaryGroup = &IsiAccessItemFileGroup{
 			Type: "group",
 		}
-		if primaryGroupId != nil {
-			primaryGroup.ID = fmt.Sprintf("GID:%d", primaryGroupId)
+		if primaryGroupID != nil {
+			primaryGroup.ID = fmt.Sprintf("GID:%d", primaryGroupID)
 		}
 		if primaryGroupName != nil {
 			primaryGroup.Name = *primaryGroupName

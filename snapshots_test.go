@@ -42,7 +42,7 @@ func TestSnapshotsGet(_ *testing.T) {
 		panic(err)
 	}
 	for _, snapshot := range snapshots {
-		snapshotMap[snapshot.Id] = snapshot.Name
+		snapshotMap[snapshot.ID] = snapshot.Name
 	}
 	initialSnapshotCount := len(snapshots)
 
@@ -58,8 +58,8 @@ func TestSnapshotsGet(_ *testing.T) {
 		panic(err)
 	}
 	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.Id, snapshotName1)
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot2.Id, snapshotName2)
+	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.ID, snapshotName1)
+	defer client.RemoveSnapshot(defaultCtx, testSnapshot2.ID, snapshotName2)
 
 	// get the updated snapshot list
 	snapshots, err = client.GetSnapshots(defaultCtx)
@@ -74,21 +74,21 @@ func TestSnapshotsGet(_ *testing.T) {
 	// remove the original snapshots and add the new ones.  in the end, we
 	// should only have the snapshots we just created and nothing more.
 	for _, snapshot := range snapshots {
-		if _, found := snapshotMap[snapshot.Id]; found == true {
+		if _, found := snapshotMap[snapshot.ID]; found == true {
 			// this snapshot existed prior to the test start
-			delete(snapshotMap, snapshot.Id)
+			delete(snapshotMap, snapshot.ID)
 		} else {
 			// this snapshot is new
-			snapshotMap[snapshot.Id] = snapshot.Name
+			snapshotMap[snapshot.ID] = snapshot.Name
 		}
 	}
 	if len(snapshotMap) != 2 {
 		panic(fmt.Sprintf("Incorrect number of new snapshots.  Expected: 2 Actual: %d\n", len(snapshotMap)))
 	}
-	if _, found := snapshotMap[testSnapshot1.Id]; found == false {
+	if _, found := snapshotMap[testSnapshot1.ID]; found == false {
 		panic("testSnapshot1 was not in the snapshot list\n")
 	}
-	if _, found := snapshotMap[testSnapshot2.Id]; found == false {
+	if _, found := snapshotMap[testSnapshot2.ID]; found == false {
 		panic("testSnapshot2 was not in the snapshot list\n")
 	}
 }
@@ -119,7 +119,7 @@ func TestSnapshotsGetByPath(_ *testing.T) {
 		panic(err)
 	}
 	for _, snapshot := range snapshots {
-		snapshotMap[snapshot.Id] = snapshot.Name
+		snapshotMap[snapshot.ID] = snapshot.Name
 	}
 	initialSnapshotCount := len(snapshots)
 
@@ -140,9 +140,9 @@ func TestSnapshotsGetByPath(_ *testing.T) {
 		panic(err)
 	}
 	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.Id, snapshotName1)
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot2.Id, snapshotName2)
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot3.Id, snapshotName3)
+	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.ID, snapshotName1)
+	defer client.RemoveSnapshot(defaultCtx, testSnapshot2.ID, snapshotName2)
+	defer client.RemoveSnapshot(defaultCtx, testSnapshot3.ID, snapshotName3)
 
 	// get the updated snapshot list
 	snapshots, err = client.GetSnapshotsByPath(defaultCtx, snapshotPath1)
@@ -158,21 +158,21 @@ func TestSnapshotsGetByPath(_ *testing.T) {
 	// remove the original snapshots and add the new ones.  in the end, we
 	// should only have the snapshots we just created and nothing more.
 	for _, snapshot := range snapshots {
-		if _, found := snapshotMap[snapshot.Id]; found == true {
+		if _, found := snapshotMap[snapshot.ID]; found == true {
 			// this snapshot existed prior to the test start
-			delete(snapshotMap, snapshot.Id)
+			delete(snapshotMap, snapshot.ID)
 		} else {
 			// this snapshot is new
-			snapshotMap[snapshot.Id] = snapshot.Name
+			snapshotMap[snapshot.ID] = snapshot.Name
 		}
 	}
 	if len(snapshotMap) != 2 {
 		panic(fmt.Sprintf("Incorrect number of new snapshots.  Expected: 2 Actual: %d\n", len(snapshotMap)))
 	}
-	if _, found := snapshotMap[testSnapshot1.Id]; found == false {
+	if _, found := snapshotMap[testSnapshot1.ID]; found == false {
 		panic("testSnapshot1 was not in the snapshot list\n")
 	}
-	if _, found := snapshotMap[testSnapshot3.Id]; found == false {
+	if _, found := snapshotMap[testSnapshot3.ID]; found == false {
 		panic("testSnapshot3 was not in the snapshot list\n")
 	}
 }
@@ -201,11 +201,11 @@ func TestSnapshotCreate(_ *testing.T) {
 		panic(err)
 	}
 	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot.Id, snapshotName)
+	defer client.RemoveSnapshot(defaultCtx, testSnapshot.ID, snapshotName)
 
 	// get the updated snapshot list
 	snapshot, err = client.GetSnapshot(
-		defaultCtx, testSnapshot.Id, snapshotName)
+		defaultCtx, testSnapshot.ID, snapshotName)
 	if err != nil {
 		panic(err)
 	}
@@ -242,13 +242,13 @@ func TestSnapshotRemove(_ *testing.T) {
 	}
 
 	// remove the snapshot
-	err = client.RemoveSnapshot(defaultCtx, snapshot.Id, snapshotName)
+	err = client.RemoveSnapshot(defaultCtx, snapshot.ID, snapshotName)
 	if err != nil {
 		panic(err)
 	}
 
 	// make sure the snapshot was removed
-	snapshot, err = client.GetSnapshot(defaultCtx, snapshot.Id, snapshotName)
+	snapshot, err = client.GetSnapshot(defaultCtx, snapshot.ID, snapshotName)
 	if err != nil {
 		panic(err)
 	}
@@ -291,7 +291,7 @@ func TestSnapshotCopy(_ *testing.T) {
 		panic(err)
 	}
 	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot.Id, sourceSnapshotName)
+	defer client.RemoveSnapshot(defaultCtx, testSnapshot.ID, sourceSnapshotName)
 	// remove the sub directory
 	err = client.DeleteVolume(defaultCtx, sourceSubDirectory)
 	if err != nil {
@@ -304,7 +304,7 @@ func TestSnapshotCopy(_ *testing.T) {
 		panic(err)
 	}
 	copiedVolume, err := client.CopySnapshot(
-		defaultCtx, testSnapshot.Id, testSnapshot.Name, accessZone, destinationVolume)
+		defaultCtx, testSnapshot.ID, testSnapshot.Name, accessZone, destinationVolume)
 	if err != nil {
 		panic(err)
 	}
@@ -363,7 +363,7 @@ func TestSnapshotCopyWithIsiPath(_ *testing.T) {
 		panic(err)
 	}
 	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot.Id, sourceSnapshotName)
+	defer client.RemoveSnapshot(defaultCtx, testSnapshot.ID, sourceSnapshotName)
 	// remove the sub directory
 	err = client.DeleteVolume(defaultCtx, sourceSubDirectory)
 	if err != nil {
@@ -377,7 +377,7 @@ func TestSnapshotCopyWithIsiPath(_ *testing.T) {
 	}
 	newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
 	copiedVolume, err := client.CopySnapshotWithIsiPath(
-		defaultCtx, newIsiPath, newIsiPath, testSnapshot.Id, testSnapshot.Name, destinationVolume, defaultAccessZone)
+		defaultCtx, newIsiPath, newIsiPath, testSnapshot.ID, testSnapshot.Name, destinationVolume, defaultAccessZone)
 	if err != nil {
 		panic(err)
 	}
@@ -426,22 +426,22 @@ func TestSnapshotGetByIdentity(_ *testing.T) {
 		panic(err)
 	}
 	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.Id, snapshotName1)
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot2.Id, snapshotName2)
+	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.ID, snapshotName1)
+	defer client.RemoveSnapshot(defaultCtx, testSnapshot2.ID, snapshotName2)
 
 	snapshot1, err := client.GetIsiSnapshotByIdentity(defaultCtx, snapshotName1)
 	if err != nil {
 		panic("failed to get testSnapshot1\n")
 	}
-	if snapshot1.Id != testSnapshot1.Id {
-		panic(fmt.Sprintf("testSnapshot1: id %d is incorrect\n", snapshot1.Id))
+	if snapshot1.ID != testSnapshot1.ID {
+		panic(fmt.Sprintf("testSnapshot1: id %d is incorrect\n", snapshot1.ID))
 	}
 	snapshot2, err := client.GetIsiSnapshotByIdentity(defaultCtx, snapshotName2)
 	if err != nil {
 		panic("failed to get testSnapshot2\n")
 	}
-	if snapshot2.Id != testSnapshot2.Id {
-		panic(fmt.Sprintf("testSnapshot2: id %d is incorrect\n", snapshot2.Id))
+	if snapshot2.ID != testSnapshot2.ID {
+		panic(fmt.Sprintf("testSnapshot2: id %d is incorrect\n", snapshot2.ID))
 	}
 }
 
@@ -469,7 +469,7 @@ func TestSnapshotIsExistent(_ *testing.T) {
 	}
 
 	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.Id, snapshotName1)
+	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.ID, snapshotName1)
 
 	// check if snapshotName1 exists
 	if !client.IsSnapshotExistent(defaultCtx, snapshotName1) {
@@ -497,7 +497,7 @@ func TestSnapshotExportWithZone(_ *testing.T) {
 	}
 
 	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.Id, snapshotName1)
+	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.ID, snapshotName1)
 
 	// export snapshot
 	id, err := client.ExportSnapshotWithZone(defaultCtx, snapshotName1, snapshotPath, defaultAccessZone, "")
@@ -537,7 +537,7 @@ func TestSnapshotSizeGet(_ *testing.T) {
 	}
 
 	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.Id, snapshotName1)
+	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.ID, snapshotName1)
 
 	newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
 	// get the updated snapshot list

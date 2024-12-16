@@ -115,7 +115,7 @@ type IsiSnapshot struct {
 	Created       int64   `json:"created"`
 	Expires       int64   `json:"expires"`
 	HasLocks      bool    `json:"has_locks"`
-	Id            int64   `json:"id"`
+	ID            int64   `json:"id"`
 	Name          string  `json:"name"`
 	Path          string  `json:"path"`
 	PctFilesystem float64 `json:"pct_filesystem"`
