@@ -40,26 +40,26 @@ const (
 )
 
 const (
-	RESYNC_PREP            apiv11.JOB_ACTION              = "resync_prep"
-	ALLOW_WRITE            apiv11.JOB_ACTION              = "allow_write"
-	ALLOW_WRITE_REVERT     apiv11.JOB_ACTION              = "allow_write_revert"
-	TEST                   apiv11.JOB_ACTION              = "test"
-	SCHEDULED              apiv11.JOB_STATE               = "scheduled"
-	RUNNING                apiv11.JOB_STATE               = "running"
-	PAUSED                 apiv11.JOB_STATE               = "paused"
-	FINISHED               apiv11.JOB_STATE               = "finished"
-	FAILED                 apiv11.JOB_STATE               = "failed"
-	CANCELED               apiv11.JOB_STATE               = "canceled"
-	NEEDS_ATTENTION        apiv11.JOB_STATE               = "needs_attention"
-	SKIPPED                apiv11.JOB_STATE               = "skipped"
-	PENDING                apiv11.JOB_STATE               = "pending"
-	UNKNOWN                apiv11.JOB_STATE               = "unknown"
-	WRITES_DISABLED        apiv11.FAILOVER_FAILBACK_STATE = "writes_disabled"
-	ENABLING_WRITES        apiv11.FAILOVER_FAILBACK_STATE = "enabling_writes"
-	WRITES_ENABLED         apiv11.FAILOVER_FAILBACK_STATE = "writes_enabled"
-	DISABLING_WRITES       apiv11.FAILOVER_FAILBACK_STATE = "disabling_writes"
-	CREATING_RESYNC_POLICY apiv11.FAILOVER_FAILBACK_STATE = "creating_resync_policy"
-	RESYNC_POLICY_CREATED  apiv11.FAILOVER_FAILBACK_STATE = "resync_policy_created"
+	ResyncPrep           apiv11.JobAction             = "resync_prep"
+	AllowWrite           apiv11.JobAction             = "allow_write"
+	AllowWriteRevert     apiv11.JobAction             = "allow_write_revert"
+	Test                 apiv11.JobAction             = "test"
+	SCHEDULED            apiv11.JobState              = "scheduled"
+	RUNNING              apiv11.JobState              = "running"
+	PAUSED               apiv11.JobState              = "paused"
+	FINISHED             apiv11.JobState              = "finished"
+	FAILED               apiv11.JobState              = "failed"
+	CANCELED             apiv11.JobState              = "canceled"
+	NeedsAttention       apiv11.JobState              = "needs_attention"
+	SKIPPED              apiv11.JobState              = "skipped"
+	PENDING              apiv11.JobState              = "pending"
+	UNKNOWN              apiv11.JobState              = "unknown"
+	WritesDisabled       apiv11.FailoverFailbackState = "writes_disabled"
+	EnablingWrites       apiv11.FailoverFailbackState = "enabling_writes"
+	WritesEnabled        apiv11.FailoverFailbackState = "writes_enabled"
+	DisablingWrites      apiv11.FailoverFailbackState = "disabling_writes"
+	CreatingResyncPolicy apiv11.FailoverFailbackState = "creating_resync_policy"
+	ResyncPolicyCreated  apiv11.FailoverFailbackState = "resync_policy_created"
 )
 
 // Policy is an Isilon Policy
@@ -94,7 +94,7 @@ func (c *Client) BreakAssociation(ctx context.Context, targetPolicyName string) 
 		return err
 	}
 
-	return c.DeleteTargetPolicy(ctx, tp.Id)
+	return c.DeleteTargetPolicy(ctx, tp.ID)
 }
 
 func (c *Client) ResetPolicy(ctx context.Context, name string) error {
@@ -123,7 +123,7 @@ func (c *Client) SetPolicyEnabledField(ctx context.Context, name string, value b
 	}
 
 	p := &apiv11.Policy{
-		Id:       pp.Id,
+		ID:       pp.ID,
 		Enabled:  value,
 		Schedule: pp.Schedule, // keep existing schedule, otherwise it will be cleared
 	}
@@ -141,7 +141,7 @@ func (c *Client) ModifyPolicy(ctx context.Context, name string, schedule string,
 	}
 
 	p := &apiv11.Policy{
-		Id:      pp.Id,
+		ID:      pp.ID,
 		Enabled: pp.Enabled, // keep existing enabled state, otherwise it will be cleared
 	}
 
@@ -163,7 +163,7 @@ func (c *Client) ResolvePolicy(ctx context.Context, name string) error {
 	}
 
 	p := &apiv11.ResolvePolicyReq{
-		Id:         pp.Id,
+		ID:         pp.ID,
 		Conflicted: false,
 		Enabled:    pp.Enabled,  // keep existing enabled state, otherwise it will be cleared
 		Schedule:   pp.Schedule, // keep existing schedule, otherwise it will be cleared
@@ -177,16 +177,16 @@ func (c *Client) AllowWrites(ctx context.Context, policyName string) error {
 	if err != nil {
 		return err
 	}
-	if targetPolicy.FailoverFailbackState == WRITES_ENABLED {
+	if targetPolicy.FailoverFailbackState == WritesEnabled {
 		return nil
 	}
 
-	_, err = c.RunActionForPolicy(ctx, policyName, apiv11.ALLOW_WRITE)
+	_, err = c.RunActionForPolicy(ctx, policyName, apiv11.AllowWrite)
 	if err != nil {
 		return err
 	}
 
-	err = c.WaitForTargetPolicyCondition(ctx, policyName, WRITES_ENABLED)
+	err = c.WaitForTargetPolicyCondition(ctx, policyName, WritesEnabled)
 	if err != nil {
 		return err
 	}
@@ -199,16 +199,16 @@ func (c *Client) DisallowWrites(ctx context.Context, policyName string) error {
 	if err != nil {
 		return err
 	}
-	if targetPolicy.FailoverFailbackState == WRITES_DISABLED {
+	if targetPolicy.FailoverFailbackState == WritesDisabled {
 		return nil
 	}
 
-	_, err = c.RunActionForPolicy(ctx, policyName, apiv11.ALLOW_WRITE_REVERT)
+	_, err = c.RunActionForPolicy(ctx, policyName, apiv11.AllowWriteRevert)
 	if err != nil {
 		return err
 	}
 
-	err = c.WaitForTargetPolicyCondition(ctx, policyName, WRITES_DISABLED)
+	err = c.WaitForTargetPolicyCondition(ctx, policyName, WritesDisabled)
 	if err != nil {
 		return err
 	}
@@ -217,7 +217,7 @@ func (c *Client) DisallowWrites(ctx context.Context, policyName string) error {
 }
 
 func (c *Client) ResyncPrep(ctx context.Context, policyName string) error {
-	_, err := c.RunActionForPolicy(ctx, policyName, apiv11.RESYNC_PREP)
+	_, err := c.RunActionForPolicy(ctx, policyName, apiv11.ResyncPrep)
 	if err != nil {
 		return err
 	}
@@ -225,9 +225,9 @@ func (c *Client) ResyncPrep(ctx context.Context, policyName string) error {
 	return nil
 }
 
-func (c *Client) RunActionForPolicy(ctx context.Context, policyName string, action apiv11.JOB_ACTION) (*apiv11.Job, error) {
+func (c *Client) RunActionForPolicy(ctx context.Context, policyName string, action apiv11.JobAction) (*apiv11.Job, error) {
 	job := &apiv11.JobRequest{
-		Id:     policyName,
+		ID:     policyName,
 		Action: action,
 	}
 
@@ -290,7 +290,7 @@ func (c *Client) WaitForNoActiveJobs(ctx context.Context, policyName string) err
 	return nil
 }
 
-func (c *Client) WaitForPolicyLastJobState(ctx context.Context, policyName string, state apiv11.JOB_STATE) error {
+func (c *Client) WaitForPolicyLastJobState(ctx context.Context, policyName string, state apiv11.JobState) error {
 	pollErr := utils.PollImmediateWithContext(ctx, defaultPoll, defaultTimeout,
 		func(iCtx context.Context) (bool, error) {
 			p, err := c.GetPolicyByName(iCtx, policyName)
@@ -312,7 +312,7 @@ func (c *Client) WaitForPolicyLastJobState(ctx context.Context, policyName strin
 	return nil
 }
 
-func (c *Client) WaitForTargetPolicyCondition(ctx context.Context, policyName string, condition apiv11.FAILOVER_FAILBACK_STATE) error {
+func (c *Client) WaitForTargetPolicyCondition(ctx context.Context, policyName string, condition apiv11.FailoverFailbackState) error {
 	pollErr := utils.PollImmediateWithContext(ctx, defaultPoll, defaultTimeout,
 		func(iCtx context.Context) (bool, error) {
 			tp, err := c.GetTargetPolicyByName(iCtx, policyName)
@@ -369,7 +369,7 @@ func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
 		return nil
 	}
 	jobReq := &apiv11.JobRequest{
-		Id: policyName,
+		ID: policyName,
 	}
 	log.Info(ctx, "found no active sync jobs, starting a new one")
 

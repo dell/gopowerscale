@@ -62,13 +62,13 @@ func TestGroupCreate(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	uid, err := strconv.ParseInt(user.Uid.Id[4:], 10, 32)
+	uid, err := strconv.ParseInt(user.UID.ID[4:], 10, 32)
 	// #nosec G115
 	uid32 := int32(uid)
 	if err != nil {
 		panic(err)
 	}
-	member := []api.IsiAuthMemberItem{{Name: &userName, Id: &uid32, Type: "user"}}
+	member := []api.IsiAuthMemberItem{{Name: &userName, ID: &uid32, Type: "user"}}
 
 	_, err = client.CreateGroupWithOptions(defaultCtx, groupName, &gid, member, &queryForce, nil, nil)
 	assertNoError(t, err)
@@ -76,7 +76,7 @@ func TestGroupCreate(t *testing.T) {
 	group, err := client.GetGroupByNameOrGID(defaultCtx, nil, &gid)
 	assertNoError(t, err)
 	assertNotNil(t, group)
-	assertEqual(t, fmt.Sprintf("GID:%d", gid), group.Gid.Id)
+	assertEqual(t, fmt.Sprintf("GID:%d", gid), group.Gid.ID)
 
 	err = client.DeleteGroupByNameOrGID(defaultCtx, nil, &gid)
 	assertNoError(t, err)
@@ -106,8 +106,8 @@ func TestGroupUpdate(t *testing.T) {
 	assertNotNil(t, groupNew)
 	assertEqual(t, group.Dn, groupNew.Dn)
 	assertEqual(t, group.Provider, groupNew.Provider)
-	assertEqual(t, fmt.Sprintf("GID:%d", newGid), groupNew.Gid.Id)
-	assertNotEqual(t, group.Gid.Id, groupNew.Gid.Id)
+	assertEqual(t, fmt.Sprintf("GID:%d", newGid), groupNew.Gid.ID)
+	assertNotEqual(t, group.Gid.ID, groupNew.Gid.ID)
 }
 
 // Test GetGroupMembers(), AddGroupMember() and RemoveGroupMember()

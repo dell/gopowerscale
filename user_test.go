@@ -58,7 +58,7 @@ func TestUserCreate(t *testing.T) {
 	user, err := client.GetUserByNameOrUID(defaultCtx, nil, &uid)
 	assertNoError(t, err)
 	assertNotNil(t, user)
-	assertEqual(t, fmt.Sprintf("UID:%d", uid), user.Uid.Id)
+	assertEqual(t, fmt.Sprintf("UID:%d", uid), user.UID.ID)
 	assertEqual(t, email, user.Email)
 
 	err = client.DeleteUserByNameOrUID(defaultCtx, nil, &uid)
@@ -95,7 +95,7 @@ func TestUserUpdate(t *testing.T) {
 	assertEqual(t, user.HomeDirectory, userNew.HomeDirectory)
 	assertEqual(t, user.Provider, userNew.Provider)
 	assertEqual(t, email, userNew.Email)
-	assertNotEqual(t, user.Email, userNew.Uid.Id)
-	assertEqual(t, fmt.Sprintf("UID:%d", newUID), userNew.Uid.Id)
-	assertNotEqual(t, user.Uid.Id, userNew.Uid.Id)
+	assertNotEqual(t, user.Email, userNew.UID.ID)
+	assertEqual(t, fmt.Sprintf("UID:%d", newUID), userNew.UID.ID)
+	assertNotEqual(t, user.UID.ID, userNew.UID.ID)
 }

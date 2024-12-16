@@ -168,9 +168,9 @@ type setupConnection struct {
 type VerboseType uint
 
 const (
-	Verbose_High   VerboseType = 0
-	Verbose_Medium VerboseType = 1
-	Verbose_Low    VerboseType = 2
+	VerboseHigh   VerboseType = 0
+	VerboseMedium VerboseType = 1
+	VerboseLow    VerboseType = 2
 )
 
 type apiVerResponse struct {

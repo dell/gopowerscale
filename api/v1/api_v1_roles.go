@@ -94,8 +94,8 @@ func AddIsiRoleMember(ctx context.Context, client api.Client, roleID string, mem
 	data := &IsiAccessItemFileGroup{
 		Type: memberType,
 	}
-	if member.Id != nil {
-		data.Id = fmt.Sprintf("%sID:%d", strings.ToUpper(memberType)[0:1], *member.Id)
+	if member.ID != nil {
+		data.ID = fmt.Sprintf("%sID:%d", strings.ToUpper(memberType)[0:1], *member.ID)
 	}
 	if member.Name != nil {
 		data.Name = *member.Name
@@ -108,7 +108,7 @@ func AddIsiRoleMember(ctx context.Context, client api.Client, roleID string, mem
 func RemoveIsiRoleMember(ctx context.Context, client api.Client, roleID string, member IsiAuthMemberItem) error {
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/roles/{role-id}/members/<member-id>
 
-	authMemberID, err := getAuthMemberID(member.Type, member.Name, member.Id)
+	authMemberID, err := getAuthMemberID(member.Type, member.Name, member.ID)
 	if err != nil {
 		return err
 	}

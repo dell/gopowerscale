@@ -45,7 +45,7 @@ func TestClient_SmbShareLifeCycleWithStructParams(t *testing.T) {
 				Permission:     "full",
 				PermissionType: "allow",
 				Trustee: openapi.V1AuthAccessAccessItemFileGroup{
-					Id:   &trusteeID,
+					ID:   &trusteeID,
 					Name: &trusteeName,
 					Type: &trusteeType,
 				},
@@ -53,7 +53,7 @@ func TestClient_SmbShareLifeCycleWithStructParams(t *testing.T) {
 		},
 	})
 	assertNil(t, err)
-	assert.Equal(t, shareName, createResponse.Id)
+	assert.Equal(t, shareName, createResponse.ID)
 
 	// Test list SMB
 	limit := int32(1)
@@ -65,7 +65,7 @@ func TestClient_SmbShareLifeCycleWithStructParams(t *testing.T) {
 
 	// Test get SMB
 	getShare, err := client.GetSmbShareWithStructParams(defaultCtx, v12.GetV12SmbShareParams{
-		V12SmbShareId: shareName,
+		V12SmbShareID: shareName,
 	})
 	assertNil(t, err)
 	assert.NotZero(t, len(getShare.Shares))
@@ -74,14 +74,14 @@ func TestClient_SmbShareLifeCycleWithStructParams(t *testing.T) {
 	// Test update SMB
 	updateCaTimeout := int32(112)
 	err = client.UpdateSmbShareWithStructParams(defaultCtx, v12.UpdateV12SmbShareRequest{
-		V12SmbShareId: shareName,
+		V12SmbShareID: shareName,
 		V12SmbShare: &openapi.V12SmbShareExtendedExtended{
 			CaTimeout: &updateCaTimeout,
 		},
 	})
 	assertNil(t, err)
 	getShare, err = client.GetSmbShareWithStructParams(defaultCtx, v12.GetV12SmbShareParams{
-		V12SmbShareId: shareName,
+		V12SmbShareID: shareName,
 	})
 	assertNil(t, err)
 	assert.NotZero(t, len(getShare.Shares))
@@ -89,12 +89,12 @@ func TestClient_SmbShareLifeCycleWithStructParams(t *testing.T) {
 
 	// Test Delete SMB
 	err = client.DeleteSmbShareWithStructParams(defaultCtx, v12.DeleteV12SmbShareRequest{
-		V12SmbShareId: shareName,
+		V12SmbShareID: shareName,
 	})
 	assertNil(t, err)
 	// ensure smb is cleaned
 	getShare, err = client.GetSmbShareWithStructParams(defaultCtx, v12.GetV12SmbShareParams{
-		V12SmbShareId: shareName,
+		V12SmbShareID: shareName,
 	})
 	assertNotNil(t, err)
 }

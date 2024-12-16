@@ -76,7 +76,7 @@ type IsiClusterConfig struct {
 	Devices      []*IsiDevice                  `json:"devices"`
 	GUID         string                        `json:"guid"`
 	JoinMode     string                        `json:"join_mode"`
-	LocalDevId   int64                         `json:"local_devid"`
+	LocalDevID   int64                         `json:"local_devid"`
 	LocalLnn     int64                         `json:"local_lnn"`
 	LocalSerial  string                        `json:"local_serial"`
 	Name         string                        `json:"name"`
@@ -86,7 +86,7 @@ type IsiClusterConfig struct {
 
 // IsiDevice refers to device information of a cluster
 type IsiDevice struct {
-	DevId int64  `json:"devid"`
+	DevID int64  `json:"devid"`
 	GUID  string `json:"guid"`
 	IsUp  bool   `json:"is_up"`
 	Lnn   int64  `json:"lnn"`
@@ -135,7 +135,7 @@ type IsiNodeStatusError struct {
 	// The field with the error if applicable.
 	Field *string `json:"field,omitempty"`
 	// Node ID (Device Number) of a node.
-	Id *int32 `json:"id,omitempty"`
+	ID *int32 `json:"id,omitempty"`
 	// Logical Node Number (LNN) of a node.
 	Lnn *int32 `json:"lnn,omitempty"`
 	// The error message.
@@ -152,7 +152,7 @@ type IsiClusterNode struct {
 	Error    *string                 `json:"error,omitempty"`
 	Hardware *IsiClusterNodeHardware `json:"hardware,omitempty"`
 	// Node ID (Device Number) of a node.
-	Id *int32 `json:"id,omitempty"`
+	ID *int32 `json:"id,omitempty"`
 	// Logical Node Number (LNN) of a node.
 	Lnn        *int32                    `json:"lnn,omitempty"`
 	Partitions *V10ClusterNodePartitions `json:"partitions,omitempty"`
@@ -197,7 +197,7 @@ type IsiClusterNodeDrive struct {
 	// Serial number for this drive.
 	Serial *string `json:"serial,omitempty"`
 	// This drive's state as presented to the UI.
-	UiState *string `json:"ui_state,omitempty"`
+	UIState *string `json:"ui_state,omitempty"`
 	// The drive's 'worldwide name' from its NAA identifiers.
 	Wwn *string `json:"wwn,omitempty"`
 	// This drive's x-axis grid location.
@@ -225,9 +225,9 @@ type IsiClusterNodeHardware struct {
 	// Class of this node (storage, accelerator, etc.).
 	Class *string `json:"class,omitempty"`
 	// Node configuration ID.
-	ConfigurationId *string `json:"configuration_id,omitempty"`
+	ConfigurationID *string `json:"configuration_id,omitempty"`
 	// Manufacturer and model of this node's CPU.
-	Cpu *string `json:"cpu,omitempty"`
+	CPU *string `json:"cpu,omitempty"`
 	// Manufacturer and model of this node's disk controller.
 	DiskController *string `json:"disk_controller,omitempty"`
 	// Manufacturer and model of this node's disk expander.
@@ -259,7 +259,7 @@ type IsiClusterNodeHardware struct {
 	// PowerScale product name.
 	Product *string `json:"product,omitempty"`
 	// Size of RAM in bytes.
-	Ram *int64 `json:"ram,omitempty"`
+	RAM *int64 `json:"ram,omitempty"`
 	// Serial number of this node.
 	SerialNumber *string `json:"serial_number,omitempty"`
 	// Series of this node (X, I, NL, etc.).
@@ -379,7 +379,7 @@ type IsiClusterNodeStatus struct {
 	Batterystatus *IsiClusterNodeStatusBatterystatus `json:"batterystatus,omitempty"`
 	// Storage capacity of this node.
 	Capacity      []IsiClusterNodeStatusCapacityItem `json:"capacity,omitempty"`
-	Cpu           *IsiClusterNodeStatusCpu           `json:"cpu,omitempty"`
+	CPU           *IsiClusterNodeStatusCPU           `json:"cpu,omitempty"`
 	Nvram         *IsiClusterNodeStatusNvram         `json:"nvram,omitempty"`
 	Powersupplies *IsiClusterNodeStatusPowersupplies `json:"powersupplies,omitempty"`
 	// OneFS release.
@@ -425,7 +425,7 @@ type IsiClusterNodeStatusCapacityItem struct {
 }
 
 // IsiClusterNodeStatusCpu CPU status information for this node.
-type IsiClusterNodeStatusCpu struct {
+type IsiClusterNodeStatusCPU struct {
 	// Manufacturer model description of this CPU.
 	Model *string `json:"model,omitempty"`
 	// CPU overtemp state.
@@ -473,7 +473,7 @@ type IsiClusterNodeStatusNvramBattery struct {
 	// The current status color of the NVRAM battery.
 	Color *string `json:"color,omitempty"`
 	// Identifying index for the NVRAM battery.
-	Id *int32 `json:"id,omitempty"`
+	ID *int32 `json:"id,omitempty"`
 	// The current status message of the NVRAM battery.
 	Status *string `json:"status,omitempty"`
 	// The current voltage of the NVRAM battery.
@@ -505,7 +505,7 @@ type IsiClusterNodeStatusPowersuppliesSupply struct {
 	// Is this power supply in a failure state.
 	Good *string `json:"good,omitempty"`
 	// Identifying index for this power supply.
-	Id int32 `json:"id"`
+	ID int32 `json:"id"`
 	// Complete identifying string for this power supply.
 	Name *string `json:"name,omitempty"`
 	// A descriptive status string for this power supply.

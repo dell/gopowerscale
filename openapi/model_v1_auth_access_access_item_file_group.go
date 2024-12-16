@@ -19,7 +19,7 @@ package openapi
 // V1AuthAccessAccessItemFileGroup Specifies the persona of the file group.
 type V1AuthAccessAccessItemFileGroup struct {
 	// Specifies the serialized form of a persona, which can be 'UID:0', 'USER:name', 'GID:0', 'GROUP:wheel', or 'SID:S-1-1'.
-	Id *string `json:"id,omitempty"`
+	ID *string `json:"id,omitempty"`
 	// Specifies the persona name, which must be combined with a type.
 	Name *string `json:"name,omitempty"`
 	// Specifies the type of persona, which must be combined with a name.

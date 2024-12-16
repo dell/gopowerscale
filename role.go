@@ -54,7 +54,7 @@ func (c *Client) IsRoleMemberOf(ctx context.Context, roleID string, member api.I
 
 	for _, m := range role.Members {
 		if member.Name != nil && m.Name == *member.Name ||
-			member.Id != nil && m.Id == fmt.Sprintf("%sID:%d", strings.ToUpper(member.Type)[0:1], *member.Id) {
+			member.ID != nil && m.ID == fmt.Sprintf("%sID:%d", strings.ToUpper(member.Type)[0:1], *member.ID) {
 			return true, nil
 		}
 	}

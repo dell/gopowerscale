@@ -40,7 +40,7 @@ func logRequest(_ context.Context, w io.Writer, req *http.Request, verbose Verbo
 	fmt.Fprintln(w, " -------------------------")
 
 	switch verbose {
-	case Verbose_Low:
+	case VerboseLow:
 		// minimal logging, i.e. print request line only
 		fmt.Fprintf(w, "    %s %s %s\r\n", req.Method, req.URL.RequestURI(), req.Proto)
 	default:
@@ -63,10 +63,10 @@ func logResponse(ctx context.Context, res *http.Response, verbose VerboseType) {
 	var buf []byte
 
 	switch verbose {
-	case Verbose_Low:
+	case VerboseLow:
 		// minimal logging, i.e. pirnt status line only
 		fmt.Fprintf(w, "    %s %s\r\n", res.Proto, res.Status)
-	case Verbose_Medium:
+	case VerboseMedium:
 		// print status line + headers
 		buf, _ = httputil.DumpResponse(res, false)
 	default:

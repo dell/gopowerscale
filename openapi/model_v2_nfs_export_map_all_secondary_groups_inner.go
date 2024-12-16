@@ -19,7 +19,7 @@ package openapi
 // V2NfsExportMapAllSecondaryGroupsInner Specifies properties for a persona, which consists of either a 'type' and a 'name' or an 'ID'.
 type V2NfsExportMapAllSecondaryGroupsInner struct {
 	// Specifies the serialized form of a persona, which can be 'UID:0', 'USER:name', 'GID:0', 'GROUP:wheel', or 'SID:S-1-1'.
-	Id *string `json:"id,omitempty"`
+	ID *string `json:"id,omitempty"`
 	// Specifies the persona name, which must be combined with a type.
 	Name NullableString `json:"name,omitempty"`
 	// Specifies the type of persona, which must be combined with a name.

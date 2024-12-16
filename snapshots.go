@@ -118,7 +118,7 @@ func (c *Client) RemoveSnapshot(
 		return err
 	}
 
-	return api.RemoveIsiSnapshot(ctx, c.API, snapshot.Id)
+	return api.RemoveIsiSnapshot(ctx, c.API, snapshot.ID)
 }
 
 // CopySnapshot copies all files/directories in a snapshot to a new directory.

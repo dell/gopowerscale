@@ -160,7 +160,7 @@ func CreateIsiQuota(
 
 	var quotaResp IsiQuota
 	err := client.Post(ctx, quotaPath, "", nil, nil, data, &quotaResp)
-	return quotaResp.Id, err
+	return quotaResp.ID, err
 }
 
 // SetIsiQuotaHardThreshold sets the hard threshold of a quota for a directory
@@ -210,7 +210,7 @@ func UpdateIsiQuotaHardThreshold(
 	}
 
 	var quotaResp IsiQuota
-	err = client.Put(ctx, quotaPath, quota.Id, nil, nil, data, &quotaResp)
+	err = client.Put(ctx, quotaPath, quota.ID, nil, nil, data, &quotaResp)
 	return err
 }
 

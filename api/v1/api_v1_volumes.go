@@ -44,7 +44,7 @@ var (
 func GetIsiVolumes(
 	ctx context.Context,
 	client api.Client,
-) (resp *getIsiVolumesResp, err error) {
+) (resp *GetIsiVolumesResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/namespace/path/to/volumes/
 	err = client.Get(ctx, realNamespacePath(client), "", nil, nil, &resp)
 	return resp, err
@@ -55,7 +55,7 @@ func CreateIsiVolume(
 	ctx context.Context,
 	client api.Client,
 	name string,
-) (resp *getIsiVolumesResp, err error) {
+) (resp *GetIsiVolumesResp, err error) {
 	return CreateIsiVolumeWithACL(ctx, client, name, defaultACL)
 }
 
@@ -64,7 +64,7 @@ func CreateIsiVolumeWithIsiPath(
 	ctx context.Context,
 	client api.Client,
 	isiPath, name, isiVolumePathPermissions string,
-) (resp *getIsiVolumesResp, err error) {
+) (resp *GetIsiVolumesResp, err error) {
 	return CreateIsiVolumeWithACLAndIsiPath(ctx, client, isiPath, name, isiVolumePathPermissions)
 }
 
@@ -73,7 +73,7 @@ func CreateIsiVolumeWithIsiPathMetaData(
 	ctx context.Context,
 	client api.Client,
 	isiPath, name, isiVolumePathPermissions string, metadata map[string]string,
-) (resp *getIsiVolumesResp, err error) {
+) (resp *GetIsiVolumesResp, err error) {
 	return CreateIsiVolumeWithACLAndIsiPathMetaData(ctx, client, isiPath, name, isiVolumePathPermissions, metadata)
 }
 
@@ -82,7 +82,7 @@ func CreateIsiVolumeWithACL(
 	ctx context.Context,
 	client api.Client,
 	name, ACL string,
-) (resp *getIsiVolumesResp, err error) {
+) (resp *GetIsiVolumesResp, err error) {
 	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/volume_name
 	//             x-isi-ifs-target-type: container
 	//             x-isi-ifs-access-control: ACL
@@ -147,7 +147,7 @@ func CreateIsiVolumeWithACLAndIsiPath(
 	ctx context.Context,
 	client api.Client,
 	isiPath, name, ACL string,
-) (resp *getIsiVolumesResp, err error) {
+) (resp *GetIsiVolumesResp, err error) {
 	createVolumeHeaders := map[string]string{
 		"x-isi-ifs-target-type":    "container",
 		"x-isi-ifs-access-control": ACL,
@@ -169,7 +169,7 @@ func CreateIsiVolumeWithACLAndIsiPathMetaData(
 	ctx context.Context,
 	client api.Client,
 	isiPath, name, ACL string, metadata map[string]string,
-) (resp *getIsiVolumesResp, err error) {
+) (resp *GetIsiVolumesResp, err error) {
 	createVolumeHeaders := make(map[string]string)
 
 	createVolumeHeaders["x-isi-ifs-target-type"] = "container"
@@ -198,7 +198,7 @@ func GetIsiVolume(
 	ctx context.Context,
 	client api.Client,
 	name string,
-) (resp *getIsiVolumeAttributesResp, err error) {
+) (resp *GetIsiVolumeAttributesResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/namespace/path/to/volume/?metadata
 	err = client.Get(
 		ctx,
@@ -215,7 +215,7 @@ func GetIsiVolumeWithIsiPath(
 	ctx context.Context,
 	client api.Client,
 	isiPath, name string,
-) (resp *getIsiVolumeAttributesResp, err error) {
+) (resp *GetIsiVolumeAttributesResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/namespace/path/to/volume/?metadata
 	err = client.Get(
 		ctx,
@@ -268,7 +268,7 @@ func DeleteIsiVolume(
 	ctx context.Context,
 	client api.Client,
 	name string,
-) (resp *getIsiVolumesResp, err error) {
+) (resp *GetIsiVolumesResp, err error) {
 	err = client.Delete(
 		ctx,
 		realNamespacePath(client),
@@ -284,7 +284,7 @@ func DeleteIsiVolumeWithIsiPath(
 	ctx context.Context,
 	client api.Client,
 	isiPath, name string,
-) (resp *getIsiVolumesResp, err error) {
+) (resp *GetIsiVolumesResp, err error) {
 	err = client.Delete(
 		ctx,
 		GetRealNamespacePathWithIsiPath(isiPath),
@@ -300,7 +300,7 @@ func CopyIsiVolume(
 	ctx context.Context,
 	client api.Client,
 	sourceName, destinationName string,
-) (resp *getIsiVolumesResp, err error) {
+) (resp *GetIsiVolumesResp, err error) {
 	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/destination_volume_name?merge=True
 	//             x-isi-ifs-copy-source: /path/to/volumes/source_volume_name
 
@@ -326,7 +326,7 @@ func CopyIsiVolumeWithIsiPath(
 	ctx context.Context,
 	client api.Client,
 	isiPath, sourceName, destinationName string,
-) (resp *getIsiVolumesResp, err error) {
+) (resp *GetIsiVolumesResp, err error) {
 	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/destination_volume_name?merge=True
 	//             x-isi-ifs-copy-source: /path/to/volumes/source_volume_name
 	//             x-isi-ifs-mode-mask: preserve
@@ -354,7 +354,7 @@ func GetIsiVolumeWithSize(
 	ctx context.Context,
 	client api.Client,
 	isiPath, name string,
-) (resp *getIsiVolumeSizeResp, err error) {
+) (resp *GetIsiVolumeSizeResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/namespace/path/to/volume?detail=size&max-depth=-1
 	err = client.Get(
 		ctx,

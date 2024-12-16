@@ -254,7 +254,7 @@ func TestQuotaUpdateByID(_ *testing.T) {
 	}
 
 	// Update the quota
-	err = client.UpdateQuotaSizeByID(defaultCtx, quota.Id, updatedQuotaSize, softLimit, advisoryLimit, softGracePrd)
+	err = client.UpdateQuotaSizeByID(defaultCtx, quota.ID, updatedQuotaSize, softLimit, advisoryLimit, softGracePrd)
 	if err != nil {
 		panic(err)
 	}

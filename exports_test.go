@@ -752,7 +752,7 @@ func TestClient_ExportLifeCycleWithStructParams(t *testing.T) {
 			Paths: []string{fullPath},
 		},
 	})
-	assert.NotZero(t, res.Id)
+	assert.NotZero(t, res.ID)
 	assertNil(t, err)
 
 	// Test list Exports
@@ -761,34 +761,34 @@ func TestClient_ExportLifeCycleWithStructParams(t *testing.T) {
 	assertNil(t, err)
 	assert.Equal(t, 1, len(listExports.Exports))
 
-	exportID := strconv.Itoa(int(res.Id))
+	exportID := strconv.Itoa(int(res.ID))
 	// Test getExport
 	getExport, err := client.GetExportWithStructParams(defaultCtx, apiv4.GetV2NfsExportRequest{
-		V2NfsExportId: exportID,
+		V2NFSExportID: exportID,
 	})
 	assertNil(t, err)
 	assert.Equal(t, 1, len(getExport.Exports))
-	assert.Equal(t, res.Id, *(getExport.Exports[0].Id))
+	assert.Equal(t, res.ID, *(getExport.Exports[0].ID))
 
 	// Test getExport
 	readOnly := true
 	err = client.UpdateExportWithStructParams(defaultCtx, apiv4.UpdateV4NfsExportRequest{
-		V2NfsExportId: exportID,
+		V2NFSExportID: exportID,
 		V2NfsExport: &openapi.V2NfsExportExtendedExtended{
 			ReadOnly: &readOnly,
 		},
 	})
 	assertNil(t, err)
 	getUpdatedExport, err := client.GetExportWithStructParams(defaultCtx, apiv4.GetV2NfsExportRequest{
-		V2NfsExportId: exportID,
+		V2NFSExportID: exportID,
 	})
 	assert.Equal(t, true, *(getUpdatedExport.Exports[0].ReadOnly))
 
 	// Test delete export
-	err = client.DeleteExportWithStructParams(defaultCtx, apiv4.DeleteV4NfsExportRequest{V2NfsExportId: exportID})
+	err = client.DeleteExportWithStructParams(defaultCtx, apiv4.DeleteV4NfsExportRequest{V2NFSExportID: exportID})
 	assertNil(t, err)
 	_, err = client.GetExportWithStructParams(defaultCtx, apiv4.GetV2NfsExportRequest{
-		V2NfsExportId: exportID,
+		V2NFSExportID: exportID,
 	})
 	assertNotNil(t, err)
 }

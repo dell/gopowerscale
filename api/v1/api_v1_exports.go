@@ -96,7 +96,7 @@ func Unexport(
 func GetIsiExports(
 	ctx context.Context,
 	client api.Client,
-) (resp *getIsiExportsResp, err error) {
+) (resp *GetIsiExportsResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/protocols/nfs/exports
 	err = client.Get(ctx, exportsPath, "", nil, nil, &resp)
 

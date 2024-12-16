@@ -47,7 +47,7 @@ type V2NfsExportExtendedExtended struct {
 	// True if user mappings query the OneFS user database. When set to false, user mappings only query local authentication.
 	MapFull *bool `json:"map_full,omitempty"`
 	// True if incoming user IDs (UIDs) are mapped to users in the OneFS user database. When set to false, incoming UIDs are applied directly to file operations.
-	MapLookupUid *bool              `json:"map_lookup_uid,omitempty"`
+	MapLookupUID *bool              `json:"map_lookup_uid,omitempty"`
 	MapNonRoot   *V2NfsExportMapAll `json:"map_non_root,omitempty"`
 	// Determines whether searches for users specified in 'map_all', 'map_root' or 'map_nonroot' are retried if the search fails.
 	MapRetry *bool              `json:"map_retry,omitempty"`
@@ -77,7 +77,7 @@ type V2NfsExportExtendedExtended struct {
 	// Sets the number of directory entries that are prefetched when a 'readdirplus' request is processed. (Deprecated.)
 	ReaddirplusPrefetch *int32 `json:"readdirplus_prefetch,omitempty"`
 	// Limits the size of file identifiers returned by NFSv3+ to 32-bit values (may require remount).
-	Return32bitFileIds *bool `json:"return_32bit_file_ids,omitempty"`
+	Return32bitFileIDs *bool `json:"return_32bit_file_ids,omitempty"`
 	// Clients that have root access to the export.
 	RootClients []string `json:"root_clients,omitempty"`
 	// Specifies the authentication types that are supported for this export.

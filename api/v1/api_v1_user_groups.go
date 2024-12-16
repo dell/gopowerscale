@@ -158,8 +158,8 @@ func AddIsiGroupMember(ctx context.Context, client api.Client, groupName *string
 	}
 
 	data := &IsiAccessItemFileGroup{}
-	if member.Id != nil {
-		data.Id = fmt.Sprintf("%sID:%d", strings.ToUpper(memberType)[0:1], *member.Id)
+	if member.ID != nil {
+		data.ID = fmt.Sprintf("%sID:%d", strings.ToUpper(memberType)[0:1], *member.ID)
 	}
 	if member.Name != nil && *member.Name != "" {
 		data.Name = *member.Name
@@ -177,7 +177,7 @@ func RemoveIsiGroupMember(ctx context.Context, client api.Client, groupName *str
 		return err
 	}
 
-	authMemberID, err := getAuthMemberID(member.Type, member.Name, member.Id)
+	authMemberID, err := getAuthMemberID(member.Type, member.Name, member.ID)
 	if err != nil {
 		return err
 	}
@@ -227,8 +227,8 @@ func CreateIsiGroup(ctx context.Context, client api.Client,
 			Type: memberType,
 		}
 
-		if m.Id != nil {
-			member.Id = fmt.Sprintf("%sID:%d", strings.ToUpper(memberType)[0:1], *m.Id)
+		if m.ID != nil {
+			member.ID = fmt.Sprintf("%sID:%d", strings.ToUpper(memberType)[0:1], *m.ID)
 		} else if m.Name != nil && *m.Name != "" {
 			member.Name = *m.Name
 		} else {
@@ -249,7 +249,7 @@ func CreateIsiGroup(ctx context.Context, client api.Client,
 		return "", err
 	}
 
-	return groupResp.Id, nil
+	return groupResp.ID, nil
 }
 
 // UpdateIsiGroupGID updates the group's gid.

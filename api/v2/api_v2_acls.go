@@ -180,12 +180,12 @@ func (p FileMode) MarshalText() ([]byte, error) {
 	return []byte(p.String()), nil
 }
 
-var invalidFileMode = errors.New("invalid file mode")
+var errInvalidFileMode = errors.New("invalid file mode")
 
 // UnmarshalText unmarshals a FileMode value from text.
 func (p *FileMode) UnmarshalText(data []byte) error {
 	if len(data) < 3 {
-		return invalidFileMode
+		return errInvalidFileMode
 	}
 	if len(data) == 3 {
 		data = []byte{'0', data[0], data[1], data[2]}

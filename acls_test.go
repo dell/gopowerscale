@@ -50,7 +50,7 @@ func TestGetVolumeACL(t *testing.T) {
 	assertNotNil(t, acl.Owner.Type)
 	assert.Equal(t, api.PersonaTypeUser, *acl.Owner.Type)
 	assertNotNil(t, acl.Owner.ID)
-	assert.Equal(t, user.OnDiskUserIdentity.Id, fmt.Sprintf("UID:%s", acl.Owner.ID.ID))
+	assert.Equal(t, user.OnDiskUserIdentity.ID, fmt.Sprintf("UID:%s", acl.Owner.ID.ID))
 	assert.Equal(t, api.PersonaIDTypeUID, acl.Owner.ID.Type)
 }
 
@@ -80,7 +80,7 @@ func TestSetVolumeOwnerToCurrentUser(t *testing.T) {
 	assertNotNil(t, acl.Owner.Type)
 	assert.Equal(t, api.PersonaTypeUser, *acl.Owner.Type)
 	assertNotNil(t, acl.Owner.ID)
-	assert.Equal(t, user.OnDiskUserIdentity.Id, fmt.Sprintf("UID:%s", acl.Owner.ID.ID))
+	assert.Equal(t, user.OnDiskUserIdentity.ID, fmt.Sprintf("UID:%s", acl.Owner.ID.ID))
 	assert.Equal(t, api.PersonaIDTypeUID, acl.Owner.ID.Type)
 
 	err = client.SetVolumeOwner(defaultCtx, volume.Name, "rexray")
