@@ -19,5 +19,5 @@ package openapi
 // Createv12SmbShareResponse An array of ids to refer SMB shares.
 type Createv12SmbShareResponse struct {
 	// ID of created item that can be used to refer to item in the collection-item resource path.
-	Id string `json:"id"`
+	ID string `json:"id"`
 }

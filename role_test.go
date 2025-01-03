@@ -95,7 +95,7 @@ func TestRoleMemberAdd(t *testing.T) {
 	assertFalse(t, isRoleMember)
 
 	// add/remove role member by uid
-	uid, err := strconv.ParseInt(user.Uid.Id[4:], 10, 32)
+	uid, err := strconv.ParseInt(user.UID.ID[4:], 10, 32)
 	// #nosec G115
 	uid32 := int32(uid)
 	if err != nil {
@@ -103,7 +103,7 @@ func TestRoleMemberAdd(t *testing.T) {
 	}
 	memberUserWithUID := api.IsiAuthMemberItem{
 		Type: "user",
-		Id:   &uid32,
+		ID:   &uid32,
 	}
 	err = client.AddRoleMember(defaultCtx, roleID, memberUserWithUID)
 	if err != nil {
