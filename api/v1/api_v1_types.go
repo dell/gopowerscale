@@ -34,7 +34,7 @@ type VolumeName struct {
 	Name string `json:"name"`
 }
 
-type getIsiVolumesResp struct {
+type GetIsiVolumesResp struct {
 	Children []*VolumeName `json:"children"`
 }
 
@@ -44,7 +44,7 @@ type Ownership struct {
 	Type string `json:"type"`
 }
 
-type AclRequest struct {
+type ACLRequest struct {
 	Authoritative string     `json:"authoritative"`
 	Action        string     `json:"action"`
 	Owner         *Ownership `json:"owner"`
@@ -52,7 +52,7 @@ type AclRequest struct {
 }
 
 // Isi PAPI volume attributes JSON struct
-type getIsiVolumeAttributesResp struct {
+type GetIsiVolumeAttributesResp struct {
 	AttributeMap []struct {
 		Name  string      `json:"name"`
 		Value interface{} `json:"value"`
@@ -60,7 +60,7 @@ type getIsiVolumeAttributesResp struct {
 }
 
 // Isi PAPI volume size JSON struct
-type getIsiVolumeSizeResp struct {
+type GetIsiVolumeSizeResp struct {
 	AttributeMap []struct {
 		Name string `json:"name"`
 		Size int64  `json:"size"`
@@ -90,17 +90,17 @@ type ExportClientList struct {
 
 // Isi PAPI export Id JSON struct
 type postIsiExportResp struct {
-	Id int `json:"id"`
+	ID int `json:"id"`
 }
 
 // Isi PAPI export attributes JSON structs
 type IsiExport struct {
-	Id      int      `json:"id"`
+	ID      int      `json:"id"`
 	Paths   []string `json:"paths"`
 	Clients []string `json:"clients"`
 }
 
-type getIsiExportsResp struct {
+type GetIsiExportsResp struct {
 	ExportList []*IsiExport `json:"exports"`
 }
 
@@ -115,7 +115,7 @@ type IsiSnapshot struct {
 	Created       int64   `json:"created"`
 	Expires       int64   `json:"expires"`
 	HasLocks      bool    `json:"has_locks"`
-	Id            int64   `json:"id"`
+	ID            int64   `json:"id"`
 	Name          string  `json:"name"`
 	Path          string  `json:"path"`
 	PctFilesystem float64 `json:"pct_filesystem"`
@@ -124,11 +124,11 @@ type IsiSnapshot struct {
 	ShadowBytes   int64   `json:"shadow_bytes"`
 	Size          int64   `json:"size"`
 	State         string  `json:"state"`
-	TargetId      int64   `json:"target_it"`
+	TargetID      int64   `json:"target_it"`
 	TargetName    string  `json:"target_name"`
 }
 
-type getIsiSnapshotsResp struct {
+type GetIsiSnapshotsResp struct {
 	SnapshotList []*IsiSnapshot `json:"snapshots"`
 	Total        int64          `json:"total"`
 	Resume       string         `json:"resume"`
@@ -150,7 +150,7 @@ type isiThresholds struct {
 type IsiQuota struct {
 	Container                 bool          `json:"container,omitempty"`
 	Enforced                  bool          `json:"enforced,omitempty"`
-	Id                        string        `json:"id"`
+	ID                        string        `json:"id"`
 	IncludeSnapshots          bool          `json:"include_snapshots,omitempty"`
 	Linked                    interface{}   `json:"linked,omitempty"`
 	Notifications             string        `json:"notifications,omitempty"`
@@ -224,7 +224,7 @@ type IsiCopySnapshotResp struct {
 // IsiAccessItemFileGroup Specifies the persona of the file group.
 type IsiAccessItemFileGroup struct {
 	// Specifies the serialized form of a persona, which can be 'UID:0', 'USER:name', 'GID:0', 'GROUP:wheel', or 'SID:S-1-1'.
-	Id string `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 	// Specifies the persona name, which must be combined with a type.
 	Name string `json:"name,omitempty"`
 	// Specifies the type of persona, which must be combined with a name. Values can be user, group or wellknown
@@ -233,7 +233,7 @@ type IsiAccessItemFileGroup struct {
 
 // IsiAuthMemberItem Specifies the persona of the group member. Member can be user or group.
 type IsiAuthMemberItem struct {
-	Id   *int32  `json:"id,omitempty"`
+	ID   *int32  `json:"id,omitempty"`
 	Name *string `json:"name,omitempty"`
 	Type string  `json:"type"`
 }
@@ -242,7 +242,7 @@ type IsiUser struct {
 	// Specifies the distinguished name for the user.
 	Dn string `json:"dn"`
 	// Specifies the DNS domain.
-	DnsDomain string `json:"dns_domain"`
+	DNSDomain string `json:"dns_domain"`
 	// Specifies the domain that the object is part of.
 	Domain string `json:"domain"`
 	// Specifies an email address.
@@ -258,14 +258,14 @@ type IsiUser struct {
 	// True, if the GID was generated.
 	GeneratedGid bool `json:"generated_gid"`
 	// True, if the UID was generated.
-	GeneratedUid bool `json:"generated_uid"`
+	GeneratedUID bool `json:"generated_uid"`
 	// True, if the UPN was generated.
 	GeneratedUpn bool                   `json:"generated_upn"`
 	Gid          IsiAccessItemFileGroup `json:"gid"`
 	// Specifies a home directory for the user.
 	HomeDirectory string `json:"home_directory"`
 	// Specifies the user or group ID.
-	Id string `json:"id"`
+	ID string `json:"id"`
 	// If true, indicates that the account is locked.
 	Locked bool `json:"locked"`
 	// Specifies the maximum time in seconds allowed before the password expires.
@@ -295,7 +295,7 @@ type IsiUser struct {
 	Sid   IsiAccessItemFileGroup `json:"sid"`
 	// Specifies the object type.
 	Type string                 `json:"type"`
-	Uid  IsiAccessItemFileGroup `json:"uid"`
+	UID  IsiAccessItemFileGroup `json:"uid"`
 	// Specifies a principal name for the user.
 	Upn string `json:"upn"`
 	// Specifies whether the password for the user can be changed.
@@ -325,7 +325,7 @@ type IsiUserReq struct {
 	// Specifies the shell for the user.
 	Shell *string `json:"shell,omitempty"`
 	// Specifies a numeric user identifier.
-	Uid *int32 `json:"uid,omitempty"`
+	UID *int32 `json:"uid,omitempty"`
 	// If true, the user account should be unlocked.
 	Unlock *bool `json:"unlock,omitempty"`
 }
@@ -351,7 +351,7 @@ type IsiUpdateUserReq struct {
 	// Specifies the shell for the user.
 	Shell *string `json:"shell,omitempty"`
 	// Specifies a numeric user identifier.
-	Uid *int32 `json:"uid,omitempty"`
+	UID *int32 `json:"uid,omitempty"`
 	// If true, the user account should be unlocked.
 	Unlock *bool `json:"unlock,omitempty"`
 }
@@ -368,7 +368,7 @@ type IsiUserListRespResume struct {
 // IsiRolePrivilegeItem Specifies the system-defined privilege that may be granted to users.
 type IsiRolePrivilegeItem struct {
 	// Specifies the ID of the privilege.
-	Id string `json:"id"`
+	ID string `json:"id"`
 	// Specifies the name of the privilege.
 	Name *string `json:"name,omitempty"`
 	// True, if the privilege is read-only.
@@ -385,7 +385,7 @@ type IsiRole struct {
 	// Specifies the privileges granted by this role.
 	Privileges []IsiRolePrivilegeItem `json:"privileges"`
 	// Specifies the ID of the role.
-	Id string `json:"id"`
+	ID string `json:"id"`
 }
 
 type isiRoleListResp struct {
@@ -403,14 +403,14 @@ type IsiGroup struct {
 	// Specifies the distinguished name for the user.
 	Dn string `json:"dn"`
 	// Specifies the DNS domain.
-	DnsDomain string `json:"dns_domain"`
+	DNSDomain string `json:"dns_domain"`
 	// Specifies the domain that the object is part of.
 	Domain string `json:"domain"`
 	// If true, the GID was generated.
 	GeneratedGid bool                   `json:"generated_gid"`
 	Gid          IsiAccessItemFileGroup `json:"gid"`
 	// Specifies the user or group ID.
-	Id string `json:"id"`
+	ID string `json:"id"`
 	// Specifies the groups that this user or group are members of.
 	MemberOf []IsiAccessItemFileGroup `json:"member_of"`
 	// Specifies a user or group name.
