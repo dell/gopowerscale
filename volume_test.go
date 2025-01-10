@@ -23,10 +23,15 @@ import (
 	"path"
 	"testing"
 
+	apiv1 "github.com/dell/goisilon/api/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	apiv2 "github.com/dell/goisilon/api/v2"
+	"github.com/dell/goisilon/mocks"
 )
+
+var anyArgs = []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
 
 // TODO - As part of PR job runs, observing GetVolumes, is not returning updated number of volumes
 // hence the reason commented, this changed seems to be mostly related to PowerScale upgrade from 8.1.2.0
@@ -91,6 +96,36 @@ import (
 	}
 
 }*/
+
+func TestGetVolume(t *testing.T) {
+	// Test case: Volume exists - with id
+	ctx := context.Background()
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiVolumeAttributesResp)
+		*resp = &apiv1.GetIsiVolumeAttributesResp{}
+	}).Once()
+	testVolume, err := client.GetVolume(ctx, "testVolumeId", "testVolumeName")
+	assert.Nil(t, err)
+	assert.Equal(t, "testVolumeId", testVolume.Name)
+
+	// Test case: Volume exists - without id
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiVolumeAttributesResp)
+		*resp = &apiv1.GetIsiVolumeAttributesResp{}
+	}).Once()
+	testVolume, err = client.GetVolume(ctx, "", "testVolumeName")
+	assert.Nil(t, err)
+	assert.Equal(t, "testVolumeName", testVolume.Name)
+
+	// Test case: Volume does not exist
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(fmt.Errorf("not found")).Once()
+	_, err = client.GetVolume(ctx, "nonExistentVolumeID", "nonExistentVolumeName")
+	assert.NotNil(t, err)
+
+}
 
 func TestVolumeGetCreate(*testing.T) {
 	volumeName := "test_get_create_volume_name"
