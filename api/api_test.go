@@ -237,9 +237,12 @@ func TestExecuteWithRetryAuthenticate(t *testing.T) {
 		"Content-Type": "text/html",
 	}
 	err := c.executeWithRetryAuthenticate(ctx, http.MethodGet, "api/v1/endpoint", "", nil, headers, nil, nil)
-	assert.NotEqual(t, "authentication successful", err)
+	expectedError := Error{}
+	jsonExpectedError := JSONError{
+		Err: []Error{expectedError},
+	}
+	assert.NotEqual(t, jsonExpectedError, err)
 }
-
 func TestParseJSONHTMLError(t *testing.T) {
 	// Create a mock HTML response
 
