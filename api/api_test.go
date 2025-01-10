@@ -28,11 +28,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type EmptyMockBody struct{}
-type MockBody struct {
-	ReadFunc  func(p []byte) (n int, err error)
-	CloseFunc func() error
-}
+type (
+	EmptyMockBody struct{}
+	MockBody      struct {
+		ReadFunc  func(p []byte) (n int, err error)
+		CloseFunc func() error
+	}
+)
 
 func (m *MockBody) Read(p []byte) (n int, err error) {
 	return m.ReadFunc(p)
@@ -71,8 +73,8 @@ func assertNotNil(t *testing.T, i interface{}) {
 		t.FailNow()
 	}
 }
-func TestNew(t *testing.T) {
 
+func TestNew(t *testing.T) {
 	ctx := context.Background()
 	hostname := "example.com"
 	username := "testuser"
@@ -211,7 +213,6 @@ func TestAuthenticate(t *testing.T) {
 	c.hostname = server.URL
 	err = c.authenticate(ctx, username, password, endpoint)
 	assert.EqualError(t, err, "authentication failed. unable to login to powerscale. verify username and password")
-
 }
 
 func TestExecuteWithRetryAuthenticate(t *testing.T) {
