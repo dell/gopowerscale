@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022-2023 Dell Inc, or its subsidiaries.
+Copyright (c) 2022-2025 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ type Policy struct {
 	TargetCert   string   `json:"target_certificate_id,omitempty"`
 	JobDelay     int      `json:"job_delay,omitempty"`
 	Schedule     string   `json:"schedule"`
-	LastJobState JobState `json:"last_JobState,omitempty"`
+	LastJobState JobState `json:"last_job_state,omitempty"`
 }
 
 type ResolvePolicyReq struct {
@@ -116,11 +116,11 @@ type TargetPolicy struct {
 	ID                      string                `json:"id,omitempty"`
 	Name                    string                `json:"name,omitempty"`
 	SourceClusterGUID       string                `json:"source_cluster_guid,omitempty"`
-	LastJobState            JobState              `json:"last_JobState,omitempty"`
+	LastJobState            JobState              `json:"last_job_state,omitempty"`
 	TargetPath              string                `json:"target_path,omitempty"`
 	SourceHost              string                `json:"source_host,omitempty"`
 	LastSourceCoordinatorIP string                `json:"last_source_coordinator_ip,omitempty"`
-	FailoverFailbackState   FailoverFailbackState `json:"failoverfailbackstate,omitempty"`
+	FailoverFailbackState   FailoverFailbackState `json:"failover_failback_state,omitempty"`
 }
 
 type TargetPolicies struct {
