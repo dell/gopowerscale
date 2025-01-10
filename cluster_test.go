@@ -25,8 +25,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-var anyArgs = []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
-
 func TestGetStatistics(t *testing.T) {
 	keyArray := []string{"ifs.bytes.avail", "ifs.bytes.total"}
 	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()

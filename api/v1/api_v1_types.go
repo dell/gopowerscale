@@ -388,7 +388,7 @@ type IsiRole struct {
 	ID string `json:"id"`
 }
 
-type isiRoleListResp struct {
+type IsiRoleListResp struct {
 	Roles []*IsiRole `json:"roles,omitempty"`
 }
 
