@@ -24,14 +24,24 @@ import (
 	"testing"
 
 	apiv1 "github.com/dell/goisilon/api/v1"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-
 	apiv2 "github.com/dell/goisilon/api/v2"
 	"github.com/dell/goisilon/mocks"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-var anyArgs = []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
+var (
+	anyArgs                     = []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
+	isiPath                     = "/ifs/data/csi"
+	isiVolumePathPermissions    = "077"
+	volumeName                  = "test_get_create_volume_name"
+	sourceVolumeName            = "test_copy_source_volume_name"
+	destinationVolumeName       = "test_copy_destination_volume_name"
+	subDirectoryName            = "test_sub_directory"
+	sourceSubDirectoryPath      = fmt.Sprintf("%s/%s", sourceVolumeName, subDirectoryName)
+	destinationSubDirectoryPath = fmt.Sprintf("%s/%s", destinationVolumeName, subDirectoryName)
+	dirPath                     = "dA/dAA/dAAA"
+)
 
 // TODO - As part of PR job runs, observing GetVolumes, is not returning updated number of volumes
 // hence the reason commented, this changed seems to be mostly related to PowerScale upgrade from 8.1.2.0
@@ -98,291 +108,370 @@ var anyArgs = []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.An
 }*/
 
 func TestGetVolume(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+
 	// Test case: Volume exists - with id
-	ctx := context.Background()
-	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
-	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
 		resp := args.Get(5).(**apiv1.GetIsiVolumeAttributesResp)
 		*resp = &apiv1.GetIsiVolumeAttributesResp{}
 	}).Once()
-	testVolume, err := client.GetVolume(ctx, "testVolumeId", "testVolumeName")
+	testVolume, err := client.GetVolume(defaultCtx, "testVolumeId", "testVolumeName")
 	assert.Nil(t, err)
 	assert.Equal(t, "testVolumeId", testVolume.Name)
 
 	// Test case: Volume exists - without id
-	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
-	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
 		resp := args.Get(5).(**apiv1.GetIsiVolumeAttributesResp)
 		*resp = &apiv1.GetIsiVolumeAttributesResp{}
 	}).Once()
-	testVolume, err = client.GetVolume(ctx, "", "testVolumeName")
+	testVolume, err = client.GetVolume(defaultCtx, "", "testVolumeName")
 	assert.Nil(t, err)
 	assert.Equal(t, "testVolumeName", testVolume.Name)
 
 	// Test case: Volume does not exist
 	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
 	client.API.(*mocks.Client).On("Get", anyArgs...).Return(fmt.Errorf("not found")).Once()
-	_, err = client.GetVolume(ctx, "nonExistentVolumeID", "nonExistentVolumeName")
+	_, err = client.GetVolume(defaultCtx, "nonExistentVolumeID", "nonExistentVolumeName")
 	assert.NotNil(t, err)
-
 }
 
-func TestVolumeGetCreate(*testing.T) {
+func TestGetVolumeWithIsiPath(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+
+	// Test case: Volume exists - with id
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiVolumeAttributesResp)
+		*resp = &apiv1.GetIsiVolumeAttributesResp{}
+	}).Once()
+	testVolume, err := client.GetVolumeWithIsiPath(defaultCtx, isiPath, "testVolumeId", "testVolumeName")
+	assert.Nil(t, err)
+	assert.Equal(t, "testVolumeId", testVolume.Name)
+
+	// Test case: Volume exists - without id
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiVolumeAttributesResp)
+		*resp = &apiv1.GetIsiVolumeAttributesResp{}
+	}).Once()
+	testVolume, err = client.GetVolumeWithIsiPath(defaultCtx, isiPath, "", "testVolumeName")
+	assert.Nil(t, err)
+	assert.Equal(t, "testVolumeName", testVolume.Name)
+
+	// Test case: Volume does not exist
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(fmt.Errorf("not found")).Once()
+	_, err = client.GetVolumeWithIsiPath(defaultCtx, isiPath, "nonExistentVolumeID", "nonExistentVolumeName")
+	assert.NotNil(t, err)
+}
+
+func TestIsVolumeExistent(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+
+	// Test case: Volume exists
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	isExistent := client.IsVolumeExistent(defaultCtx, "volumeId", "volumeName")
+	assert.True(t, isExistent)
+
+	// Test case: Volume does not exist
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(fmt.Errorf("not found")).Once()
+	isExistent = client.IsVolumeExistent(defaultCtx, "volumeId", "volumeName")
+	assert.False(t, isExistent)
+}
+
+func TestIsVolumeExistentWithIsiPath(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+
+	// Test case: Volume exists
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	isExistent := client.IsVolumeExistentWithIsiPath(defaultCtx, isiPath, "volumeId", "volumeName")
+	assert.True(t, isExistent)
+
+	// Test case: Volume does not exist
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(fmt.Errorf("not found")).Once()
+	isExistent = client.IsVolumeExistentWithIsiPath(defaultCtx, isiPath, "volumeId", "volumeName")
+	assert.False(t, isExistent)
+}
+
+func TestGetVolumes(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+
+	// Test case: Volume exists - with id
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiVolumesResp)
+		*resp = &apiv1.GetIsiVolumesResp{}
+	}).Once()
+	testVolumes, err := client.GetVolumes(defaultCtx)
+	assert.Nil(t, err)
+	assert.Empty(t, testVolumes)
+
+	// Test case: Volume exists - without id
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiVolumesResp)
+		*resp = &apiv1.GetIsiVolumesResp{
+			Children: []*apiv1.VolumeName{{Name: "testVolume"}},
+		}
+	}).Once()
+	testVolumes, err = client.GetVolumes(defaultCtx)
+	assert.Nil(t, err)
+	assert.Equal(t, "testVolume", testVolumes[0].Name)
+
+	// Test case: Volume does not exist
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(fmt.Errorf("not found")).Once()
+	testVolumes, err = client.GetVolumes(defaultCtx)
+	assert.NotNil(t, err)
+	assert.Nil(t, testVolumes)
+}
+
+func TestCreateVolume(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+
+	// success
 	volumeName := "test_get_create_volume_name"
-
-	// make sure the volume doesn't exist yet
-	volume, err := client.GetVolume(defaultCtx, volumeName, volumeName)
-	if err == nil && volume != nil {
-		panic(fmt.Sprintf("Volume (%s) already exists.\n", volumeName))
-	}
-
-	// Add the test volume
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
 	testVolume, err := client.CreateVolume(defaultCtx, volumeName)
-	if err != nil {
-		panic(err)
-	}
-	// make sure we clean up when we're done
-	defer client.DeleteVolume(defaultCtx, testVolume.Name)
+	assert.Nil(t, err)
+	assert.Equal(t, volumeName, testVolume.Name)
 
-	// get the new volume
-	volume, err = client.GetVolume(defaultCtx, volumeName, volumeName)
-	if err != nil {
-		panic(err)
-	}
-	if volume == nil {
-		panic(fmt.Sprintf("Volume (%s) was not created.\n", volumeName))
-	}
-	if volume.Name != volumeName {
-		panic(fmt.Sprintf("Volume name not set properly.  Expected: (%s) Actual: (%s)\n", volumeName, volume.Name))
-	}
+	// negative
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(fmt.Errorf("volume creation failed")).Once()
+	testVolume, err = client.CreateVolume(defaultCtx, volumeName)
+	assert.ErrorContains(t, err, "volume creation failed")
+	assert.Nil(t, testVolume)
 }
 
-func TestVolumeGetCreateMetaData(*testing.T) {
-	volumeName := "test_get_create_volume_name"
-	isiPath := "/ifs/data/csi"
-	isiVolumePathPermissions := "077"
+func TestCreateVolumeWithIsipath(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
 
+	// success
+	volumeName := "test_get_create_volume_name"
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	testVolume, err := client.CreateVolumeWithIsipath(defaultCtx, isiPath, volumeName, isiVolumePathPermissions)
+	assert.Nil(t, err)
+	assert.Equal(t, volumeName, testVolume.Name)
+
+	// negative
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(fmt.Errorf("volume creation failed")).Once()
+	testVolume, err = client.CreateVolumeWithIsipath(defaultCtx, isiPath, volumeName, isiVolumePathPermissions)
+	assert.ErrorContains(t, err, "volume creation failed")
+	assert.Nil(t, testVolume)
+}
+
+func TestCreateVolumeWithIsipathMetaData(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	volumeName := "test_get_create_volume_name"
 	testHeader := map[string]string{
 		"x-csi-pv-name":      "pv-name",
 		"x-csi-pv-claimname": "pv-claimname",
 		"x-csi-pv-namespace": "pv-namesace",
 	}
-	// make sure the volume doesn't exist yet
-	volume, err := client.GetVolume(defaultCtx, volumeName, volumeName)
-	if err == nil && volume != nil {
-		panic(fmt.Sprintf("Volume (%s) already exists.\n", volumeName))
-	}
 
-	// Add the test volume
+	// success
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
 	testVolume, err := client.CreateVolumeWithIsipathMetaData(defaultCtx, isiPath, volumeName, isiVolumePathPermissions, testHeader)
-	if err != nil {
-		panic(err)
-	}
-	// make sure we clean up when we're done
-	defer client.DeleteVolume(defaultCtx, testVolume.Name)
+	assert.Nil(t, err)
+	assert.Equal(t, volumeName, testVolume.Name)
 
-	// get the new volume
-	volume, err = client.GetVolume(defaultCtx, volumeName, volumeName)
-	if err != nil {
-		panic(err)
-	}
-	if volume == nil {
-		panic(fmt.Sprintf("Volume (%s) was not created.\n", volumeName))
-	}
-	if volume.Name != volumeName {
-		panic(fmt.Sprintf("Volume name not set properly.  Expected: (%s) Actual: (%s)\n", volumeName, volume.Name))
-	}
+	// negative
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(fmt.Errorf("volume creation failed")).Once()
+	testVolume, err = client.CreateVolumeWithIsipathMetaData(defaultCtx, isiPath, volumeName, isiVolumePathPermissions, testHeader)
+	assert.ErrorContains(t, err, "volume creation failed")
+	assert.Nil(t, testVolume)
 }
 
-func TestVolumeDelete(*testing.T) {
+func TestCreateVolumeNoACL(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+
+	// success
+	volumeName := "test_get_create_volume_name"
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	testVolume, err := client.CreateVolumeNoACL(defaultCtx, volumeName)
+	assert.Nil(t, err)
+	assert.Equal(t, volumeName, testVolume.Name)
+
+	// negative
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(fmt.Errorf("volume creation failed")).Once()
+	testVolume, err = client.CreateVolumeNoACL(defaultCtx, volumeName)
+	assert.ErrorContains(t, err, "volume creation failed")
+	assert.Nil(t, testVolume)
+}
+
+func TestDeleteVolume(t *testing.T) {
 	volumeName := "test_remove_volume_name"
-
-	// make sure the volume exists
-	client.CreateVolume(defaultCtx, volumeName)
-	volume, err := client.GetVolume(defaultCtx, volumeName, volumeName)
-	if err != nil {
-		panic(err)
-	}
-	if volume == nil {
-		panic(fmt.Sprintf("Test not setup properly.  No test volume (%s).", volumeName))
-	}
-
 	// remove the volume
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Delete", anyArgs[0:6]...).Return(nil).Once()
 	err = client.DeleteVolume(defaultCtx, volumeName)
-	if err != nil {
-		panic(err)
-	}
+	assert.Nil(t, err)
 
-	// make sure the volume was removed
-	volume, err = client.GetVolume(defaultCtx, volumeName, volumeName)
-	if err == nil {
-		panic("Attempting to get a removed volume should return an error but returned nil")
-	}
-	if volume != nil {
-		panic(fmt.Sprintf("Volume (%s) was not removed.\n%+v\n", volumeName, volume))
-	}
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Delete", anyArgs[0:6]...).Return(fmt.Errorf("not found")).Once()
+	err = client.DeleteVolume(defaultCtx, volumeName)
+	assert.ErrorContains(t, err, "not found")
 }
 
-func TestIsVolumeExistent(t *testing.T) {
-	volumeName := "non_existent_volume_name"
+func TestDeleteIsiVolumeWithIsiPath(t *testing.T) {
+	volumeName := "test_remove_volume_name"
+	// remove the volume
+	client.API.(*mocks.Client).On("Delete", anyArgs[0:6]...).Return(nil).Once()
+	err = client.DeleteVolumeWithIsiPath(defaultCtx, isiPath, volumeName)
+	assert.Nil(t, err)
 
-	// make sure the volume exists
-	isExistent := client.IsVolumeExistent(defaultCtx, "", volumeName)
-	assert.False(t, isExistent, "non-existent volume '%s' regarded as existent", volumeName)
+	client.API.(*mocks.Client).On("Delete", anyArgs[0:6]...).Return(fmt.Errorf("not found")).Once()
+	err = client.DeleteVolumeWithIsiPath(defaultCtx, isiPath, volumeName)
+	assert.ErrorContains(t, err, "not found")
 }
 
-func TestVolumeCopy(*testing.T) {
-	sourceVolumeName := "test_copy_source_volume_name"
-	destinationVolumeName := "test_copy_destination_volume_name"
-	subDirectoryName := "test_sub_directory"
-	sourceSubDirectoryPath := fmt.Sprintf("%s/%s", sourceVolumeName, subDirectoryName)
-	destinationSubDirectoryPath := fmt.Sprintf("%s/%s", destinationVolumeName, subDirectoryName)
+func TestCopyVolume(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
 
-	// make sure the destination volume doesn't exist yet
-	destinationVolume, err := client.GetVolume(
-		defaultCtx, destinationVolumeName, destinationVolumeName)
-	if err == nil && destinationVolume != nil {
-		panic(fmt.Sprintf("Volume (%s) already exists.\n", destinationVolumeName))
-	}
+	// success
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiVolumeAttributesResp)
+		*resp = &apiv1.GetIsiVolumeAttributesResp{}
+	}).Once()
+	testVolume, err := client.CopyVolume(defaultCtx, sourceVolumeName, destinationVolumeName)
+	assert.Nil(t, err)
+	assert.Equal(t, destinationVolumeName, testVolume.Name)
 
-	// Add the test volume
-	sourceTestVolume, err := client.CreateVolume(defaultCtx, sourceVolumeName)
-	if err != nil {
-		panic(err)
-	}
-	// make sure we clean up when we're done
-	defer client.DeleteVolume(defaultCtx, sourceTestVolume.Name)
-	// add a sub directory to the source volume
-	_, err = client.CreateVolume(defaultCtx, sourceSubDirectoryPath)
-	if err != nil {
-		panic(err)
-	}
-
-	// copy the source volume to the test volume
-	_, err = client.CreateVolume(defaultCtx, destinationVolumeName)
-	if err != nil {
-		panic(err)
-	}
-	destinationTestVolume, err := client.CopyVolume(
-		defaultCtx, sourceVolumeName, destinationVolumeName)
-	if err != nil {
-		panic(err)
-	}
-	defer client.DeleteVolume(defaultCtx, destinationTestVolume.Name)
-	// verify the copied volume is the same as the source volume
-	if destinationTestVolume == nil {
-		panic(fmt.Sprintf("Destination volume (%s) was not created.\n", destinationVolumeName))
-	}
-	if destinationTestVolume.Name != destinationVolumeName {
-		panic(fmt.Sprintf("Destination volume name not set properly.  Expected: (%s) Actual: (%s)\n", destinationVolumeName, destinationTestVolume.Name))
-	}
-	// make sure the destination volume contains the sub-directory
-	subTestVolume, err := client.GetVolume(
-		defaultCtx, "", destinationSubDirectoryPath)
-	if err != nil {
-		panic(err)
-	}
-	// verify the copied subdirectory is the same as int the source volume
-	if subTestVolume == nil {
-		panic(fmt.Sprintf("Destination sub directory (%s) was not created.\n", subDirectoryName))
-	}
-	if subTestVolume.Name != destinationSubDirectoryPath {
-		panic(fmt.Sprintf("Destination sub directory name not set properly.  Expected: (%s) Actual: (%s)\n", destinationSubDirectoryPath, subTestVolume.Name))
-	}
+	// negative
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(fmt.Errorf("volume copy failed")).Once()
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	testVolume, err = client.CopyVolume(defaultCtx, sourceVolumeName, destinationVolumeName)
+	assert.ErrorContains(t, err, "volume copy failed")
+	assert.Nil(t, testVolume)
 }
 
-func TestVolumeCopyWithIsiPath(*testing.T) {
-	sourceVolumeName := "test_copy_source_volume_name"
-	destinationVolumeName := "test_copy_destination_volume_name"
-	subDirectoryName := "test_sub_directory"
-	sourceSubDirectoryPath := fmt.Sprintf("%s/%s", sourceVolumeName, subDirectoryName)
-	destinationSubDirectoryPath := fmt.Sprintf("%s/%s", destinationVolumeName, subDirectoryName)
+func TestCopyVolumeWithIsiPath(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
 
-	// make sure the destination volume doesn't exist yet
-	destinationVolume, err := client.GetVolume(
-		defaultCtx, destinationVolumeName, destinationVolumeName)
-	if err == nil && destinationVolume != nil {
-		panic(fmt.Sprintf("Volume (%s) already exists.\n", destinationVolumeName))
-	}
+	// success
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiVolumeAttributesResp)
+		*resp = &apiv1.GetIsiVolumeAttributesResp{}
+	}).Once()
+	testVolume, err := client.CopyVolumeWithIsiPath(defaultCtx, isiPath, sourceVolumeName, destinationVolumeName)
+	assert.Nil(t, err)
+	assert.Equal(t, destinationVolumeName, testVolume.Name)
 
-	// Add the test volume
-	sourceTestVolume, err := client.CreateVolume(defaultCtx, sourceVolumeName)
-	if err != nil {
-		panic(err)
-	}
-	// make sure we clean up when we're done
-	defer client.DeleteVolume(defaultCtx, sourceTestVolume.Name)
-	// add a sub directory to the source volume
-	_, err = client.CreateVolume(defaultCtx, sourceSubDirectoryPath)
-	if err != nil {
-		panic(err)
-	}
-
-	// copy the source volume to the test volume
-	_, err = client.CreateVolume(defaultCtx, destinationVolumeName)
-	if err != nil {
-		panic(err)
-	}
-	newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
-	destinationTestVolume, err := client.CopyVolumeWithIsiPath(
-		defaultCtx, newIsiPath, sourceVolumeName, destinationVolumeName)
-	if err != nil {
-		panic(err)
-	}
-	defer client.DeleteVolume(defaultCtx, destinationTestVolume.Name)
-	// verify the copied volume is the same as the source volume
-	if destinationTestVolume == nil {
-		panic(fmt.Sprintf("Destination volume (%s) was not created.\n", destinationVolumeName))
-	}
-	if destinationTestVolume.Name != destinationVolumeName {
-		panic(fmt.Sprintf("Destination volume name not set properly.  Expected: (%s) Actual: (%s)\n", destinationVolumeName, destinationTestVolume.Name))
-	}
-	// make sure the destination volume contains the sub-directory
-	subTestVolume, err := client.GetVolume(
-		defaultCtx, "", destinationSubDirectoryPath)
-	if err != nil {
-		panic(err)
-	}
-	// verify the copied subdirectory is the same as int the source volume
-	if subTestVolume == nil {
-		panic(fmt.Sprintf("Destination sub directory (%s) was not created.\n", subDirectoryName))
-	}
-	if subTestVolume.Name != destinationSubDirectoryPath {
-		panic(fmt.Sprintf("Destination sub directory name not set properly.  Expected: (%s) Actual: (%s)\n", destinationSubDirectoryPath, subTestVolume.Name))
-	}
+	// negative
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(fmt.Errorf("volume copy failed")).Once()
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	testVolume, err = client.CopyVolumeWithIsiPath(defaultCtx, isiPath, sourceVolumeName, destinationVolumeName)
+	assert.ErrorContains(t, err, "volume copy failed")
+	assert.Nil(t, testVolume)
 }
 
-func TestVolumeExport(*testing.T) {
-	// TODO: Make this more robust
+func TestExportVolume(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Times(3)
+	client.API.(*mocks.Client).On("Post", anyArgs...).Return(nil).Once()
 	_, err := client.ExportVolume(defaultCtx, "testing")
-	if err != nil {
-		panic(err)
-	}
+	assert.Nil(t, err)
 }
 
-func TestVolumeUnexport(*testing.T) {
-	// TODO: Make this more robust
+func TestExportVolumeWithZone(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Post", anyArgs...).Return(nil).Once()
+	_, err := client.ExportVolumeWithZone(defaultCtx, sourceVolumeName, "zone", "description")
+	assert.Nil(t, err)
+}
+
+func TestExportVolumeWithZoneAndPath(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Post", anyArgs...).Return(nil).Once()
+	_, err := client.ExportVolumeWithZoneAndPath(defaultCtx, isiPath, "zone", "description")
+	assert.Nil(t, err)
+}
+
+func TestUnexportVolume(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Times(3)
+	client.API.(*mocks.Client).On("Delete", anyArgs...).Return(nil).Once()
 	err := client.UnexportVolume(defaultCtx, "testing")
-	if err != nil {
-		panic(err)
-	}
+	assert.Nil(t, err)
 }
 
-func TestVolumePath(*testing.T) {
-	// TODO: Make this more robust
-	fmt.Println(client.API.VolumePath("testing"))
+func TestQueryVolumeChildren(t *testing.T) {
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	_, err := client.QueryVolumeChildren(defaultCtx, "testing")
+	assert.Nil(t, err)
 }
 
-func TestVolumeGetExportMap(t *testing.T) {
-	// TODO: Make this more robust
-	volExMap, err := client.GetVolumeExportMap(defaultCtx, false)
-	assertNoError(t, err)
-	for v := range volExMap {
-		t.Logf("volName=%s, volPath=%s", v.Name, client.API.VolumePath(v.Name))
-	}
+func TestCreateVolumeDir(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+
+	// success
+	newDirMode := apiv2.FileMode(0o755)
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.CreateVolumeDir(defaultCtx, volumeName, dirPath, os.FileMode(newDirMode), false, false)
+	assert.Nil(t, err)
+
+	// negative
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(fmt.Errorf("volume creation failed")).Once()
+	err = client.CreateVolumeDir(defaultCtx, volumeName, dirPath, os.FileMode(newDirMode), false, false)
+	assert.ErrorContains(t, err, "volume creation failed")
 }
 
-func TestVolumeQueryChildren(t *testing.T) {
+func TestGetVolumeExportMap(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiVolumesResp)
+		*resp = &apiv1.GetIsiVolumesResp{}
+	}).Once()
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	testVolumes, err := client.GetVolumeExportMap(defaultCtx, false)
+	assert.Nil(t, err)
+	assert.Empty(t, testVolumes)
+}
+
+type bufReadCloser struct {
+	b *bytes.Buffer
+}
+
+func (b *bufReadCloser) Read(p []byte) (n int, err error) {
+	return b.b.Read(p)
+}
+
+func (b *bufReadCloser) Close() error {
+	return nil
+}
+
+func VolumeQueryChildrenTest(t *testing.T) {
 	// TODO: Need to fix this as it is failing with Isilon 8.1
 	skipTest(t)
 
@@ -984,43 +1073,39 @@ func TestVolumeQueryChildren(t *testing.T) {
 	assertNoError(t, client.ForceDeleteVolume(ctx, volumeName))
 }
 
-type bufReadCloser struct {
-	b *bytes.Buffer
-}
+func TestGetVolumeSize(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
 
-func (b *bufReadCloser) Read(p []byte) (n int, err error) {
-	return b.b.Read(p)
-}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiVolumeSizeResp)
+		*resp = &apiv1.GetIsiVolumeSizeResp{}
+	}).Once()
+	size, err := client.GetVolumeSize(defaultCtx, isiPath, volumeName)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(0), size)
 
-func (b *bufReadCloser) Close() error {
-	return nil
-}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiVolumeSizeResp)
+		*resp = &apiv1.GetIsiVolumeSizeResp{AttributeMap: []struct {
+			Name string `json:"name"`
+			Size int64  `json:"size"`
+		}{
+			{
+				Name: "vol1",
+				Size: 1024,
+			},
+			{
+				Name: "vol2",
+				Size: 512,
+			},
+		}}
+	}).Once()
+	size, err = client.GetVolumeSize(defaultCtx, isiPath, volumeName)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(1536), size)
 
-func TestVolumeSizeGet(*testing.T) {
-	volumeName := "test_get_create_volume_name"
-
-	// make sure the volume doesn't exist yet
-	volume, err := client.GetVolume(defaultCtx, volumeName, volumeName)
-	if err == nil && volume != nil {
-		panic(fmt.Sprintf("Volume (%s) already exists.\n", volumeName))
-	}
-
-	// Add the test volume
-	testVolume, err := client.CreateVolume(defaultCtx, volumeName)
-	if err != nil {
-		panic(err)
-	}
-	// make sure we clean up when we're done
-	defer client.DeleteVolume(defaultCtx, testVolume.Name)
-
-	// get the new volume
-	newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
-	size, err := client.GetVolumeSize(defaultCtx, newIsiPath, volumeName)
-	if err != nil {
-		panic(err)
-	}
-
-	if size < 0 {
-		panic(fmt.Sprintf("Volume size is not correct: %d\n", size))
-	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(fmt.Errorf("not found")).Once()
+	size, err = client.GetVolumeSize(defaultCtx, isiPath, volumeName)
+	assert.ErrorContains(t, err, "not found")
+	assert.Equal(t, int64(0), size)
 }
