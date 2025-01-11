@@ -32,7 +32,7 @@ func GetIsiGroup(ctx context.Context, client api.Client, groupName *string, gid 
 		return
 	}
 
-	var groupListResp *isiGroupListResp
+	var groupListResp *IsiGroupListResp
 	if err = client.Get(ctx, groupPath, authGroupID, nil, nil, &groupListResp); err != nil {
 		return
 	}

@@ -31,7 +31,7 @@ func GetIsiUser(ctx context.Context, client api.Client, userName *string, uid *i
 		return
 	}
 
-	var userListResp *isiUserListResp
+	var userListResp *IsiUserListResp
 	if err = client.Get(ctx, userPath, authUserID, nil, nil, &userListResp); err != nil {
 		return
 	}
