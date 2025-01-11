@@ -27,7 +27,7 @@ import (
 func GetIsiRole(ctx context.Context, client api.Client, roleID string) (role *IsiRole, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/auth/roles/<role-id>
 
-	var roleResp *isiRoleListResp
+	var roleResp *IsiRoleListResp
 	if err = client.Get(ctx, rolePath, roleID, nil, nil, &roleResp); err != nil {
 		return
 	}

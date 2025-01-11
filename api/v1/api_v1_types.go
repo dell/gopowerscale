@@ -356,7 +356,7 @@ type IsiUpdateUserReq struct {
 	Unlock *bool `json:"unlock,omitempty"`
 }
 
-type isiUserListResp struct {
+type IsiUserListResp struct {
 	Users []*IsiUser `json:"users,omitempty"`
 }
 
@@ -446,7 +446,7 @@ type IsiGroupMemberListRespResume struct {
 	Resume  string                    `json:"resume,omitempty"`
 }
 
-type isiGroupListResp struct {
+type IsiGroupListResp struct {
 	Groups []*IsiGroup `json:"groups,omitempty"`
 }
 

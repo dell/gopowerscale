@@ -19,11 +19,11 @@ import (
 	"context"
 	"flag"
 	"os"
-	"strconv"
 	"testing"
 
 	log "github.com/akutz/gournal"
 	glogrus "github.com/akutz/gournal/logrus"
+	"github.com/dell/goisilon/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -60,32 +60,7 @@ func TestMain(m *testing.M) {
 			log.DebugLevel)
 	}
 
-	goInsecure, err := strconv.ParseBool(os.Getenv("GOISILON_INSECURE"))
-	if err != nil {
-		log.WithError(err).Panic(defaultCtx, "error fetching environment variable GOISILON_INSECURE")
-	}
-	ignoreUnresolvableHosts, err := strconv.ParseBool(os.Getenv("GOISILON_UNRESOLVABLE_HOSTS"))
-	if err != nil {
-		log.WithError(err).Panic(defaultCtx, "error fetching environment variable GOISILON_UNRESOLVABLE_HOSTS")
-	}
-	authType, err := strconv.Atoi(os.Getenv("GOISILON_AUTHTYPE"))
-	if err != nil {
-		log.WithError(err).Panic(defaultCtx, "error fetching environment variable GOISILON_AUTHTYPE")
-	}
-
-	// #nosec G115
-	client, err = NewClientWithArgs(
-		defaultCtx,
-		os.Getenv("GOISILON_ENDPOINT"),
-		goInsecure,
-		1,
-		os.Getenv("GOISILON_USERNAME"),
-		"",
-		os.Getenv("GOISILON_PASSWORD"),
-		os.Getenv("GOISILON_VOLUMEPATH"),
-		os.Getenv("GOISILON_VOLUMEPATH_PERMISSIONS"),
-		ignoreUnresolvableHosts,
-		uint8(authType))
+	client = &Client{&mocks.Client{}}
 	if err != nil {
 		log.WithError(err).Panic(defaultCtx, "error creating test client")
 	}
