@@ -1,297 +1,730 @@
-package goisilon_test
-
-/*
-Copyright (c) 2021-2023 Dell Inc, or its subsidiaries.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-	http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+package goisilon
 
 import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
-	"github.com/dell/goisilon"
-	"github.com/dell/goisilon/api"
-	"github.com/stretchr/testify/suite"
+	apiv11 "github.com/dell/goisilon/api/v11"
+	"github.com/dell/goisilon/mocks"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-type ReplicationTestSuite struct {
-	suite.Suite
-	localClient    *goisilon.Client
-	remoteClient   *goisilon.Client
-	localEndpoint  string
-	remoteEndpoint string
-}
+const (
+	policiesPath       = "/platform/11/sync/policies/"
+	targetPoliciesPath = "/platform/11/sync/target/policies/"
+	jobsPath           = "/platform/11/sync/jobs/"
+)
 
-func (suite *ReplicationTestSuite) SetupSuite() {
-	lc, err := goisilon.NewClientWithArgs(
-		context.Background(),
-		"https://10.225.111.21:8080",
-		true,
-		1,
-		"admin",
-		"",
-		"dangerous",
-		"/ifs/data/test-goisilon",
-		"0777", false, 0)
-	if err != nil {
-		panic(err)
+const resolveErrorToIgnore = "The policy was not conflicted, so no change was made"
+
+func TestGetPolicyByName(t *testing.T) {
+	ctx := context.Background()
+	policyID := "test-policy"
+	expectedPolicy := &apiv11.Policy{
+		ID: policyID,
 	}
-	suite.localClient = lc
-	suite.localEndpoint = "10.225.111.21"
-
-	rc, err := goisilon.NewClientWithArgs(
-		context.Background(),
-		"https://10.225.111.70:8080",
-		true,
-		1,
-		"admin",
-		"",
-		"dangerous",
-		"/ifs/data/test-goisilon",
-		"0777", false, 0)
-	if err != nil {
-		panic(err)
-	}
-	suite.remoteClient = rc
-	suite.remoteEndpoint = "10.225.111.70"
-}
-
-func (suite *ReplicationTestSuite) TearDownSuite() {
-}
-
-func (suite *ReplicationTestSuite) TestUnplannedFailoverScenario() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
-
-	volumeName := "replicated"
-
-	// *** SIMULATE CREATE_VOLUME CALL *** //
-
-	// Create volume that would serve as VG
-	volume, err := suite.localClient.CreateVolume(ctx, volumeName)
-	suite.NoError(err)
-	suite.NotNil(volume)
-
-	// defer func() {
-	// 	err := suite.localClient.DeleteVolume(ctx, volumeName)
-	// 	suite.NoError(err)
-	// }()
-
-	res, err := suite.localClient.GetVolume(context.Background(), "", volumeName)
-	suite.NoError(err)
-	fmt.Println("local", res)
-
-	err = suite.localClient.CreatePolicy(ctx,
-		volumeName,
-		300,
-		"/ifs/data/test-goisilon/replicated",
-		"/ifs/data/test-goisilon/replicated",
-		suite.remoteEndpoint,
-		"",
-		true)
-	// suite.NoError(err)
-
-	p, err := suite.localClient.GetPolicyByName(ctx, volumeName)
-	suite.NoError(err)
-	suite.NotNil(p)
-	fmt.Println("local policy", p)
-
-	err = suite.localClient.WaitForPolicyLastJobState(ctx, volumeName, goisilon.FINISHED)
-	suite.NoError(err)
-
-	// defer func() {
-	// 	err := suite.localClient.DeletePolicy(ctx, volumeName)
-	// 	suite.NoError(err)
-	// }()
-
-	// *** SIMULATE EXECUTE_ACTION UNPLANNED_FAILOVER CALL ***
-
-	err = suite.remoteClient.BreakAssociation(ctx, volumeName)
-	suite.NoError(err)
-
-	// *** SIMULATE EXECUTE_ACTION REPROTECT CALL ***
-	// In driver EXECUTE_ACTION reprotect will be called on another side, but here we just talk to remote client
-
-	local := suite.remoteClient
-	remote := suite.localClient
-
-	pp, err := remote.GetPolicyByName(ctx, volumeName)
-	suite.NoError(err)
-
-	if pp.Enabled {
-		// Disable policy on remote
-		err = remote.DisablePolicy(ctx, volumeName)
-		suite.NoError(err)
-
-		err = remote.WaitForPolicyEnabledFieldCondition(ctx, volumeName, false)
-		suite.NoError(err)
-
-		// Run reset on the policy
-		err = remote.ResetPolicy(ctx, volumeName)
-		suite.NoError(err)
-
-		// Create policy on local (actually get it before creating it)
-		err = local.CreatePolicy(ctx,
-			volumeName,
-			300,
-			"/ifs/data/test-goisilon/replicated",
-			"/ifs/data/test-goisilon/replicated",
-			suite.localEndpoint,
-			"",
-			true)
-		suite.NoError(err)
-
-		err = local.WaitForPolicyEnabledFieldCondition(ctx, volumeName, true)
-		suite.NoError(err)
-
-	} else {
-		err = local.EnablePolicy(ctx, volumeName)
-		suite.NoError(err)
-
-		err = local.WaitForPolicyEnabledFieldCondition(ctx, volumeName, true)
-		suite.NoError(err)
-	}
-
-	tp, err := remote.GetTargetPolicyByName(ctx, volumeName)
-	if err != nil {
-		if e, ok := err.(*api.JSONError); ok {
-			if e.StatusCode != 404 {
-				suite.NoError(err)
-			}
+	client.API.(*mocks.Client).On("GetPolicyByName", mock.Anything, policyID).Return("", nil).Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv11.Policies)
+		*resp = &apiv11.Policies{
+			Policy: []apiv11.Policy{
+				*expectedPolicy,
+			},
 		}
-	}
-
-	if tp != nil {
-		err = remote.DisallowWrites(ctx, volumeName)
-		suite.NoError(err)
-	}
+	}).Once()
+	policy, err := client.GetPolicyByName(ctx, policyID)
+	assert.Nil(t, err)
+	assert.Equal(t, Policy(expectedPolicy), policy)
 }
 
-func (suite *ReplicationTestSuite) TestReplication() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
+func TestGetTargetPolicyByName(t *testing.T) {
+	ctx := context.Background()
+	policyID := "test-target-policy"
+	expectedPolicy := &apiv11.TargetPolicy{
+		ID:                      policyID,
+		Name:                    "Test Policy",
+		SourceClusterGUID:       "source-cluster-guid",
+		LastJobState:            apiv11.JobState("running"),
+		TargetPath:              "/target/path",
+		SourceHost:              "source-host",
+		LastSourceCoordinatorIP: "192.168.1.1",
+		FailoverFailbackState:   apiv11.FailoverFailbackState("writes_disabled"),
+	}
 
-	volumeName := "replicated"
-
-	// *** SIMULATE CREATE_VOLUME CALL *** //
-
-	// Create volume that would serve as VG
-	volume, err := suite.localClient.CreateVolume(ctx, volumeName)
-	suite.NoError(err)
-	suite.NotNil(volume)
-
-	// defer func() {
-	// 	err := suite.localClient.DeleteVolume(ctx, volumeName)
-	// 	suite.NoError(err)
-	// }()
-
-	res, err := suite.localClient.GetVolume(context.Background(), "", volumeName)
-	suite.NoError(err)
-	fmt.Println("local", res)
-
-	err = suite.localClient.CreatePolicy(ctx,
-		volumeName,
-		300,
-		"/ifs/data/test-goisilon/replicated",
-		"/ifs/data/test-goisilon/replicated",
-		suite.remoteEndpoint,
-		"",
-		true)
-	suite.NoError(err)
-
-	p, err := suite.localClient.GetPolicyByName(ctx, volumeName)
-	suite.NoError(err)
-	suite.NotNil(p)
-	fmt.Println("local policy", p)
-
-	err = suite.localClient.WaitForPolicyLastJobState(ctx, volumeName, goisilon.FINISHED)
-	suite.NoError(err)
-
-	// defer func() {
-	// 	err := suite.localClient.DeletePolicy(ctx, volumeName)
-	// 	suite.NoError(err)
-	// }()
-
-	// *** SIMULATE EXECUTE_ACTION FAILOVER CALL ***
-
-	err = suite.localClient.SyncPolicy(ctx, volumeName)
-	suite.NoError(err)
-
-	// Create Remote Policy
-	err = suite.remoteClient.CreatePolicy(ctx,
-		volumeName,
-		300,
-		"/ifs/data/test-goisilon/replicated",
-		"/ifs/data/test-goisilon/replicated",
-		suite.remoteEndpoint,
-		"",
-		false)
-	suite.NoError(err)
-
-	rp, err := suite.remoteClient.GetPolicyByName(ctx, volumeName)
-	suite.NoError(err)
-	suite.NotNil(rp)
-	suite.Equal(rp.Enabled, false)
-	fmt.Println("remote policy", rp)
-
-	err = suite.remoteClient.WaitForPolicyLastJobState(ctx, volumeName, goisilon.UNKNOWN)
-	suite.NoError(err)
-
-	// defer func() {
-	// 	err := suite.remoteClient.DeletePolicy(ctx, volumeName)
-	// 	suite.NoError(err)
-	// }()
-
-	// Allow writes on remote
-	err = suite.remoteClient.AllowWrites(ctx, volumeName)
-	suite.NoError(err)
-
-	// Disable policy on local
-	err = suite.localClient.DisablePolicy(ctx, volumeName)
-	suite.NoError(err)
-
-	err = suite.localClient.WaitForPolicyEnabledFieldCondition(ctx, volumeName, false)
-	suite.NoError(err)
-
-	// Disable writes on local (if we can)
-	tp, err := suite.localClient.GetTargetPolicyByName(ctx, volumeName)
-	if err != nil {
-		if e, ok := err.(*api.JSONError); ok {
-			if e.StatusCode != 404 {
-				suite.NoError(err)
-			}
+	client.API.(*mocks.Client).On("GetTargetPolicyByName", mock.Anything, policyID).Return("", nil).Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv11.TargetPolicies)
+		*resp = &apiv11.TargetPolicies{
+			Policy: []apiv11.TargetPolicy{
+				*expectedPolicy,
+			},
 		}
-	}
-
-	fmt.Println("local target policy", tp)
-
-	if tp != nil {
-		err = suite.localClient.DisallowWrites(ctx, volumeName)
-		suite.NoError(err)
-	}
-
-	// *** SIMULATE EXECUTE_ACTION REPROTECT CALL ***
-	// In driver EXECUTE_ACTION reprotect will be called on another side, but here we just talk to remote client
-	err = suite.remoteClient.EnablePolicy(ctx, volumeName)
-	suite.NoError(err)
-
-	err = suite.remoteClient.WaitForPolicyEnabledFieldCondition(ctx, volumeName, true)
-	suite.NoError(err)
+	}).Once()
+	policy, err := client.GetTargetPolicyByName(ctx, policyID)
+	assert.Nil(t, err)
+	assert.Equal(t, TargetPolicy(expectedPolicy), policy)
 }
 
-func TestReplicationSuite(_ *testing.T) {
-	//	suite.Run(t, new(ReplicationTestSuite))
+func TestCreatePolicy(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+	name := "test-policy"
+	rpo := 5
+	sourcePath := "/source/path"
+	targetPath := "/target/path"
+	targetHost := "target-host"
+	targetCert := "target-cert"
+	enabled := true
+
+	expectedData := &apiv11.Policy{
+		Action:     "sync",
+		Name:       name,
+		Enabled:    enabled,
+		TargetPath: targetPath,
+		SourcePath: sourcePath,
+		TargetHost: targetHost,
+		JobDelay:   rpo,
+		TargetCert: targetCert,
+		Schedule:   "when-source-modified",
+	}
+
+	var policyResp apiv11.Policy
+
+	// Set up expectations
+	client.API.(*mocks.Client).On(
+		"Post",
+		ctx,
+		policiesPath,
+		"",
+		mock.Anything,
+		mock.Anything,
+		expectedData,
+		&policyResp,
+	).Return(nil).Once()
+
+	// Call the CreatePolicy method
+	err := client.CreatePolicy(ctx, name, rpo, sourcePath, targetPath, targetHost, targetCert, enabled)
+
+	// Assertions
+	assert.Nil(t, err)
+}
+
+func TestDeletePolicy(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+	name := "test-policy"
+	// Define response for Delete operation
+	var resp string
+	// Set up expectations
+	client.API.(*mocks.Client).On(
+		"Delete",
+		ctx,
+		policiesPath,
+		name,
+		mock.Anything,
+		mock.Anything,
+		&resp,
+	).Return(nil).Once()
+	// Call the DeletePolicy method
+	err := client.DeletePolicy(ctx, name)
+	// Assertions
+	assert.Nil(t, err)
+}
+
+func TestDeleteTargetPolicy(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+	id := "test-target-policy"
+	// Define response for Delete operation
+	var resp string
+	// Set up expectations
+	client.API.(*mocks.Client).On(
+		"Delete",
+		ctx,
+		targetPoliciesPath,
+		id,
+		mock.Anything,
+		mock.Anything,
+		&resp,
+	).Return(nil).Once()
+	// Call the DeleteTargetPolicy method
+	err := client.DeleteTargetPolicy(ctx, id)
+	// Assertions
+	assert.Nil(t, err)
+}
+
+func TestBreakAssociation(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+
+	targetPolicyName := "test-target-policy"
+	targetPolicyID := "test-target-policy-id"
+
+	expectedTargetPolicy := &apiv11.TargetPolicy{
+		ID: targetPolicyID,
+	}
+
+	// Mock GetTargetPolicyByName method
+	client.API.(*mocks.Client).On("GetTargetPolicyByName", mock.Anything, targetPolicyID).Return("", nil).Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv11.TargetPolicies)
+		*resp = &apiv11.TargetPolicies{
+			Policy: []apiv11.TargetPolicy{
+				*expectedTargetPolicy,
+			},
+		}
+	}).Once()
+
+	// Mock DeleteTargetPolicy method
+	client.API.(*mocks.Client).On(
+		"Delete",
+		ctx,
+		targetPoliciesPath,
+		targetPolicyID,
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+	).Return(nil).Once()
+
+	// Call the BreakAssociation method
+	err := client.BreakAssociation(ctx, targetPolicyName)
+
+	// Assertions
+	assert.Nil(t, err)
+}
+
+func TestResetPolicy(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+
+	name := "test-policy"
+
+	// Define response for Post operation
+	var resp apiv11.Policy
+
+	// Set up expectations
+	client.API.(*mocks.Client).On(
+		"Post",
+		ctx,
+		policiesPath,
+		name+"/reset",
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+		&resp,
+	).Return(nil).Once()
+
+	// Call the ResetPolicy method
+	err := client.ResetPolicy(ctx, name)
+
+	// Assertions
+	assert.Nil(t, err)
+}
+
+func TestEnablePolicy(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+
+	name := "test-policy"
+	policyID := "policy-id"
+	schedule := "when-source-modified"
+
+	pp := &apiv11.Policy{
+		ID:       policyID,
+		Enabled:  false,
+		Schedule: schedule,
+	}
+
+	updatedPolicy := &apiv11.Policy{
+		Enabled:  true,
+		Schedule: schedule,
+	}
+
+	// Mock GetPolicyByName method
+	client.API.(*mocks.Client).On("GetPolicyByName", mock.Anything, policyID).Return("", nil).Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv11.Policies)
+		*resp = &apiv11.Policies{
+			Policy: []apiv11.Policy{
+				*pp,
+			},
+		}
+	}).Once()
+
+	// Mock UpdatePolicy method
+	client.API.(*mocks.Client).On(
+		"Put",
+		ctx,
+		policiesPath,
+		policyID,
+		mock.Anything,
+		mock.Anything,
+		updatedPolicy,
+		nil,
+	).Return(nil).Once()
+
+	// Call the EnablePolicy method
+	err := client.EnablePolicy(ctx, name)
+
+	// Assertions
+	assert.Nil(t, err)
+
+}
+
+func TestDisablePolicy(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+
+	name := "test-policy"
+	policyID := "policy-id"
+	schedule := "when-source-modified"
+
+	pp := &apiv11.Policy{
+		ID:       policyID,
+		Enabled:  true,
+		Schedule: schedule,
+	}
+
+	updatedPolicy := &apiv11.Policy{
+		Enabled:  false,
+		Schedule: schedule,
+	}
+
+	// Mock GetPolicyByName method
+	client.API.(*mocks.Client).On("GetPolicyByName", mock.Anything, policyID).Return("", nil).Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv11.Policies)
+		*resp = &apiv11.Policies{
+			Policy: []apiv11.Policy{
+				*pp,
+			},
+		}
+	}).Once()
+
+	// Mock UpdatePolicy method
+	client.API.(*mocks.Client).On(
+		"Put",
+		ctx,
+		policiesPath,
+		policyID,
+		mock.Anything,
+		mock.Anything,
+		updatedPolicy,
+		nil,
+	).Return(nil).Once()
+
+	// Call the EnablePolicy method
+	err := client.DisablePolicy(ctx, name)
+
+	// Assertions
+	assert.Nil(t, err)
+
+}
+
+func TestSetPolicyEnabledField(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+
+	name := "test-policy"
+	policyID := "policy-id"
+	schedule := "when-source-modified"
+
+	pp := &apiv11.Policy{
+		ID:       policyID,
+		Enabled:  false,
+		Schedule: schedule,
+	}
+
+	updatedPolicy := &apiv11.Policy{
+		Enabled:  true,
+		Schedule: schedule,
+	}
+
+	// Mock GetPolicyByName method
+	client.API.(*mocks.Client).On("GetPolicyByName", mock.Anything, policyID).Return("", nil).Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv11.Policies)
+		*resp = &apiv11.Policies{
+			Policy: []apiv11.Policy{
+				*pp,
+			},
+		}
+	}).Once()
+
+	// Mock UpdatePolicy method (simulating the Put method call)
+	client.API.(*mocks.Client).On(
+		"Put",
+		ctx,
+		policiesPath,
+		policyID,
+		mock.Anything,
+		mock.Anything,
+		updatedPolicy,
+		mock.Anything,
+	).Return(nil).Once()
+
+	// Call the SetPolicyEnabledField method
+	err := client.SetPolicyEnabledField(ctx, name, true)
+
+	// Assertions
+	assert.Nil(t, err)
+}
+
+func TestModifyPolicy(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+
+	name := "test-policy"
+	policyID := "policy-id"
+	enabled := true
+
+	pp := &apiv11.Policy{
+		ID:      policyID,
+		Enabled: enabled,
+	}
+
+	t.Run("Manual Schedule", func(t *testing.T) {
+		updatedPolicy := &apiv11.Policy{
+			Enabled:  enabled,
+			Schedule: "",
+		}
+
+		// Mock GetPolicyByName method
+		client.API.(*mocks.Client).On("GetPolicyByName", mock.Anything, policyID).Return("", nil).Once()
+		client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(**apiv11.Policies)
+			*resp = &apiv11.Policies{
+				Policy: []apiv11.Policy{
+					*pp,
+				},
+			}
+		}).Once()
+
+		// Mock UpdatePolicy method (simulating the Put method call)
+		client.API.(*mocks.Client).On(
+			"Put",
+			ctx,
+			policiesPath,
+			policyID,
+			mock.Anything,
+			mock.Anything,
+			updatedPolicy,
+			mock.Anything,
+		).Return(nil).Once()
+
+		// Call the ModifyPolicy method with manual schedule
+		err := client.ModifyPolicy(ctx, name, "", 0)
+
+		// Assertions
+		assert.Nil(t, err)
+	})
+
+	t.Run("When Source Modified Schedule", func(t *testing.T) {
+		rpo := 10
+		updatedPolicy := &apiv11.Policy{
+			Enabled:  enabled,
+			Schedule: "when-source-modified",
+			JobDelay: rpo,
+		}
+
+		// Mock GetPolicyByName method
+		client.API.(*mocks.Client).On("GetPolicyByName", mock.Anything, policyID).Return("", nil).Once()
+		client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(**apiv11.Policies)
+			*resp = &apiv11.Policies{
+				Policy: []apiv11.Policy{
+					*pp,
+				},
+			}
+		}).Once()
+
+		// Mock UpdatePolicy method (simulating the Put method call)
+		client.API.(*mocks.Client).On(
+			"Put",
+			ctx,
+			policiesPath,
+			policyID,
+			mock.Anything,
+			mock.Anything,
+			updatedPolicy,
+			mock.Anything,
+		).Return(nil).Once()
+
+		// Call the ModifyPolicy method with "when-source-modified" schedule
+		err := client.ModifyPolicy(ctx, name, "when-source-modified", rpo)
+
+		// Assertions
+		assert.Nil(t, err)
+	})
+}
+
+func TestResolvePolicy(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+
+	name := "test-policy"
+	policyID := "policy-id"
+	enabled := true
+	schedule := "daily"
+
+	pp := &apiv11.Policy{
+		ID:       policyID,
+		Enabled:  enabled,
+		Schedule: schedule,
+	}
+
+	resolvePolicyReq := &apiv11.ResolvePolicyReq{
+		Conflicted: false,
+		Enabled:    enabled,
+		Schedule:   schedule,
+	}
+
+	t.Run("ResolvePolicy_Success", func(t *testing.T) {
+		// Mock GetPolicyByName method
+		client.API.(*mocks.Client).On("GetPolicyByName", mock.Anything, policyID).Return("", nil).Once()
+		client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(**apiv11.Policies)
+			*resp = &apiv11.Policies{
+				Policy: []apiv11.Policy{
+					*pp,
+				},
+			}
+		}).Once()
+
+		// Mock ResolvePolicy method (simulating the Put method call)
+		client.API.(*mocks.Client).On(
+			"Put",
+			ctx,
+			policiesPath,
+			policyID,
+			mock.Anything,
+			mock.Anything,
+			resolvePolicyReq,
+			mock.Anything,
+		).Return(nil).Once()
+
+		// Call the ResolvePolicy method with no errors
+		err := client.ResolvePolicy(ctx, name)
+
+		// Assertions
+		assert.Nil(t, err)
+	})
+
+	t.Run("ResolvePolicy_HandlesSpecificError", func(t *testing.T) {
+		// Mock GetPolicyByName method
+		client.API.(*mocks.Client).On("GetPolicyByName", mock.Anything, policyID).Return("", nil).Once()
+		client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(**apiv11.Policies)
+			*resp = &apiv11.Policies{
+				Policy: []apiv11.Policy{
+					*pp,
+				},
+			}
+		}).Once()
+
+		// Mock ResolvePolicy method to return a specific error that should be ignored
+		client.API.(*mocks.Client).On(
+			"Put",
+			ctx,
+			policiesPath,
+			policyID,
+			mock.Anything,
+			mock.Anything,
+			resolvePolicyReq,
+			mock.Anything,
+		).Return(fmt.Errorf(resolveErrorToIgnore)).Once()
+		// Call the ResolvePolicy method and expect the specific error to be ignored
+		err := client.ResolvePolicy(ctx, name)
+
+		// Assertions
+		assert.Nil(t, err)
+	})
+}
+
+func TestAllowWrites(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+
+	policyName := "test-policy"
+
+	targetPolicy := &apiv11.TargetPolicy{
+		ID:                    policyName,
+		FailoverFailbackState: WritesDisabled,
+	}
+
+	writeEnabledtargetPolicy := &apiv11.TargetPolicy{
+		ID:                    policyName,
+		FailoverFailbackState: WritesEnabled,
+	}
+
+	// Mock GetTargetPolicyByName method
+	client.API.(*mocks.Client).On("GetTargetPolicyByName", mock.Anything, policyName).Return("", nil).Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv11.TargetPolicies)
+		*resp = &apiv11.TargetPolicies{
+			Policy: []apiv11.TargetPolicy{
+				*targetPolicy,
+			},
+		}
+	}).Once()
+
+	// Define response for Post operation
+	var resp apiv11.Job
+	// Set up expectations
+	client.API.(*mocks.Client).On(
+		"Post",
+		ctx,
+		jobsPath,
+		"",
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+		&resp,
+	).Return(nil).Once()
+
+	client.API.(*mocks.Client).On("GetTargetPolicyByName", mock.Anything, policyName).Return("", nil).Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv11.TargetPolicies)
+		*resp = &apiv11.TargetPolicies{
+			Policy: []apiv11.TargetPolicy{
+				*writeEnabledtargetPolicy,
+			},
+		}
+	}).Maybe()
+
+	// Call the AllowWrites method
+	err := client.AllowWrites(ctx, policyName)
+
+	// Assertions
+	assert.Nil(t, err)
+}
+
+func TestDisallowWrites(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+
+	policyName := "test-policy"
+
+	targetPolicy := &apiv11.TargetPolicy{
+		ID:                    policyName,
+		FailoverFailbackState: WritesEnabled,
+	}
+
+	writeDisabledtargetPolicy := &apiv11.TargetPolicy{
+		ID:                    policyName,
+		FailoverFailbackState: WritesDisabled,
+	}
+
+	// Mock GetTargetPolicyByName method
+	client.API.(*mocks.Client).On("GetTargetPolicyByName", mock.Anything, policyName).Return("", nil).Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv11.TargetPolicies)
+		*resp = &apiv11.TargetPolicies{
+			Policy: []apiv11.TargetPolicy{
+				*targetPolicy,
+			},
+		}
+	}).Once()
+
+	// Define response for Post operation
+	var resp apiv11.Job
+
+	// Set up expectations
+	client.API.(*mocks.Client).On(
+		"Post",
+		ctx,
+		jobsPath,
+		"",
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+		&resp,
+	).Return(nil).Once()
+
+	client.API.(*mocks.Client).On("GetTargetPolicyByName", mock.Anything, policyName).Return("", nil).Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv11.TargetPolicies)
+		*resp = &apiv11.TargetPolicies{
+			Policy: []apiv11.TargetPolicy{
+				*writeDisabledtargetPolicy,
+			},
+		}
+	}).Maybe()
+
+	// Call the AllowWrites method
+	err := client.DisallowWrites(ctx, policyName)
+
+	// Assertions
+	assert.Nil(t, err)
+}
+
+func TestResyncPrep(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+
+	policyName := "test-policy"
+
+	// Define response for Post operation
+	var resp apiv11.Job
+
+	// Set up expectations
+	client.API.(*mocks.Client).On(
+		"Post",
+		ctx,
+		jobsPath,
+		"",
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+		&resp,
+	).Return(nil).Once()
+
+	// Call the ResyncPrep method
+	err := client.ResyncPrep(ctx, policyName)
+
+	// Assertions
+	assert.Nil(t, err)
+}
+
+func TestRunActionForPolicy(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+
+	policyName := "test-policy"
+	action := apiv11.AllowWrite
+	jobRequest := &apiv11.JobRequest{Action: action, ID: policyName}
+	expectedJob := &apiv11.Job{}
+
+	// Mock Post method
+	client.API.(*mocks.Client).On("Post", ctx, jobsPath, "", mock.Anything, mock.Anything, jobRequest, expectedJob).Return(nil).Once()
+
+	// Call the RunActionForPolicy method
+	job, err := client.RunActionForPolicy(ctx, policyName, action)
+
+	// Assertions
+	assert.Nil(t, err)
+	assert.Equal(t, expectedJob, job)
+}
+
+func TestStartSyncIQJob(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+
+	jobRequest := &apiv11.JobRequest{
+		ID:     "policy-id",
+		Action: apiv11.ResyncPrep,
+	}
+	expectedJob := &apiv11.Job{}
+
+	// Expect the Post method to be called with the specified parameters
+	client.API.(*mocks.Client).On("Post", ctx, jobsPath, "", mock.Anything, mock.Anything, jobRequest, expectedJob).Return(nil).Once()
+
+	// Call the StartSyncIQJob method
+	job, err := client.StartSyncIQJob(ctx, jobRequest)
+
+	// Assertions
+	assert.Nil(t, err)
+	assert.Equal(t, expectedJob, job)
 }
