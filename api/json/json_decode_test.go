@@ -3,6 +3,8 @@ package json
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLiteralStore(t *testing.T) {
@@ -34,4 +36,27 @@ func TestLiteralStore(t *testing.T) {
 	var z uint8 = 5
 	v = reflect.ValueOf(&z)
 	d.literalStore(item, v, true)
+}
+
+func TestIsValidNumber(t *testing.T) {
+	value := isValidNumber("")
+	assert.False(t, value)
+
+	value = isValidNumber("-")
+	assert.False(t, value)
+
+	value = isValidNumber("0")
+	assert.True(t, value)
+
+	value = isValidNumber("2")
+	assert.True(t, value)
+
+	value = isValidNumber("12")
+	assert.True(t, value)
+
+	value = isValidNumber("123.254")
+	assert.True(t, value)
+
+	value = isValidNumber("123e+10")
+	assert.True(t, value)
 }
