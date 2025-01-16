@@ -31,7 +31,6 @@ import (
 )
 
 var (
-	anyArgs                     = []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
 	isiPath                     = "/ifs/data/csi"
 	isiVolumePathPermissions    = "077"
 	volumeName                  = "test_get_create_volume_name"

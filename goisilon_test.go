@@ -26,12 +26,14 @@ import (
 	"github.com/dell/goisilon/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 var (
 	err        error
 	client     *Client
 	defaultCtx context.Context
+	anyArgs    = []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
 )
 
 func init() {

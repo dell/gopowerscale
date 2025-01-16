@@ -30,8 +30,6 @@ import (
 	"github.com/dell/goisilon/mocks"
 )
 
-var anyArgs = []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
-
 // Test GetAllGroups() and GetGroupsWithFilter()
 func TestGroupGet(t *testing.T) {
 	// Get groups with filter

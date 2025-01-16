@@ -16,12 +16,32 @@ limitations under the License.
 package goisilon
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
 
 	apiv1 "github.com/dell/goisilon/api/v1"
+	"github.com/dell/goisilon/mocks"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
+
+func TestGetSnapshots(t *testing.T) {
+	// Test case: Successful retrieval of snapshots
+	client.API.(*mocks.Client).ExpectedCalls = nil
+
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiSnapshotsResp)
+		*resp = &apiv1.GetIsiSnapshotsResp{}
+	}).Once()
+	_, err = client.GetSnapshots(context.Background())
+	assert.Nil(t, err)
+
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(fmt.Errorf("not found")).Once()
+	_, err = client.GetSnapshots(context.Background())
+	assert.NotNil(t, err)
+}
 
 func TestSnapshotsGet(_ *testing.T) {
 	snapshotPath := "test_snapshots_get_volume"
