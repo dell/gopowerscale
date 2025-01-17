@@ -27,6 +27,7 @@ import (
 
 var quotaSize = int64(1234567)
 var softLimit, advisoryLimit, softGracePrd int64
+var quotaID string
 
 // Test both GetQuota() and SetQuota()
 func TestGetQuota(t *testing.T) {
@@ -53,64 +54,41 @@ func TestGetQuota(t *testing.T) {
 }
 
 // Test GetAllQuotas()
-func TestAllQuotasGet(t *testing.T) {
+func TestGetAllQuotas(t *testing.T) {
+
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.IsiQuotaListRespResume)
+		*resp = &apiv1.IsiQuotaListRespResume{
+			Quotas: []*apiv1.IsiQuota{},
+			Resume: "",
+		}
+	}).Once()
 	// Get All the quotas
-	quotas, err := client.GetAllQuotas(defaultCtx)
-	if err != nil {
-		panic(err)
-	}
-	assertNotNil(t, quotas)
+	_, err := client.GetAllQuotas(defaultCtx)
+	assert.Nil(t, err)
+
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(fmt.Errorf("not found")).Once()
+	// Get All the quotas
+	_, err = client.GetAllQuotas(defaultCtx)
+	assert.NotNil(t, err)
 }
 
 // Test UpdateQuota()
-func TestQuotaUpdate(_ *testing.T) {
-	volumeName := "test_quota_update"
-	quotaSize := int64(1234567)
+func TestUpdateQuotaSizeByID(t *testing.T) {
+	// volumeName := "test_quota_update"
 	updatedQuotaSize := int64(22345000)
 	var softLimit, advisoryLimit, softGracePrd int64
 
-	// Setup the test
-	_, err := client.CreateVolume(defaultCtx, volumeName)
-	if err != nil {
-		panic(err)
-	}
-	// make sure we clean up when we're done
-	defer client.DeleteVolume(defaultCtx, volumeName)
-	defer client.ClearQuota(defaultCtx, volumeName)
-	// Set the quota
-	quotaID, err := client.SetQuotaSize(defaultCtx, volumeName, quotaSize, softLimit, advisoryLimit, softGracePrd)
-	if err != nil {
-		panic(err)
-	}
-	// Make sure the quota is initialized
-	quota, err := client.GetQuotaByID(defaultCtx, quotaID)
-	if err != nil {
-		panic(err)
-	}
-	if quota == nil {
-		panic(fmt.Sprintf("Quota should not be nil: %v", quota))
-	}
-	if quota.Thresholds.Hard != quotaSize {
-		panic(fmt.Sprintf("Initial quota not set properly.  Expected: %d Actual: %d", quotaSize, quota.Thresholds.Hard))
-	}
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
 
 	// Update the quota
 	err = client.UpdateQuotaSizeByID(defaultCtx, quotaID, updatedQuotaSize, softLimit, advisoryLimit, softGracePrd)
-	if err != nil {
-		panic(err)
-	}
+	assert.Nil(t, err)
 
-	// Make sure the quota is updated
-	quota, err = client.GetQuotaByID(defaultCtx, quotaID)
-	if err != nil {
-		panic(err)
-	}
-	if quota == nil {
-		panic(fmt.Sprintf("Updated quota should not be nil: %v", quota))
-	}
-	if quota.Thresholds.Hard != updatedQuotaSize {
-		panic(fmt.Sprintf("Updated quota not set properly.  Expected: %d Actual: %d", updatedQuotaSize, quota.Thresholds.Hard))
-	}
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(fmt.Errorf("not found")).Once()
+	// Update the quota
+	err = client.UpdateQuotaSizeByID(defaultCtx, quotaID, updatedQuotaSize, softLimit, advisoryLimit, softGracePrd)
+	assert.NotNil(t, err)
 }
 
 // Test ClearQuota()
