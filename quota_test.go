@@ -131,6 +131,25 @@ func TestGetQuotawithPath(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestCreateQuota(t *testing.T) {
+
+	size := int64(22345000)
+	var softLimit, advisoryLimit, softGracePrd int64
+	var container bool
+
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Post", anyArgs...).Return(nil).Once()
+	// Clear the quota
+	_, err = client.CreateQuota(defaultCtx, quotaID, container, size, softLimit, advisoryLimit, softGracePrd)
+	assert.Nil(t, err)
+
+	// client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
+	// client.API.(*mocks.Client).On("Post", anyArgs...).Return(fmt.Errorf("not found")).Once()
+	// // Clear the quota
+	// _, err = client.CreateQuota(defaultCtx, quotaID, container, size, softLimit, advisoryLimit, softGracePrd)
+	// assert.NotNil(t, err)
+}
+
 // Test UpdateQuota()
 func TestUpdateQuotaSizeByID(t *testing.T) {
 
