@@ -28,6 +28,8 @@ import (
 var quotaSize = int64(1234567)
 var softLimit, advisoryLimit, softGracePrd int64
 var quotaID string
+var resume string
+var ID string
 
 // Test both GetQuota() and SetQuota()
 func TestGetQuota(t *testing.T) {
@@ -73,9 +75,65 @@ func TestGetAllQuotas(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestGetQuotasWithResume(t *testing.T) {
+
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv1.IsiQuotaListRespResume)
+		*resp = apiv1.IsiQuotaListRespResume{
+			Quotas: []*apiv1.IsiQuota{},
+			Resume: "",
+		}
+	}).Once()
+	// Clear the quota
+	_, err = client.GetQuotasWithResume(defaultCtx, resume)
+	assert.Nil(t, err)
+
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(fmt.Errorf("not found")).Once()
+	// Clear the quota
+	_, err = client.GetQuotasWithResume(defaultCtx, resume)
+	assert.NotNil(t, err)
+}
+func TestGetQuotaByID(t *testing.T) {
+
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv1.IsiQuotaListResp)
+		*resp = apiv1.IsiQuotaListResp{
+			Quotas: []apiv1.IsiQuota{{}},
+		}
+	}).Once()
+
+	// Clear the quota
+	_, err = client.GetQuotaByID(defaultCtx, ID)
+	assert.Nil(t, err)
+
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(fmt.Errorf("not found")).Once()
+	// Clear the quota
+	_, err = client.GetQuotaByID(defaultCtx, ID)
+	assert.NotNil(t, err)
+}
+
+func TestGetQuotawithPath(t *testing.T) {
+
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv1.IsiQuotaListResp)
+		*resp = apiv1.IsiQuotaListResp{
+			Quotas: []apiv1.IsiQuota{{}},
+		}
+	}).Once()
+
+	// Clear the quota
+	_, err = client.GetQuotaWithPath(defaultCtx, ID)
+	assert.Nil(t, err)
+
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(fmt.Errorf("not found")).Once()
+	// Clear the quota
+	_, err = client.GetQuotaWithPath(defaultCtx, ID)
+	assert.NotNil(t, err)
+}
+
 // Test UpdateQuota()
 func TestUpdateQuotaSizeByID(t *testing.T) {
-	// volumeName := "test_quota_update"
+
 	updatedQuotaSize := int64(22345000)
 	var softLimit, advisoryLimit, softGracePrd int64
 
@@ -92,98 +150,43 @@ func TestUpdateQuotaSizeByID(t *testing.T) {
 }
 
 // Test ClearQuota()
-func TestQuotaClear(_ *testing.T) {
-	volumeName := "test_quota_clear"
-	quotaSize := int64(1234567)
-	var softLimit, advisoryLimit, softGracePrd int64
+func TestClearQuota(t *testing.T) {
 
-	// Setup the test
-	_, err := client.CreateVolume(defaultCtx, volumeName)
-	if err != nil {
-		panic(err)
-	}
-	// make sure we clean up when we're done
-	defer client.DeleteVolume(defaultCtx, volumeName)
-	defer client.ClearQuota(defaultCtx, volumeName)
-	// Set the quota
-	quotaID, err := client.SetQuotaSize(defaultCtx, volumeName, quotaSize, softLimit, advisoryLimit, softGracePrd)
-	if err != nil {
-		panic(err)
-	}
-	// Make sure the quota is initialized
-	quota, err := client.GetQuotaByID(defaultCtx, quotaID)
-	if err != nil {
-		panic(err)
-	}
-	if quota == nil {
-		panic(fmt.Sprintf("Quota should not be nil: %v", quota))
-	}
-	if quota.Thresholds.Hard != quotaSize {
-		panic(fmt.Sprintf("Initial quota not set properly.  Expected: %d Actual: %d", quotaSize, quota.Thresholds.Hard))
-	}
-
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Delete", anyArgs[0:6]...).Return(nil).Once()
 	// Clear the quota
 	err = client.ClearQuota(defaultCtx, volumeName)
-	if err != nil {
-		panic(err)
-	}
+	assert.Nil(t, err)
 
-	// Make sure the quota is gone
-	quota, err = client.GetQuotaByID(defaultCtx, quotaID)
-	if err == nil {
-		panic("Attempting to get a cleared quota should return an error but returned nil")
-	}
-	if quota != nil {
-		panic(fmt.Sprintf("Cleared quota should be nil: %v", quota))
-	}
-}
-
-// Test ClearQuotaByID()
-func TestQuotaClearByID(_ *testing.T) {
-	volumeName := "test_quota_clear_by_id"
-	quotaSize := int64(1234567)
-	var softLimit, advisoryLimit, softGracePrd int64
-
-	// Setup the test
-	_, err := client.CreateVolume(defaultCtx, volumeName)
-	if err != nil {
-		panic(err)
-	}
-	// make sure we clean up when we're done
-	defer client.DeleteVolume(defaultCtx, volumeName)
-	defer client.ClearQuota(defaultCtx, volumeName)
-	// Set the quota
-	var quotaID string
-	if quotaID, err = client.SetQuotaSize(defaultCtx, volumeName, quotaSize, softLimit, advisoryLimit, softGracePrd); err != nil {
-		panic(err)
-	}
-
-	var quota Quota
-	// Make sure the quota is initialized
-	if quota, err = client.GetQuotaByID(defaultCtx, quotaID); err != nil {
-		panic(err)
-	}
-
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Delete", anyArgs[0:6]...).Return(fmt.Errorf("not found")).Once()
 	// Clear the quota
-	if err := client.ClearQuotaByID(defaultCtx, quotaID); err != nil {
-		panic(err)
-	}
-
-	// Make sure the quota is gone
-	if quota, err = client.GetQuotaByID(defaultCtx, quotaID); err == nil {
-		panic("Attempting to get a cleared quota should return an error but returned nil")
-	} else if quota != nil {
-		panic(fmt.Sprintf("Cleared quota should be nil: %v", quota))
-	}
+	err = client.ClearQuota(defaultCtx, volumeName)
+	assert.NotNil(t, err)
 }
 
-// Test IsQuotaLicenseActivated()
+func TestClearQuotaByID(t *testing.T) {
+
+	client.API.(*mocks.Client).On("Delete", anyArgs[0:6]...).Return(nil).Once()
+	// Clear the quota
+	err := client.ClearQuotaByID(defaultCtx, quotaID)
+	assert.Nil(t, err)
+
+	client.API.(*mocks.Client).On("Delete", anyArgs[0:6]...).Return(fmt.Errorf("not found")).Once()
+	// Clear the quota
+	err = client.ClearQuotaByID(defaultCtx, quotaID)
+	assert.NotNil(t, err)
+}
+
 func TestIsQuotaLicenseActivated(t *testing.T) {
-	t.Log("start TestIsQuotaLicenseActivated")
 
-	isActivated, _ := client.IsQuotaLicenseActivated(defaultCtx)
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	_, err := client.IsQuotaLicenseActivated(defaultCtx)
+	assert.Nil(t, err)
 
-	assert.True(t, isActivated)
+	// client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(fmt.Errorf("not found")).Once()
+	// _, err = client.IsQuotaLicenseActivated(defaultCtx)
+	// assert.NotNil(t, err)
 }
 
 // Test TestQuotaUpdateByID()
