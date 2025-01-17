@@ -1492,6 +1492,44 @@ func TestSyncPolicy(t *testing.T) {
 		assert.Contains(t, err.Error(), "wait error")
 	})
 
+	t.Run("Max Retries Reached for Retryable Error", func(t *testing.T) {
+		client.API.(*mocks.Client).On("GetPolicyByName", mock.Anything, policyName).Return("", nil).Once()
+		client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(**apiv11.Policies)
+			*resp = &apiv11.Policies{
+				Policy: []apiv11.Policy{
+					*enabledPolicy,
+				},
+			}
+		}).Once()
+		client.API.(*mocks.Client).On("GetJobsByPolicyName", mock.Anything, policyName).Return("", nil).Once()
+		client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(**apiv11.Jobs)
+			*resp = &apiv11.Jobs{
+				Job: []apiv11.Job{},
+			}
+		}).Once()
+
+		client.API.(*mocks.Client).On("Post", ctx, jobsPath, "", mock.Anything, mock.Anything, &apiv11.JobRequest{ID: policyName}, mock.Anything).Return(errors.New(retryablePolicyError)).Times(maxRetries)
+
+		client.API.(*mocks.Client).On("GetReportsByPolicyName", mock.Anything, policyName, 1).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(**apiv11.Reports)
+			*resp = &apiv11.Reports{
+				Reports: []apiv11.Report{
+					{
+						Errors: []string{retryablePolicyError},
+					},
+				},
+			}
+		}).Times(maxRetries - 1)
+
+		client.API.(*mocks.Client).On("Get", anyArgs...).Return(errors.New(retryablePolicyError)).Once()
+
+		err := client.SyncPolicy(ctx, policyName)
+		assert.NotNil(t, err)
+		assert.Contains(t, err.Error(), retryablePolicyError)
+	})
+
 	t.Run("SyncPolicy with maxRetries reached and no retryable error found", func(t *testing.T) {
 		policyName := "test-policy"
 		client.API.(*mocks.Client).On("GetPolicyByName", mock.Anything, policyName).Return("", nil).Once()
