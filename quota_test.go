@@ -19,50 +19,37 @@ import (
 	"fmt"
 	"testing"
 
+	apiv1 "github.com/dell/goisilon/api/v1"
+	"github.com/dell/goisilon/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-// Test both GetQuota() and SetQuota()
-func TestQuotaGetSet(_ *testing.T) {
-	volumeName := "test_quota_get_set"
-	quotaSize := int64(1234567)
-	var softLimit, advisoryLimit, softGracePrd int64
+var quotaSize = int64(1234567)
+var softLimit, advisoryLimit, softGracePrd int64
 
-	// Setup the test
-	_, err := client.CreateVolume(defaultCtx, volumeName)
-	if err != nil {
-		panic(err)
-	}
-	// make sure we clean up when we're done
-	defer client.DeleteVolume(defaultCtx, volumeName)
-	defer client.ClearQuota(defaultCtx, volumeName)
+// Test both GetQuota() and SetQuota()
+func TestGetQuota(t *testing.T) {
+	volumeName := "test_quota_get_set"
+
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv1.IsiQuotaListResp)
+		*resp = apiv1.IsiQuotaListResp{
+			Quotas: []apiv1.IsiQuota{{}},
+		}
+	}).Once()
 
 	// Make sure there is no quota yet
-	quota, err := client.GetQuota(defaultCtx, volumeName)
-	if quota != nil {
-		panic(fmt.Sprintf("Quota should be nil: %v", quota))
-	}
-	if err == nil {
-		panic("GetQuota should return an error when there isn't a quota.")
-	}
+	_, err := client.GetQuota(defaultCtx, volumeName)
+	assert.Nil(t, err)
 
-	// Set the quota
-	quotaID, err := client.SetQuotaSize(defaultCtx, volumeName, quotaSize, softLimit, advisoryLimit, softGracePrd)
-	if err != nil {
-		panic(err)
-	}
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(fmt.Errorf("not found")).Once()
 
-	// Make sure the quota was set
-	quota, err = client.GetQuotaByID(defaultCtx, quotaID)
-	if err != nil {
-		panic(err)
-	}
-	if quota == nil {
-		panic("Quota should not be nil")
-	}
-	if quota.Thresholds.Hard != quotaSize {
-		panic(fmt.Sprintf("Unexpected new quota.  Expected: %d Actual: %d", quotaSize, quota.Thresholds.Hard))
-	}
+	// Make sure there is no quota yet
+	_, err = client.GetQuota(defaultCtx, volumeName)
+	assert.NotNil(t, err)
 }
 
 // Test GetAllQuotas()

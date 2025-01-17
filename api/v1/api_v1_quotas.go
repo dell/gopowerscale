@@ -31,7 +31,7 @@ func GetIsiQuota(
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/quota/quotas?path=/path/to/volume
 	// This will list the quota by path on the cluster
 
-	var quotaResp isiQuotaListResp
+	var quotaResp IsiQuotaListResp
 	pathWithQueryParam := quotaPath + "?path=" + path
 	err = client.Get(ctx, pathWithQueryParam, "", nil, nil, &quotaResp)
 	if err != nil {
@@ -102,7 +102,7 @@ func GetIsiQuotaByID(
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/quota/quotas/igSJAAEAAAAAAAAAAAAAQH0RAAAAAAAA
 	// This will list the quota by id on the cluster
 
-	var quotaResp isiQuotaListResp
+	var quotaResp IsiQuotaListResp
 	err = client.Get(ctx, quotaPath, ID, nil, nil, &quotaResp)
 	if err != nil {
 		return nil, err
