@@ -200,7 +200,7 @@ type IsiQuotaListRespResume struct {
 }
 
 // getIsiZonesResp returns an array of all related access zones
-type getIsiZonesResp struct {
+type GetIsiZonesResp struct {
 	Zones []*IsiZone `json:"zones"`
 }
 

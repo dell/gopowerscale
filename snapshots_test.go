@@ -21,6 +21,7 @@ import (
 	"os"
 	"testing"
 
+	api "github.com/dell/goisilon/api/v1"
 	apiv1 "github.com/dell/goisilon/api/v1"
 	"github.com/dell/goisilon/mocks"
 	"github.com/stretchr/testify/assert"
@@ -54,6 +55,40 @@ func TestCreateSnapshot(t *testing.T) {
 	// Call the function
 	_, err := client.CreateSnapshot(context.Background(), volName, snapshotName)
 	assert.Nil(t, err)
+}
+
+func TestGetSnapshotsByPath(t *testing.T) {
+	path := "testPath"
+	volumePath := "/path/to/volume"
+
+	// Mock snapshots
+	mockSnapshots := SnapshotList{
+		&api.IsiSnapshot{Path: volumePath},
+		&api.IsiSnapshot{Path: "/another/path"},
+	}
+
+	// Successful retrieval of snapshots
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiSnapshotsResp)
+		*resp = &apiv1.GetIsiSnapshotsResp{
+			SnapshotList: mockSnapshots,
+		}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", path).Return(volumePath).Twice()
+
+	// Call the function
+	result, err := client.GetSnapshotsByPath(context.Background(), path)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(result))
+	assert.Equal(t, volumePath, result[0].Path)
+
+	// Retrieval failure
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(fmt.Errorf("retrieval failed")).Once()
+
+	// Call the function
+	result, err = client.GetSnapshotsByPath(context.Background(), path)
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, len(result))
 }
 
 func TestSnapshotsGet(_ *testing.T) {
