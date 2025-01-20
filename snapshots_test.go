@@ -21,6 +21,7 @@ import (
 	"os"
 	"testing"
 
+	api "github.com/dell/goisilon/api/v1"
 	apiv1 "github.com/dell/goisilon/api/v1"
 	"github.com/dell/goisilon/mocks"
 	"github.com/stretchr/testify/assert"
