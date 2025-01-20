@@ -43,6 +43,19 @@ func TestGetSnapshots(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestCreateSnapshot(t *testing.T) {
+	volName := "testVol"
+	snapshotName := "testSnapshot"
+	volumePath := "/path/to/volume"
+
+	// Successful snapshot creation
+	client.API.(*mocks.Client).On("VolumePath", volName).Return(volumePath).Once()
+	client.API.(*mocks.Client).On("Post", anyArgs...).Return(nil).Once()
+	// Call the function
+	_, err := client.CreateSnapshot(context.Background(), volName, snapshotName)
+	assert.Nil(t, err)
+}
+
 func TestSnapshotsGet(_ *testing.T) {
 	snapshotPath := "test_snapshots_get_volume"
 	snapshotName1 := "test_snapshots_get_snapshot_0"
