@@ -19,5 +19,5 @@ package openapi
 // Createv3EventEventResponse struct for Createv3EventEventResponse
 type Createv3EventEventResponse struct {
 	// ID of created item that can be used to refer to item in the collection-item resource path.
-	Id int32 `json:"id"`
+	ID int32 `json:"id"`
 }

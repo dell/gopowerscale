@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022-2023 Dell Inc, or its subsidiaries.
+Copyright (c) 2022-2025 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -31,46 +31,46 @@ const (
 	reportsPath        = "/platform/11/sync/reports"
 )
 
-type JOB_ACTION string
+type JobAction string
 
 const (
-	RESYNC_PREP        JOB_ACTION = "resync_prep"
-	ALLOW_WRITE        JOB_ACTION = "allow_write"
-	ALLOW_WRITE_REVERT JOB_ACTION = "allow_write_revert"
-	TEST               JOB_ACTION = "test"
+	ResyncPrep       JobAction = "resync_prep"
+	AllowWrite       JobAction = "allow_write"
+	AllowWriteRevert JobAction = "allow_write_revert"
+	Test             JobAction = "test"
 )
 
-type RUNNING_JOB_ACTION string
+type RunningJobAction string
 
 const (
-	SYNC RUNNING_JOB_ACTION = "sync"
-	COPY RUNNING_JOB_ACTION = "copy"
+	SYNC RunningJobAction = "sync"
+	COPY RunningJobAction = "copy"
 )
 
-type JOB_STATE string
+type JobState string
 
 const (
-	SCHEDULED       JOB_STATE = "scheduled"
-	RUNNING         JOB_STATE = "running"
-	PAUSED          JOB_STATE = "paused"
-	FINISHED        JOB_STATE = "finished"
-	FAILED          JOB_STATE = "failed"
-	CANCELED        JOB_STATE = "canceled"
-	NEEDS_ATTENTION JOB_STATE = "needs_attention"
-	SKIPPED         JOB_STATE = "skipped"
-	PENDING         JOB_STATE = "pending"
-	UNKNOWN         JOB_STATE = "unknown"
+	SCHEDULED      JobState = "scheduled"
+	RUNNING        JobState = "running"
+	PAUSED         JobState = "paused"
+	FINISHED       JobState = "finished"
+	FAILED         JobState = "failed"
+	CANCELED       JobState = "canceled"
+	NeedsAttention JobState = "needs_attention"
+	SKIPPED        JobState = "skipped"
+	PENDING        JobState = "pending"
+	UNKNOWN        JobState = "unknown"
 )
 
-type FAILOVER_FAILBACK_STATE string
+type FailoverFailbackState string
 
 const (
-	WRITES_DISABLED        FAILOVER_FAILBACK_STATE = "writes_disabled"
-	ENABLING_WRITES        FAILOVER_FAILBACK_STATE = "enabling_writes"
-	WRITES_ENABLED         FAILOVER_FAILBACK_STATE = "writes_enabled"
-	DISABLING_WRITES       FAILOVER_FAILBACK_STATE = "disabling_writes"
-	CREATING_RESYNC_POLICY FAILOVER_FAILBACK_STATE = "creating_resync_policy"
-	RESYNC_POLICY_CREATED  FAILOVER_FAILBACK_STATE = "resync_policy_created"
+	WritesDisabled       FailoverFailbackState = "writes_disabled"
+	EnablingWrites       FailoverFailbackState = "enabling_writes"
+	WritesEnabled        FailoverFailbackState = "writes_enabled"
+	DisablingWrites      FailoverFailbackState = "disabling_writes"
+	CreatingResyncPolicy FailoverFailbackState = "creating_resync_policy"
+	ResyncPolicyCreated  FailoverFailbackState = "resync_policy_created"
 )
 
 const resolveErrorToIgnore = "The policy was not conflicted, so no change was made"
@@ -83,21 +83,21 @@ var (
 
 // Policy contains the CloudIQ policy info.
 type Policy struct {
-	Action       string    `json:"action,omitempty"`
-	Id           string    `json:"id,omitempty"`
-	Name         string    `json:"name,omitempty"`
-	Enabled      bool      `json:"enabled"`
-	TargetPath   string    `json:"target_path,omitempty"`
-	SourcePath   string    `json:"source_root_path,omitempty"`
-	TargetHost   string    `json:"target_host,omitempty"`
-	TargetCert   string    `json:"target_certificate_id,omitempty"`
-	JobDelay     int       `json:"job_delay,omitempty"`
-	Schedule     string    `json:"schedule"`
-	LastJobState JOB_STATE `json:"last_job_state,omitempty"`
+	Action       string   `json:"action,omitempty"`
+	ID           string   `json:"id,omitempty"`
+	Name         string   `json:"name,omitempty"`
+	Enabled      bool     `json:"enabled"`
+	TargetPath   string   `json:"target_path,omitempty"`
+	SourcePath   string   `json:"source_root_path,omitempty"`
+	TargetHost   string   `json:"target_host,omitempty"`
+	TargetCert   string   `json:"target_certificate_id,omitempty"`
+	JobDelay     int      `json:"job_delay,omitempty"`
+	Schedule     string   `json:"schedule"`
+	LastJobState JobState `json:"last_job_state,omitempty"`
 }
 
 type ResolvePolicyReq struct {
-	Id         string `json:"id,omitempty"`
+	ID         string `json:"id,omitempty"`
 	Name       string `json:"name,omitempty"`
 	Enabled    bool   `json:"enabled"`
 	Conflicted bool   `json:"conflicted"`
@@ -113,14 +113,14 @@ type Reports struct {
 }
 
 type TargetPolicy struct {
-	Id                      string                  `json:"id,omitempty"`
-	Name                    string                  `json:"name,omitempty"`
-	SourceClusterGuid       string                  `json:"source_cluster_guid,omitempty"`
-	LastJobState            JOB_STATE               `json:"last_job_state,omitempty"`
-	TargetPath              string                  `json:"target_path,omitempty"`
-	SourceHost              string                  `json:"source_host,omitempty"`
-	LastSourceCoordinatorIp string                  `json:"last_source_coordinator_ip,omitempty"`
-	FailoverFailbackState   FAILOVER_FAILBACK_STATE `json:"failover_failback_state,omitempty"`
+	ID                      string                `json:"id,omitempty"`
+	Name                    string                `json:"name,omitempty"`
+	SourceClusterGUID       string                `json:"source_cluster_guid,omitempty"`
+	LastJobState            JobState              `json:"last_job_state,omitempty"`
+	TargetPath              string                `json:"target_path,omitempty"`
+	SourceHost              string                `json:"source_host,omitempty"`
+	LastSourceCoordinatorIP string                `json:"last_source_coordinator_ip,omitempty"`
+	FailoverFailbackState   FailoverFailbackState `json:"failover_failback_state,omitempty"`
 }
 
 type TargetPolicies struct {
@@ -128,16 +128,16 @@ type TargetPolicies struct {
 }
 
 type JobRequest struct {
-	Action       JOB_ACTION `json:"action,omitempty"`
-	Id           string     `json:"id,omitempty"` // ID or Name of policy
-	SkipFailover bool       `json:"skip_failover,omitempty"`
-	SkipMap      bool       `json:"skip_map,omitempty"`
-	SkipCopy     bool       `json:"skip_copy,omitempty"`
+	Action       JobAction `json:"action,omitempty"`
+	ID           string    `json:"id,omitempty"` // ID or Name of policy
+	SkipFailover bool      `json:"skip_failover,omitempty"`
+	SkipMap      bool      `json:"skip_map,omitempty"`
+	SkipCopy     bool      `json:"skip_copy,omitempty"`
 }
 
 type Job struct {
-	Action RUNNING_JOB_ACTION `json:"policy_action,omitempty"`
-	Id     string             `json:"id,omitempty"` // ID or Name of policy
+	Action RunningJobAction `json:"policy_action,omitempty"`
+	ID     string           `json:"id,omitempty"` // ID or Name of policy
 }
 
 type Jobs struct {
@@ -145,12 +145,12 @@ type Jobs struct {
 }
 
 type Report struct {
-	Policy  Policy    `json:"policy,omitempty"`
-	Id      string    `json:"id"`
-	JobId   int64     `json:"job_id"`
-	State   JOB_STATE `json:"state,omitempty"`
-	EndTime int64     `json:"end_time"`
-	Errors  []string  `json:"errors"`
+	Policy  Policy   `json:"policy,omitempty"`
+	ID      string   `json:"id"`
+	JobID   int64    `json:"job_id"`
+	State   JobState `json:"state,omitempty"`
+	EndTime int64    `json:"end_time"`
+	Errors  []string `json:"errors"`
 }
 
 // GetPolicyByName returns policy by name
@@ -178,7 +178,7 @@ func CreatePolicy(ctx context.Context, client api.Client, name string, sourcePat
 	var policyResp Policy
 	body := &Policy{
 		Action:     "sync",
-		Id:         "",
+		ID:         "",
 		Name:       name,
 		Enabled:    enabled,
 		TargetPath: targetPath,
@@ -202,15 +202,15 @@ func DeleteTargetPolicy(ctx context.Context, client api.Client, id string) error
 }
 
 func UpdatePolicy(ctx context.Context, client api.Client, policy *Policy) error {
-	id := policy.Id
-	policy.Id = ""
+	id := policy.ID
+	policy.ID = ""
 
 	return client.Put(ctx, policiesPath, id, nil, nil, policy, nil)
 }
 
 func ResolvePolicy(ctx context.Context, client api.Client, policy *ResolvePolicyReq) error {
-	id := policy.Id
-	policy.Id = ""
+	id := policy.ID
+	policy.ID = ""
 
 	err := client.Put(ctx, policiesPath, id, nil, nil, policy, nil)
 	if err != nil && !strings.Contains(err.Error(), resolveErrorToIgnore) {

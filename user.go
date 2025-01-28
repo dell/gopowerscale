@@ -60,13 +60,13 @@ func (c *Client) CreateUserByName(ctx context.Context, name string) (string, err
 func (c *Client) CreateUserWithOptions(
 	ctx context.Context, name string, uid *int32, queryForce *bool, queryZone, queryProvider *string,
 	email, homeDirectory, password, fullName, shell, primaryGroupName *string,
-	primaryGroupId, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool,
+	primaryGroupID, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool,
 ) (string, error) {
 	return api.CreateIsiUser(
 		ctx, c.API, name,
 		queryForce, queryZone, queryProvider,
 		email, homeDirectory, password, primaryGroupName, fullName, shell,
-		uid, primaryGroupId, expiry, enabled, passwordExpires, promptPasswordChange, unlock)
+		uid, primaryGroupID, expiry, enabled, passwordExpires, promptPasswordChange, unlock)
 }
 
 // UpdateUserByName modifies a specific user by user name or uid with
@@ -77,13 +77,13 @@ func (c *Client) UpdateUserByNameOrUID(
 	ctx context.Context, name *string, uid *int32,
 	queryForce *bool, queryZone, queryProvider *string,
 	email, homeDirectory, password, fullName, shell, primaryGroupName *string,
-	newUid, primaryGroupId, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool,
+	newUID, primaryGroupID, expiry *int32, enabled, passwordExpires, promptPasswordChange, unlock *bool,
 ) error {
 	return api.UpdateIsiUser(
 		ctx, c.API, name, uid,
 		queryForce, queryZone, queryProvider,
 		email, homeDirectory, password, primaryGroupName, fullName, shell,
-		newUid, primaryGroupId, expiry, enabled, passwordExpires, promptPasswordChange, unlock)
+		newUID, primaryGroupID, expiry, enabled, passwordExpires, promptPasswordChange, unlock)
 }
 
 // DeleteUserByNameOrUID deletes a specific user by user name or uid.

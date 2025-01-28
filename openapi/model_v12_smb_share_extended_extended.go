@@ -61,13 +61,13 @@ type V12SmbShareExtendedExtended struct {
 	// Hide files and directories that begin with a period '.'.
 	HideDotFiles *bool `json:"hide_dot_files,omitempty"`
 	// An ACL expressing which hosts are allowed access. A deny clause must be the final entry.
-	HostAcl []string `json:"host_acl,omitempty"`
+	HostACL []string `json:"host_acl,omitempty"`
 	// Specify the condition in which user access is done as the guest account.
 	ImpersonateGuest *string `json:"impersonate_guest,omitempty"`
 	// User account to be used as guest account.
 	ImpersonateUser *string `json:"impersonate_user,omitempty"`
 	// Set the inheritable ACL on the share path.
-	InheritablePathAcl *bool `json:"inheritable_path_acl,omitempty"`
+	InheritablePathACL *bool `json:"inheritable_path_acl,omitempty"`
 	// Specifies the wchar_t starting point for automatic byte mangling.
 	MangleByteStart *int32 `json:"mangle_byte_start,omitempty"`
 	// Character mangle map.
@@ -75,7 +75,7 @@ type V12SmbShareExtendedExtended struct {
 	// Share name.
 	Name *string `json:"name,omitempty"`
 	// Support NTFS ACLs on files and directories.
-	NtfsAclSupport *bool `json:"ntfs_acl_support,omitempty"`
+	NtfsACLSupport *bool `json:"ntfs_acl_support,omitempty"`
 	// Support oplocks.
 	Oplocks *bool `json:"oplocks,omitempty"`
 	// Path of share within /ifs.
