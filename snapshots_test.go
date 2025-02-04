@@ -549,3 +549,35 @@ func TestSnapshotSizeGet(_ *testing.T) {
 		panic(fmt.Sprintf("Snapshot folder size %d is not correct.\n", totalSize))
 	}
 }
+
+func TestCreateWriteableSnapshot(_ *testing.T) {
+	snapshotPath := "test_snapshot_create_volume"
+	snapshotName := "test_snapshot_create_snapshot"
+	writeableSnapshotName := "/ifs/data/csi/test_snapshot_create_writeable_snapshot"
+
+	_, err := client.CreateVolume(defaultCtx, snapshotPath)
+	if err != nil {
+		panic(err)
+	}
+	defer client.DeleteVolume(defaultCtx, snapshotPath)
+
+	snapshot, err := client.GetSnapshot(defaultCtx, -1, snapshotName)
+	if err == nil && snapshot != nil {
+		panic(fmt.Sprintf("Snapshot (%s) already exists.\n", snapshotName))
+	}
+
+	testSnapshot, err := client.CreateSnapshot(
+		defaultCtx, snapshotPath, snapshotName)
+	if err != nil {
+		panic(err)
+	}
+	defer client.RemoveSnapshot(defaultCtx, testSnapshot.ID, snapshotName)
+
+	resp, err := client.CreateWriteableSnapshot(defaultCtx, snapshotName, writeableSnapshotName)
+	if err != nil {
+		panic(err)
+	}
+	defer client.RemoveWriteableSnapshot(defaultCtx, writeableSnapshotName)
+
+	fmt.Printf("Writeable snapshot created: %s\n", resp.DstPath)
+}

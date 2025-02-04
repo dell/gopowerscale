@@ -17,5 +17,6 @@ limitations under the License.
 package v14
 
 const (
-	clusterAcsPath = "platform/14/cluster/acs"
+	clusterAcsPath        = "platform/14/cluster/acs"
+	writeableSnapshotPath = "platform/14/snapshot/writable"
 )

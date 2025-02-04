@@ -31,3 +31,25 @@ type IsiClusterAcs struct {
 	// list of unresponsive nodes serial number.
 	UnresponsiveSn []string `json:"unresponsive_sn,omitempty"`
 }
+
+// An IsiWriteableSnapshot is a writable snapshot.
+type IsiWriteableSnapshot struct {
+	// The Unix Epoch time the writable snapshot was created.
+	Created int64 `json:"created"`
+	// The /ifs path of user supplied source snapshot. This will be null for writable snapshots pending delete.
+	SrcPath string `json:"src_path"`
+	// The user supplied /ifs path of writable snapshot.
+	DstPath string `json:"dst_path"`
+	// The system ID given to the writable snapshot.
+	ID int64 `json:"id"`
+	// The system ID of the user supplied source snapshot.
+	SrcID int64 `json:"src_id"`
+	// The user supplied source snapshot name or ID. This will be null for writable snapshots pending delete.
+	SrcSnap string `json:"src_snap"`
+	// The sum in bytes of logical size of files in this writable snapshot.
+	LogSize int64 `json:"log_size"`
+	// The amount of storage in bytes used to store this writable snapshot.
+	PhysicalSize int64 `json:"phys_size"`
+	// Writable Snapshot state.
+	State string `json:"state"`
+}

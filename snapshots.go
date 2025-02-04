@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	api "github.com/dell/goisilon/api/v1"
+	apiv14 "github.com/dell/goisilon/api/v14"
 )
 
 const (
@@ -37,6 +38,9 @@ type SnapshotList []*api.IsiSnapshot
 
 // Snapshot represents an Isilon snapshot.
 type Snapshot *api.IsiSnapshot
+
+// WriteableSnapshot represents an Isilon writeable snapshot.
+type WriteableSnapshot *apiv14.IsiWriteableSnapshot
 
 // GetSnapshots returns a list of snapshots from the cluster.
 func (c *Client) GetSnapshots(ctx context.Context) (SnapshotList, error) {
@@ -258,4 +262,36 @@ func (c *Client) GetSnapshotIsiPath(
 		return parts[1], nil
 	}
 	return path.Join(zone.Path, snapShot, snapshot.Name, path.Base(snapshot.Path)), nil
+}
+
+// CreateWriteableSnapshot creates a writeable snapshot.
+//
+// ctx: the context.
+// sourceSnapshot: the source snapshot name or ID.
+// destination: the destination path, must not be nested under the source snapshot.
+//
+// Returns the snapshot on success and error in case of failure.
+func (c *Client) CreateWriteableSnapshot(
+	ctx context.Context,
+	sourceSnapshot string,
+	destination string,
+) (WriteableSnapshot, error) {
+	return apiv14.CreateWriteableSnapshot(ctx, c.API, sourceSnapshot, destination)
+}
+
+// RemoveWriteableSnapshot removes a writeable snapshot.
+//
+// ctx: the context.
+// snapshotPath: the path of the snapshot.
+//
+// Returns an error on failure.
+func (c *Client) RemoveWriteableSnapshot(
+	ctx context.Context,
+	snapshotPath string,
+) error {
+	if !strings.HasPrefix(snapshotPath, "/ifs/") {
+		return fmt.Errorf("invalid snapshot path, must start with /ifs: %s", snapshotPath)
+	}
+
+	return apiv14.RemoveWriteableSnapshot(ctx, c.API, snapshotPath)
 }
