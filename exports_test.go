@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022-2023 Dell Inc, or its subsidiaries.
+Copyright (c) 2022-2025 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,22 +17,1514 @@ package goisilon
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
 	"testing"
 
+	apiv2 "github.com/dell/goisilon/api/v2"
 	apiv4 "github.com/dell/goisilon/api/v4"
+	"github.com/dell/goisilon/mocks"
 	"github.com/dell/goisilon/openapi"
 
 	log "github.com/akutz/gournal"
 	"github.com/dell/goisilon/api"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 var exportForClient int
 
-func TestExportsList(t *testing.T) {
+func TestGetExports(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export list is empty
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	exports, err := client.GetExports(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(exports))
+
+	// Test case: Export list is not empty
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{
+			&apiv2.Export{
+				ID:    1,
+				Paths: &[]string{"/path1"},
+			},
+			&apiv2.Export{
+				ID:    2,
+				Paths: &[]string{"/path2"},
+			},
+		}
+	}).Once()
+	exports, err = client.GetExports(context.Background())
+	assert.NoError(t, err)
+	assert.NotNil(t, exports)
+	assert.Equal(t, 2, len(exports))
+	assert.Equal(t, int(1), exports[0].ID)
+	assert.Equal(t, "/path1", (*exports[0].Paths)[0])
+	assert.Equal(t, int(2), exports[1].ID)
+	assert.Equal(t, "/path2", (*exports[1].Paths)[0])
+
+	// Test case: API error
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(errors.New("API error")).Once()
+	exports, err = client.GetExports(context.Background())
+	assert.NotNil(t, err)
+	assert.Nil(t, exports)
+}
+
+func TestGetExportByID(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export list is empty
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	export, err := client.GetExportByID(context.Background(), 0)
+	assert.NoError(t, err)
+	assert.Nil(t, export)
+
+	// Test case: Export list is not empty
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{
+			&apiv2.Export{
+				ID:    1,
+				Paths: &[]string{"/path1"},
+			},
+		}
+	}).Once()
+	export, err = client.GetExportByID(context.Background(), 1)
+	assert.NoError(t, err)
+	assert.NotNil(t, export)
+	assert.Equal(t, int(1), export.ID)
+	assert.Equal(t, "/path1", (*export.Paths)[0])
+
+	// Test case: API error
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(errors.New("API error")).Once()
+	export, err = client.GetExportByID(context.Background(), 2)
+	assert.NotNil(t, err)
+	assert.Nil(t, export)
+}
+
+func TestGetExportByName(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export found
+	name := "test_volume"
+	expectedExport := &apiv2.Export{
+		ID:    1,
+		Paths: &[]string{"/path1"},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{expectedExport}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/path1").Once()
+	export, err := client.GetExportByName(defaultCtx, name)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedExport.ID, export.ID)
+	assert.Equal(t, expectedExport.Paths, export.Paths)
+
+	// Test case: Export not found
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
+	export, err = client.GetExportByName(defaultCtx, name)
+	assert.NoError(t, err)
+	assert.Nil(t, export)
+
+	// Test case: Error returned from ExportsList
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
+	export, err = client.GetExportByName(defaultCtx, name)
+	assert.ErrorIs(t, err, expectedErr)
+	assert.Nil(t, export)
+}
+
+func TestGetExportByNameWithZone(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export found
+	name := "test_export"
+	zone := "test_zone"
+	expectedExport := &apiv2.Export{
+		ID:    1,
+		Paths: &[]string{"/path1"},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{expectedExport}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/path1").Once()
+	export, err := client.GetExportByNameWithZone(defaultCtx, name, zone)
+	assert.NoError(t, err)
+	assert.NotNil(t, export)
+	if export != nil {
+		assert.Equal(t, expectedExport.ID, export.ID)
+		assert.Equal(t, expectedExport.Paths, export.Paths)
+	}
+
+	// Test case: Export not found
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
+	export, err = client.GetExportByNameWithZone(defaultCtx, name, zone)
+	assert.NoError(t, err)
+	assert.Nil(t, export)
+
+	// Test case: Error returned by ExportsListWithZone
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
+	export, err = client.GetExportByNameWithZone(defaultCtx, name, zone)
+	assert.Equal(t, expectedErr, err)
+	assert.Nil(t, export)
+}
+
+func TestExport(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Volume already exported
+	testExportID := 1
+	testVolumeName := "test_volume"
+	testVolumePath := "/path/to/test_volume"
+	expectedExport := &apiv2.Export{
+		ID:    testExportID,
+		Paths: &[]string{testVolumePath},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{expectedExport}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return(testVolumePath).Once()
+	exportID, err := client.Export(context.Background(), testVolumeName)
+	assert.NoError(t, err)
+	assert.Equal(t, testExportID, exportID)
+
+	// Test case: Volume not exported
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return(testVolumePath).Once()
+	client.API.(*mocks.Client).On("Post", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(6).(*apiv2.Export)
+		*resp = *expectedExport
+	}).Once()
+	exportID, err = client.Export(context.Background(), testVolumeName)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedExport.ID, exportID)
+
+	// Test case: Error in IsExported
+	testIsExportedError := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(testIsExportedError).Once()
+	_, err = client.Export(context.Background(), testVolumeName)
+	assert.ErrorIs(t, err, testIsExportedError)
+
+	// Test case: Error in ExportCreate
+	testExportCreateError := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return(testVolumePath).Once()
+	client.API.(*mocks.Client).On("Post", anyArgs...).Return(testExportCreateError).Once()
+	_, err = client.Export(context.Background(), testVolumeName)
+	assert.ErrorIs(t, err, testExportCreateError)
+}
+
+func TestExportWithZone(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export volume with valid name and zone
+	name := "test_volume"
+	zone := "test_zone"
+	description := "test_description"
+	expectedExport := &apiv2.Export{
+		Paths:       &[]string{"/path1"},
+		Description: description,
+	}
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/path1").Once()
+	client.API.(*mocks.Client).On("Post", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(6).(*apiv2.Export)
+		*resp = *expectedExport
+	}).Once()
+	exportID, err := client.ExportWithZone(defaultCtx, name, zone, description)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedExport.ID, exportID)
+
+	// Test case: Export volume with invalid name
+	name = ""
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Post", anyArgs...).Return(nil).Once()
+	exportID, err = client.ExportWithZone(defaultCtx, name, zone, description)
+	assert.NoError(t, err)
+	assert.Equal(t, exportID, 0)
+
+	// Test case: Export volume with invalid zone
+	zone = ""
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
+	exportID, err = client.ExportWithZone(defaultCtx, name, zone, description)
+	assert.Error(t, err, "zone cannot be empty")
+	assert.Equal(t, exportID, 0)
+
+	// Test case: Export volume with error from ExportCreateWithZone
+	zone = "test_zone"
+	testExportCreateWithZoneError := errors.New("test error")
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Post", anyArgs...).Return(testExportCreateWithZoneError).Once()
+	exportID, err = client.ExportWithZone(defaultCtx, name, zone, description)
+	assert.ErrorIs(t, err, testExportCreateWithZoneError)
+	assert.Equal(t, exportID, 0)
+}
+
+func TestExportWithZoneAndPath(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Exporting a volume with a valid path, zone, and description
+	path := "test_path"
+	zone := "test_zone"
+	description := "test_description"
+	expectedExport := &apiv2.Export{
+		ID:          1,
+		Paths:       &[]string{path},
+		Description: description,
+	}
+	client.API.(*mocks.Client).On("Post", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(6).(*apiv2.Export)
+		*resp = *expectedExport
+	}).Once()
+	exportID, err := client.ExportWithZoneAndPath(defaultCtx, path, zone, description)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedExport.ID, exportID)
+
+	// Test case: Exporting a volume with an invalid path
+	invalidPath := ""
+	client.API.(*mocks.Client).On("Post", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(6).(*apiv2.Export)
+		*resp = *expectedExport
+	}).Once()
+	_, err = client.ExportWithZoneAndPath(defaultCtx, invalidPath, zone, description)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedExport.ID, exportID)
+
+	// Test case: Exporting a volume with an invalid zone
+	invalidZone := ""
+	_, err = client.ExportWithZoneAndPath(defaultCtx, path, invalidZone, description)
+	assert.Error(t, err, "zone cannot be empty")
+
+	// Test case: Exporting a volume with an invalid description
+	path = "test_path"
+	zone = "test_zone"
+	invalidDescription := ""
+	expectedExport = &apiv2.Export{
+		ID:          2,
+		Paths:       &[]string{path},
+		Description: invalidDescription,
+	}
+	client.API.(*mocks.Client).On("Post", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(6).(*apiv2.Export)
+		*resp = *expectedExport
+	}).Once()
+	exportID, err = client.ExportWithZoneAndPath(defaultCtx, path, zone, invalidDescription)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedExport.ID, exportID)
+}
+
+func TestGetRootMapping(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export found
+	expectedExport := &apiv2.Export{
+		ID:    1,
+		Paths: &[]string{"/export1"},
+		MapRoot: &apiv2.UserMapping{
+			User: &apiv2.Persona{
+				ID: &apiv2.PersonaID{
+					ID:   "user1",
+					Type: apiv2.PersonaIDTypeUser,
+				},
+			},
+		},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{expectedExport}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export1").Once()
+	mapping, err := client.GetRootMapping(context.Background(), "export1")
+	assert.NoError(t, err)
+	assert.NotNil(t, mapping)
+	assert.Equal(t, "user1", mapping.User.ID.ID)
+
+	// Test case: Export not found
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/").Once()
+	mapping, err = client.GetRootMapping(context.Background(), "export2")
+	assert.NoError(t, err)
+	assert.Nil(t, mapping)
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	mapping, err = client.GetRootMapping(context.Background(), "path3")
+	assert.Error(t, err, expectedErr)
+	assert.Nil(t, mapping)
+}
+
+func TestGetRootMappingByID(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export found
+	expectedExport := &apiv2.Export{
+		ID:    1,
+		Paths: &[]string{"/export1"},
+		MapRoot: &apiv2.UserMapping{
+			User: &apiv2.Persona{
+				ID: &apiv2.PersonaID{
+					ID:   "user1",
+					Type: apiv2.PersonaIDTypeUser,
+				},
+			},
+		},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{expectedExport}
+	}).Once()
+	mapping, err := client.GetRootMappingByID(context.Background(), 1)
+	assert.NoError(t, err)
+	assert.NotNil(t, mapping)
+	assert.Equal(t, "user1", mapping.User.ID.ID)
+
+	// Test case: Export not found
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{}
+	}).Once()
+	mapping, err = client.GetRootMappingByID(context.Background(), 2)
+	assert.NoError(t, err)
+	assert.Nil(t, mapping)
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	mapping, err = client.GetRootMappingByID(context.Background(), 3)
+	assert.Error(t, err, expectedErr)
+	assert.Nil(t, mapping)
+}
+
+func TestEnableRootMapping(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Enable root mapping for an existing export
+	name := "export1"
+	user := "test_user"
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		MapRoot: &apiv2.UserMapping{},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export1").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.EnableRootMapping(defaultCtx, name, user)
+	assert.NoError(t, err)
+
+	// Test case: Enable root mapping for a non-existing export
+	name = "export2"
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export2").Once()
+	err = client.EnableRootMapping(defaultCtx, name, user)
+	assert.NoError(t, err)
+
+	// Test case: Error getting export
+	name = ""
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.EnableRootMapping(defaultCtx, name, user)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestEnableRootMappingByID(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Enable root mapping for an existing export
+	user := "test_user"
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		MapRoot: &apiv2.UserMapping{},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.EnableRootMappingByID(defaultCtx, 1, user)
+	assert.NoError(t, err)
+
+	// Test case: Enable root mapping for a non-existing export
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	err = client.EnableRootMappingByID(defaultCtx, 2, user)
+	assert.NoError(t, err)
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.EnableRootMappingByID(defaultCtx, 3, user)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestDisableRootMapping(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Disable root mapping for an existing export
+	name := "export1"
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		MapRoot: &apiv2.UserMapping{},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export1").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.DisableRootMapping(defaultCtx, name)
+	assert.NoError(t, err)
+
+	// Test case: Disable root mapping for a non-existing export
+	name = "export2"
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export2").Once()
+	err = client.DisableRootMapping(defaultCtx, name)
+	assert.NoError(t, err)
+
+	// Test case: Error getting export
+	name = ""
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.DisableRootMapping(defaultCtx, name)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestDisableRootMappingByID(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Disable root mapping for an existing export
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		MapRoot: &apiv2.UserMapping{},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.DisableRootMappingByID(defaultCtx, 1)
+	assert.NoError(t, err)
+
+	// Test case: Disable root mapping for a non-existing export
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	err = client.DisableRootMappingByID(defaultCtx, 2)
+	assert.NoError(t, err)
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.DisableRootMappingByID(defaultCtx, 3)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestGetNonRootMapping(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export found
+	expectedExport := &apiv2.Export{
+		ID:    1,
+		Paths: &[]string{"/export1"},
+		MapNonRoot: &apiv2.UserMapping{
+			User: &apiv2.Persona{
+				ID: &apiv2.PersonaID{
+					ID:   "user1",
+					Type: apiv2.PersonaIDTypeUser,
+				},
+			},
+		},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{expectedExport}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export1").Once()
+	mapping, err := client.GetNonRootMapping(context.Background(), "export1")
+	assert.NoError(t, err)
+	assert.NotNil(t, mapping)
+	assert.Equal(t, "user1", mapping.User.ID.ID)
+
+	// Test case: Export not found
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/").Once()
+	mapping, err = client.GetNonRootMapping(context.Background(), "export2")
+	assert.NoError(t, err)
+	assert.Nil(t, mapping)
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	mapping, err = client.GetNonRootMapping(context.Background(), "path3")
+	assert.Error(t, err, expectedErr)
+	assert.Nil(t, mapping)
+}
+
+func TestGetNonRootMappingByID(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export found
+	expectedExport := &apiv2.Export{
+		ID:    1,
+		Paths: &[]string{"/export1"},
+		MapNonRoot: &apiv2.UserMapping{
+			User: &apiv2.Persona{
+				ID: &apiv2.PersonaID{
+					ID:   "user1",
+					Type: apiv2.PersonaIDTypeUser,
+				},
+			},
+		},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{expectedExport}
+	}).Once()
+	mapping, err := client.GetNonRootMappingByID(context.Background(), 1)
+	assert.NoError(t, err)
+	assert.NotNil(t, mapping)
+	assert.Equal(t, "user1", mapping.User.ID.ID)
+
+	// Test case: Export not found
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{}
+	}).Once()
+	mapping, err = client.GetNonRootMappingByID(context.Background(), 2)
+	assert.NoError(t, err)
+	assert.Nil(t, mapping)
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	mapping, err = client.GetNonRootMappingByID(context.Background(), 3)
+	assert.Error(t, err, expectedErr)
+	assert.Nil(t, mapping)
+}
+
+func TestEnableNonRootMapping(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Enable non root mapping for an existing export
+	name := "export1"
+	user := "test_user"
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		MapRoot: &apiv2.UserMapping{},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export1").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.EnableNonRootMapping(defaultCtx, name, user)
+	assert.NoError(t, err)
+
+	// Test case: Enable non root mapping for a non-existing export
+	name = "export2"
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export2").Once()
+	err = client.EnableNonRootMapping(defaultCtx, name, user)
+	assert.NoError(t, err)
+
+	// Test case: Error getting export
+	name = ""
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.EnableNonRootMapping(defaultCtx, name, user)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestEnableNonRootMappingByID(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Enable non root mapping for an existing export
+	user := "test_user"
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		MapRoot: &apiv2.UserMapping{},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.EnableNonRootMappingByID(defaultCtx, 1, user)
+	assert.NoError(t, err)
+
+	// Test case: Enable non root mapping for a non-existing export
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	err = client.EnableNonRootMappingByID(defaultCtx, 2, user)
+	assert.NoError(t, err)
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.EnableNonRootMappingByID(defaultCtx, 3, user)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestDisableNonRootMapping(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Disable non root mapping for an existing export
+	name := "export1"
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		MapRoot: &apiv2.UserMapping{},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export1").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.DisableNonRootMapping(defaultCtx, name)
+	assert.NoError(t, err)
+
+	// Test case: Disable non root mapping for a non-existing export
+	name = "export2"
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export2").Once()
+	err = client.DisableNonRootMapping(defaultCtx, name)
+	assert.NoError(t, err)
+
+	// Test case: Error getting export
+	name = ""
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.DisableNonRootMapping(defaultCtx, name)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestDisableNonRootMappingByID(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Disable non root mapping for an existing export
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		MapRoot: &apiv2.UserMapping{},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.DisableNonRootMappingByID(defaultCtx, 1)
+	assert.NoError(t, err)
+
+	// Test case: Disable non root mapping for a non-existing export
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	err = client.DisableNonRootMappingByID(defaultCtx, 2)
+	assert.NoError(t, err)
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.DisableNonRootMappingByID(defaultCtx, 3)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestGetFailureMapping(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export found
+	expectedExport := &apiv2.Export{
+		ID:    1,
+		Paths: &[]string{"/export1"},
+		MapFailure: &apiv2.UserMapping{
+			User: &apiv2.Persona{
+				ID: &apiv2.PersonaID{
+					ID:   "user1",
+					Type: apiv2.PersonaIDTypeUser,
+				},
+			},
+		},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{expectedExport}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export1").Once()
+	mapping, err := client.GetFailureMapping(context.Background(), "export1")
+	assert.NoError(t, err)
+	assert.NotNil(t, mapping)
+	assert.Equal(t, "user1", mapping.User.ID.ID)
+
+	// Test case: Export not found
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/").Once()
+	mapping, err = client.GetFailureMapping(context.Background(), "export2")
+	assert.NoError(t, err)
+	assert.Nil(t, mapping)
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	mapping, err = client.GetFailureMapping(context.Background(), "path3")
+	assert.Error(t, err, expectedErr)
+	assert.Nil(t, mapping)
+}
+
+func TestGetFailureMappingByID(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export found
+	expectedExport := &apiv2.Export{
+		ID:    1,
+		Paths: &[]string{"/export1"},
+		MapFailure: &apiv2.UserMapping{
+			User: &apiv2.Persona{
+				ID: &apiv2.PersonaID{
+					ID:   "user1",
+					Type: apiv2.PersonaIDTypeUser,
+				},
+			},
+		},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{expectedExport}
+	}).Once()
+	mapping, err := client.GetFailureMappingByID(context.Background(), 1)
+	assert.NoError(t, err)
+	assert.NotNil(t, mapping)
+	assert.Equal(t, "user1", mapping.User.ID.ID)
+
+	// Test case: Export not found
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{}
+	}).Once()
+	mapping, err = client.GetFailureMappingByID(context.Background(), 2)
+	assert.NoError(t, err)
+	assert.Nil(t, mapping)
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	mapping, err = client.GetFailureMappingByID(context.Background(), 3)
+	assert.Error(t, err, expectedErr)
+	assert.Nil(t, mapping)
+}
+
+func TestEnableFailureMapping(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Enable non root mapping for an existing export
+	name := "export1"
+	user := "test_user"
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		MapRoot: &apiv2.UserMapping{},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export1").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.EnableFailureMapping(defaultCtx, name, user)
+	assert.NoError(t, err)
+
+	// Test case: Enable non root mapping for a non-existing export
+	name = "export2"
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export2").Once()
+	err = client.EnableFailureMapping(defaultCtx, name, user)
+	assert.NoError(t, err)
+
+	// Test case: Error getting export
+	name = ""
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.EnableFailureMapping(defaultCtx, name, user)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestEnableFailureMappingByID(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Enable non root mapping for an existing export
+	user := "test_user"
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		MapRoot: &apiv2.UserMapping{},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.EnableFailureMappingByID(defaultCtx, 1, user)
+	assert.NoError(t, err)
+
+	// Test case: Enable non root mapping for a non-existing export
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	err = client.EnableFailureMappingByID(defaultCtx, 2, user)
+	assert.NoError(t, err)
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.EnableFailureMappingByID(defaultCtx, 3, user)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestDisableFailureMapping(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Disable non root mapping for an existing export
+	name := "export1"
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		MapRoot: &apiv2.UserMapping{},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export1").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.DisableFailureMapping(defaultCtx, name)
+	assert.NoError(t, err)
+
+	// Test case: Disable non root mapping for a non-existing export
+	name = "export2"
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export2").Once()
+	err = client.DisableFailureMapping(defaultCtx, name)
+	assert.NoError(t, err)
+
+	// Test case: Error getting export
+	name = ""
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.DisableFailureMapping(defaultCtx, name)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestDisableFailureMappingByID(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Disable non root mapping for an existing export
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		MapRoot: &apiv2.UserMapping{},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.DisableFailureMappingByID(defaultCtx, 1)
+	assert.NoError(t, err)
+
+	// Test case: Disable non root mapping for a non-existing export
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	err = client.DisableFailureMappingByID(defaultCtx, 2)
+	assert.NoError(t, err)
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.DisableFailureMappingByID(defaultCtx, 3)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestGetExportClients(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export exists and has clients
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		Clients: &[]string{"client1", "client2"},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export1").Once()
+	clients, err := client.GetExportClients(defaultCtx, "export1")
+	assert.NoError(t, err)
+	assert.Equal(t, len(*ex.Clients), len(clients))
+	assert.Equal(t, *ex.Clients, clients)
+
+	// Test case: Export exists but has no clients
+	ex.Clients = nil
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export1").Once()
+	clients, err = client.GetExportClients(defaultCtx, "export1")
+	assert.NoError(t, err)
+	assert.Nil(t, clients)
+
+	// Test case: Export does not exist
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export2").Once()
+	clients, err = client.GetExportClients(defaultCtx, "export2")
+	assert.NoError(t, err)
+	assert.Nil(t, clients)
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	clients, err = client.GetExportClients(defaultCtx, "export3")
+	assert.Error(t, err, expectedErr)
+	assert.Nil(t, clients)
+}
+
+func TestGetExportClientsByID(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export exists and has clients
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		Clients: &[]string{"client1", "client2"},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	clients, err := client.GetExportClientsByID(defaultCtx, 1)
+	assert.NoError(t, err)
+	assert.Equal(t, len(*ex.Clients), len(clients))
+	assert.Equal(t, *ex.Clients, clients)
+
+	// Test case: Export exists but has no clients
+	ex.Clients = nil
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	clients, err = client.GetExportClientsByID(defaultCtx, 1)
+	assert.NoError(t, err)
+	assert.Nil(t, clients)
+
+	// Test case: Export does not exist
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	clients, err = client.GetExportClientsByID(defaultCtx, 2)
+	assert.NoError(t, err)
+	assert.Nil(t, clients)
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	clients, err = client.GetExportClientsByID(defaultCtx, 3)
+	assert.Error(t, err, expectedErr)
+	assert.Nil(t, clients)
+}
+
+func TestAddExportClients(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export exists and has clients
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		Clients: &[]string{"client1"},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export1").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.AddExportClients(defaultCtx, "export1", "client2")
+	assert.NoError(t, err)
+
+	// Test case: Export exists but has no clients
+	ex.Clients = nil
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export1").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportClients(defaultCtx, "export1", "client2")
+	assert.NoError(t, err)
+
+	// Test case: Export does not exist
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("/export2").Once()
+	err = client.AddExportClients(defaultCtx, "export2", "client2")
+	assert.NoError(t, err)
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.AddExportClients(defaultCtx, "export3", "client2")
+	assert.Error(t, err, expectedErr)
+}
+
+func TestAddExportClientsByExportID(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export exists and has clients
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		Clients: &[]string{"client1"},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.AddExportClientsByExportID(defaultCtx, 1, "client2")
+	assert.NoError(t, err)
+
+	// Test case: Export exists but has no clients
+	ex.Clients = nil
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportClientsByExportID(defaultCtx, 1, "client2")
+	assert.NoError(t, err)
+
+	// Test case: Export does not exist
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportClientsByExportID(defaultCtx, 2, "client2")
+	assert.NoError(t, err)
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.AddExportClientsByExportID(defaultCtx, 3, "client2")
+	assert.Error(t, err, expectedErr)
+}
+
+func TestAddExportClientsByID(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export exists and has clients
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		Clients: &[]string{"client1"},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.AddExportClientsByID(defaultCtx, 1, []string{"client2"}, false)
+	assert.NoError(t, err)
+
+	// Test case: Export exists but has no clients
+	ex.Clients = nil
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportClientsByID(defaultCtx, 1, []string{"client2"}, false)
+	assert.NoError(t, err)
+
+	// Test case: Export does not exist
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportClientsByID(defaultCtx, 2, []string{"client2"}, false)
+	assert.Error(t, err, "Export instance is nil, abort calling exportAddClients")
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.AddExportClientsByID(defaultCtx, 3, []string{"client2"}, false)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestAddExportReadOnlyClientsByID(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export exists and has clients
+	ex := &apiv2.Export{
+		ID:              1,
+		Paths:           &[]string{"/export1"},
+		ReadOnlyClients: &[]string{"client1"},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.AddExportReadOnlyClientsByID(defaultCtx, 1, []string{"client2"}, false)
+	assert.NoError(t, err)
+
+	// Test case: Export exists but has no clients
+	ex.ReadOnlyClients = nil
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportReadOnlyClientsByID(defaultCtx, 1, []string{"client2"}, false)
+	assert.NoError(t, err)
+
+	// Test case: Export does not exist
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportReadOnlyClientsByID(defaultCtx, 2, []string{"client2"}, false)
+	assert.Error(t, err, "Export instance is nil, abort calling exportAddClients")
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.AddExportReadOnlyClientsByID(defaultCtx, 3, []string{"client2"}, false)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestAddExportReadWriteClientsByID(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export exists and has clients
+	ex := &apiv2.Export{
+		ID:               1,
+		Paths:            &[]string{"/export1"},
+		ReadWriteClients: &[]string{"client1"},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.AddExportReadWriteClientsByID(defaultCtx, 1, []string{"client2"}, false)
+	assert.NoError(t, err)
+
+	// Test case: Export exists but has no clients
+	ex.ReadWriteClients = nil
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportReadWriteClientsByID(defaultCtx, 1, []string{"client2"}, false)
+	assert.NoError(t, err)
+
+	// Test case: Export does not exist
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportReadWriteClientsByID(defaultCtx, 2, []string{"client2"}, false)
+	assert.Error(t, err, "Export instance is nil, abort calling exportAddClients")
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.AddExportReadWriteClientsByID(defaultCtx, 3, []string{"client2"}, false)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestAddExportClientsByExportIDWithZone(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export exists and has clients
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		Clients: &[]string{"client1"},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.AddExportClientsByExportIDWithZone(defaultCtx, 1, "zone1", false, "client2")
+	assert.NoError(t, err)
+
+	// Test case: Export exists but has no clients
+	ex.Clients = nil
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportClientsByExportIDWithZone(defaultCtx, 1, "zone1", false, "client2")
+	assert.NoError(t, err)
+
+	// Test case: Export does not exist
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportClientsByExportIDWithZone(defaultCtx, 2, "zone1", false, "client2")
+	assert.NoError(t, err)
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.AddExportClientsByExportIDWithZone(defaultCtx, 3, "zone1", false, "client2")
+	assert.Error(t, err, expectedErr)
+}
+
+func TestAddExportClientsByIDWithZone(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export exists and has clients
+	ex := &apiv2.Export{
+		ID:      1,
+		Paths:   &[]string{"/export1"},
+		Clients: &[]string{"client1"},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.AddExportClientsByIDWithZone(defaultCtx, 1, "zone1", []string{"client2"}, false)
+	assert.NoError(t, err)
+
+	// Test case: Export exists but has no clients
+	ex.Clients = nil
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportClientsByIDWithZone(defaultCtx, 1, "zone1", []string{"client2"}, false)
+	assert.NoError(t, err)
+
+	// Test case: Export does not exist
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportClientsByIDWithZone(defaultCtx, 2, "zone1", []string{"client2"}, false)
+	assert.Error(t, err, "Export instance is nil, abort calling exportAddClients")
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.AddExportClientsByIDWithZone(defaultCtx, 3, "zone1", []string{"client2"}, false)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestAddExportRootClientsByIDWithZone(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export exists and has clients
+	ex := &apiv2.Export{
+		ID:          1,
+		Paths:       &[]string{"/export1"},
+		RootClients: &[]string{"client1"},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.AddExportRootClientsByIDWithZone(defaultCtx, 1, "zone1", []string{"client2"}, false)
+	assert.NoError(t, err)
+
+	// Test case: Export exists but has no clients
+	ex.RootClients = nil
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportRootClientsByIDWithZone(defaultCtx, 1, "zone1", []string{"client2"}, false)
+	assert.NoError(t, err)
+
+	// Test case: Export does not exist
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportRootClientsByIDWithZone(defaultCtx, 2, "zone1", []string{"client2"}, false)
+	assert.Error(t, err, "Export instance is nil, abort calling exportAddClients")
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.AddExportRootClientsByIDWithZone(defaultCtx, 3, "zone1", []string{"client2"}, false)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestAddExportReadOnlyClientsByIDWithZone(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export exists and has clients
+	ex := &apiv2.Export{
+		ID:              1,
+		Paths:           &[]string{"/export1"},
+		ReadOnlyClients: &[]string{"client1"},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.AddExportReadOnlyClientsByIDWithZone(defaultCtx, 1, "zone1", []string{"client2"}, false)
+	assert.NoError(t, err)
+
+	// Test case: Export exists but has no clients
+	ex.ReadOnlyClients = nil
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportReadOnlyClientsByIDWithZone(defaultCtx, 1, "zone1", []string{"client2"}, false)
+	assert.NoError(t, err)
+
+	// Test case: Export does not exist
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportReadOnlyClientsByIDWithZone(defaultCtx, 2, "zone1", []string{"client2"}, false)
+	assert.Error(t, err, "Export instance is nil, abort calling exportAddClients")
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.AddExportReadOnlyClientsByIDWithZone(defaultCtx, 3, "zone1", []string{"client2"}, false)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestAddExportReadWriteClientsByIDWithZone(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export exists and has clients
+	ex := &apiv2.Export{
+		ID:               1,
+		Paths:            &[]string{"/export1"},
+		ReadWriteClients: &[]string{"client1"},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.AddExportReadWriteClientsByIDWithZone(defaultCtx, 1, "zone1", []string{"client2"}, false)
+	assert.NoError(t, err)
+
+	// Test case: Export exists but has no clients
+	ex.ReadWriteClients = nil
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportReadWriteClientsByIDWithZone(defaultCtx, 1, "zone1", []string{"client2"}, false)
+	assert.NoError(t, err)
+
+	// Test case: Export does not exist
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.AddExportReadWriteClientsByIDWithZone(defaultCtx, 2, "zone1", []string{"client2"}, false)
+	assert.Error(t, err, "Export instance is nil, abort calling exportAddClients")
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.AddExportReadWriteClientsByIDWithZone(defaultCtx, 3, "zone1", []string{"client2"}, false)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestRemoveExportClientsByID(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export exists and has clients
+	ex := &apiv2.Export{
+		ID:               1,
+		Paths:            &[]string{"/export1"},
+		Clients:          &[]string{"client1"},
+		RootClients:      &[]string{"client2"},
+		ReadOnlyClients:  &[]string{"client3"},
+		ReadWriteClients: &[]string{"client4"},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.RemoveExportClientsByID(defaultCtx, 1, []string{"client2"}, false)
+	assert.NoError(t, err)
+
+	// Test case: Export does not exist
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.RemoveExportClientsByID(defaultCtx, 2, []string{"client2"}, false)
+	assert.Error(t, err, "Export instance is nil, abort calling exportAddClients")
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.RemoveExportClientsByID(defaultCtx, 3, []string{"client2"}, false)
+	assert.Error(t, err, expectedErr)
+}
+
+func TestRemoveExportClientsByIDWithZone(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	// Test case: Export exists and has clients
+	ex := &apiv2.Export{
+		ID:               1,
+		Paths:            &[]string{"/export1"},
+		Clients:          &[]string{"client1"},
+		RootClients:      &[]string{"client2"},
+		ReadOnlyClients:  &[]string{"client3"},
+		ReadWriteClients: &[]string{"client4"},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{ex}
+	}).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.RemoveExportClientsByIDWithZone(defaultCtx, 1, "zone1", []string{"client2"}, false)
+	assert.NoError(t, err)
+
+	// Test case: Export does not exist
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err = client.RemoveExportClientsByIDWithZone(defaultCtx, 2, "zone1", []string{"client2"}, false)
+	assert.Error(t, err, "Export instance is nil, abort calling exportAddClients")
+
+	// Test case: Error getting export
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	err = client.RemoveExportClientsByIDWithZone(defaultCtx, 3, "zone1", []string{"client2"}, false)
+	assert.Error(t, err, expectedErr)
+}
+
+func testExportsList(t *testing.T) {
 	volumeName1 := "test_get_exports1"
 	volumeName2 := "test_get_exports2"
 	volumeName3 := "test_get_exports3"
@@ -133,7 +1625,7 @@ func TestExportsList(t *testing.T) {
 	assert.Equal(t, 7, volumeBitmap)
 }
 
-func TestExportCreate(t *testing.T) {
+func testExportCreate(t *testing.T) {
 	volumeName := "test_create_export"
 	volumePath := client.API.VolumePath(volumeName)
 
@@ -172,7 +1664,7 @@ func TestExportCreate(t *testing.T) {
 	assert.True(t, found)
 }
 
-func TestExportDelete(t *testing.T) {
+func testExportDelete(t *testing.T) {
 	volumeName := "test_unexport_volume"
 
 	// initialize the export
@@ -200,7 +1692,7 @@ func TestExportDelete(t *testing.T) {
 	assertNil(t, export)
 }
 
-func TestExportNonRootMapping(t *testing.T) {
+func testExportNonRootMapping(t *testing.T) {
 	testUserMapping(
 		t,
 		"test_export_non_root_mapping",
@@ -209,7 +1701,7 @@ func TestExportNonRootMapping(t *testing.T) {
 		client.DisableNonRootMappingByID)
 }
 
-func TestExportFailureMapping(t *testing.T) {
+func testExportFailureMapping(t *testing.T) {
 	testUserMapping(
 		t,
 		"test_export_failure_mapping",
@@ -218,7 +1710,7 @@ func TestExportFailureMapping(t *testing.T) {
 		client.DisableFailureMappingByID)
 }
 
-func TestExportRootMapping(t *testing.T) {
+func testExportRootMapping(t *testing.T) {
 	testUserMapping(
 		t,
 		"test_export_root_mapping",
@@ -293,62 +1785,6 @@ var (
 	}
 )
 
-func TestExportClientsGet(t *testing.T) {
-	testExportClientsGet(
-		t,
-		"test_get_export_clients",
-		client.GetExportClientsByID,
-		client.SetExportClientsByID)
-}
-
-func TestExportClientsSet(t *testing.T) {
-	testExportClientsSet(
-		t,
-		"test_set_export_clients",
-		getClients,
-		client.SetExportClientsByID)
-}
-
-func TestExportClientsAdd(t *testing.T) {
-	testExportClientsAdd(
-		t,
-		"test_add_export_clients",
-		getClients,
-		client.SetExportClientsByID,
-		client.AddExportClientsByExportID)
-}
-
-func TestAddExportClientsByID(t *testing.T) {
-	// Add the test exports
-	volumeName1 := "test_get_exports1"
-	vol, err := client.CreateVolume(defaultCtx, volumeName1)
-	assertNoError(t, err)
-	assertNotNil(t, vol)
-	volumeName1 = vol.Name
-	t.Logf("created volume: %s", volumeName1)
-
-	exportID, err := client.Export(defaultCtx, volumeName1)
-	assertNoError(t, err)
-	t.Logf("created export: %d", exportID)
-
-	exportForClient = exportID
-	export, _ := client.GetExportByID(defaultCtx, exportID)
-
-	fmt.Printf("export '%d' has \n%-20v: '%v'\n%-20v: '%v'\n%-20v: '%v'\n", exportID, "clients", *export.Clients, "read_only_cilents", *export.ReadOnlyClients, "read_write_cilents", *export.ReadWriteClients)
-
-	testAddExportClientsByID(t, exportID, export, client.AddExportClientsByID)
-	testAddExportClientsByID(t, exportID, export, client.AddExportReadOnlyClientsByID)
-	testAddExportClientsByID(t, exportID, export, client.AddExportReadWriteClientsByID)
-
-	export, _ = client.GetExportByID(defaultCtx, exportID)
-
-	fmt.Printf("now export '%d' has \n%-20v: '%v'\n%-20v: '%v'\n%-20v: '%v'\n", exportID, "clients", *export.Clients, "read_only_cilents", *export.ReadOnlyClients, "read_write_cilents", *export.ReadWriteClients)
-
-	assert.Contains(t, *export.Clients, "192.168.1.112")
-	assert.Contains(t, *export.ReadOnlyClients, "192.168.1.112")
-	assert.Contains(t, *export.ReadWriteClients, "192.168.1.112")
-}
-
 func testAddExportClientsByID(t *testing.T, exportID int, export Export, addExportClientsByID func(
 	ctx context.Context, id int, clients []string, ignoreUnresolvableHosts bool) error,
 ) {
@@ -357,14 +1793,14 @@ func testAddExportClientsByID(t *testing.T, exportID int, export Export, addExpo
 	log.Debug(defaultCtx, "add '%v' to '%v' for export '%d'", clientsToAdd, *export.Clients, exportID)
 
 	err = addExportClientsByID(defaultCtx, exportID, clientsToAdd, false)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
-func TestRemoveExportClientsByID(t *testing.T) {
+func testRemoveExportClientsByID(t *testing.T) {
 	testRemoveExportClients(t, client.RemoveExportClientsByID, nil)
 }
 
-func TestRemoveExportClientsByName(t *testing.T) {
+func testRemoveExportClientsByName(t *testing.T) {
 	testRemoveExportClients(t, nil, client.RemoveExportClientsByName)
 	volumeName1 := "test_get_exports1"
 	// make sure we clean up when we're done
@@ -390,10 +1826,10 @@ func testRemoveExportClients(t *testing.T,
 
 	if removeExportClientsByIDFunc != nil {
 		err = removeExportClientsByIDFunc(defaultCtx, exportID, clientsToRemove, false)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	} else {
 		err = removeExportClientsByNameFunc(defaultCtx, exportName, clientsToRemove, false)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	}
 
 	export, _ = client.GetExportByID(defaultCtx, exportID)
@@ -413,16 +1849,7 @@ func testRemoveExportClients(t *testing.T,
 	assert.NotContains(t, *export.ReadWriteClients, "192.168.1.111")
 }
 
-func TestExportClientsClear(t *testing.T) {
-	testExportClientsClear(
-		t,
-		"test_clear_export_clients",
-		getClients,
-		client.SetExportClientsByID,
-		client.ClearExportClientsByID)
-}
-
-func TestExportRootClientsGet(t *testing.T) {
+func testExportRootClientsGet(t *testing.T) {
 	testExportClientsGet(
 		t,
 		"test_get_export_root_clients",
@@ -430,7 +1857,7 @@ func TestExportRootClientsGet(t *testing.T) {
 		client.SetExportRootClientsByID)
 }
 
-func TestExportRootClientsSet(t *testing.T) {
+func testExportRootClientsSet(t *testing.T) {
 	testExportClientsSet(
 		t,
 		"test_set_export_root_clients",
@@ -438,7 +1865,7 @@ func TestExportRootClientsSet(t *testing.T) {
 		client.SetExportRootClientsByID)
 }
 
-func TestExportRootClientsAdd(t *testing.T) {
+func testExportRootClientsAdd(t *testing.T) {
 	testExportClientsAdd(
 		t,
 		"test_add_export_root_clients",
@@ -447,7 +1874,7 @@ func TestExportRootClientsAdd(t *testing.T) {
 		client.AddExportRootClientsByID)
 }
 
-func TestExportRootClientsClear(t *testing.T) {
+func testExportRootClientsClear(t *testing.T) {
 	testExportClientsClear(
 		t,
 		"test_clear_export_root_clients",
@@ -686,7 +2113,7 @@ func testExportClientsClear(
 	assert.Len(t, getClients(defaultCtx, export), 0)
 }
 
-func TestGetExportsWithPagination(_ *testing.T) {
+func testGetExportsWithPagination(_ *testing.T) {
 	// This test makes assumption that the number of exports is no less than 2
 	limit := "2"
 	params := api.OrderedValues{
@@ -730,14 +2157,14 @@ func TestGetExportsWithPagination(_ *testing.T) {
 	}
 }
 
-func TestClient_ListExportsWithStructParams(t *testing.T) {
+func testClientListExportsWithStructParams(t *testing.T) {
 	// use limit to test pagination, would still output all shares
 	limit := int32(600)
 	_, err := client.ListAllExportsWithStructParams(defaultCtx, apiv4.ListV4NfsExportsParams{Limit: &limit})
 	assertNil(t, err)
 }
 
-func TestClient_ExportLifeCycleWithStructParams(t *testing.T) {
+func testClientExportLifeCycleWithStructParams(t *testing.T) {
 	exportName := "tf_nfs_export_test"
 	defer client.DeleteVolume(defaultCtx, exportName)
 

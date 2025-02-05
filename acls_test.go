@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022 Dell Inc, or its subsidiaries.
+Copyright (c) 2022-2025 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,105 +16,38 @@ limitations under the License.
 package goisilon
 
 import (
-	"fmt"
 	"testing"
 
+	"github.com/dell/goisilon/mocks"
 	"github.com/stretchr/testify/assert"
-
-	api "github.com/dell/goisilon/api/v2"
 )
 
 func TestGetVolumeACL(t *testing.T) {
-	volumeName := "test_get_volume_acl"
-
-	// make sure the volume exists
-	client.CreateVolume(defaultCtx, volumeName)
-	volume, err := client.GetVolume(defaultCtx, volumeName, volumeName)
-	assertNoError(t, err)
-	assertNotNil(t, volume)
-
-	defer client.DeleteVolume(defaultCtx, volume.Name)
-
-	username := client.API.User()
-	user, err := client.GetUserByNameOrUID(defaultCtx, &username, nil)
-	assertNoError(t, err)
-	assertNotNil(t, user)
-
-	acl, err := client.GetVolumeACL(defaultCtx, volume.Name)
-	assertNoError(t, err)
-	assertNotNil(t, acl)
-
-	assertNotNil(t, acl.Owner)
-	assertNotNil(t, acl.Owner.Name)
-	assert.Equal(t, user.Name, *acl.Owner.Name)
-	assertNotNil(t, acl.Owner.Type)
-	assert.Equal(t, api.PersonaTypeUser, *acl.Owner.Type)
-	assertNotNil(t, acl.Owner.ID)
-	assert.Equal(t, user.OnDiskUserIdentity.ID, fmt.Sprintf("UID:%s", acl.Owner.ID.ID))
-	assert.Equal(t, api.PersonaIDTypeUID, acl.Owner.ID.Type)
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	_, err := client.GetVolumeACL(defaultCtx, "test_get_volume_acl")
+	assert.Nil(t, err)
 }
 
 func TestSetVolumeOwnerToCurrentUser(t *testing.T) {
-	volumeName := "test_set_volume_owner"
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Once()
+	client.API.(*mocks.Client).On("User", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.SetVolumeOwnerToCurrentUser(defaultCtx, "test_set_volume_owner")
+	assert.Nil(t, err)
+}
 
-	// make sure the volume exists
-	client.CreateVolume(defaultCtx, volumeName)
-	volume, err := client.GetVolume(defaultCtx, volumeName, volumeName)
-	assertNoError(t, err)
-	assertNotNil(t, volume)
+func TestSetVolumeOwner(t *testing.T) {
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.SetVolumeOwner(defaultCtx, "test_set_volume_owner", "rexray")
+	assert.Nil(t, err)
+}
 
-	defer client.DeleteVolume(defaultCtx, volume.Name)
-
-	username := client.API.User()
-	user, err := client.GetUserByNameOrUID(defaultCtx, &username, nil)
-	assertNoError(t, err)
-	assertNotNil(t, user)
-
-	acl, err := client.GetVolumeACL(defaultCtx, volume.Name)
-	assertNoError(t, err)
-	assertNotNil(t, acl)
-
-	assertNotNil(t, acl.Owner)
-	assertNotNil(t, acl.Owner.Name)
-	assert.Equal(t, user.Name, *acl.Owner.Name)
-	assertNotNil(t, acl.Owner.Type)
-	assert.Equal(t, api.PersonaTypeUser, *acl.Owner.Type)
-	assertNotNil(t, acl.Owner.ID)
-	assert.Equal(t, user.OnDiskUserIdentity.ID, fmt.Sprintf("UID:%s", acl.Owner.ID.ID))
-	assert.Equal(t, api.PersonaIDTypeUID, acl.Owner.ID.Type)
-
-	err = client.SetVolumeOwner(defaultCtx, volume.Name, "rexray")
-	if err != nil {
-		t.Skipf("Unable to change volume owner: %s - is efs.bam.chown_unrestricted set?", err)
-	}
-	assertNoError(t, err)
-
-	acl, err = client.GetVolumeACL(defaultCtx, volume.Name)
-	assertNoError(t, err)
-	assertNotNil(t, acl)
-
-	assertNotNil(t, acl.Owner)
-	assertNotNil(t, acl.Owner.Name)
-	assert.Equal(t, "rexray", *acl.Owner.Name)
-	assertNotNil(t, acl.Owner.Type)
-	assert.Equal(t, api.PersonaTypeUser, *acl.Owner.Type)
-	assertNotNil(t, acl.Owner.ID)
-	assert.Equal(t, "2000", acl.Owner.ID.ID)
-	assert.Equal(t, api.PersonaIDTypeUID, acl.Owner.ID.Type)
-
-	err = client.SetVolumeOwnerToCurrentUser(defaultCtx, volume.Name)
-	assertNoError(t, err)
-
-	acl, err = client.GetVolumeACL(defaultCtx, volume.Name)
-	assertNoError(t, err)
-	assertNotNil(t, acl)
-
-	assertNotNil(t, acl.Owner)
-	assertNotNil(t, acl.Owner.Name)
-	assert.Equal(t, client.API.User(), *acl.Owner.Name)
-	assertNotNil(t, acl.Owner.Type)
-	assert.Equal(t, api.PersonaTypeUser, *acl.Owner.Type)
-	assertNotNil(t, acl.Owner.ID)
-	assert.Equal(t, "10", acl.Owner.ID.ID)
-	assert.Equal(t, api.PersonaIDTypeUID, acl.Owner.ID.Type)
+func TestSetVolumeMode(t *testing.T) {
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs[0:6]...).Return("").Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.SetVolumeMode(defaultCtx, "test_set_volume_owner", 777)
+	assert.Nil(t, err)
 }

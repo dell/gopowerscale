@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022 Dell Inc, or its subsidiaries.
+Copyright (c) 2022-2025 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,14 +16,21 @@ limitations under the License.
 package v2
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"os"
 	"testing"
 
+	"github.com/dell/goisilon/api"
+	"github.com/dell/goisilon/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/dell/goisilon/api/json"
 )
+
+var anyArgs = []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
 
 func TestExportEncodeJSON(t *testing.T) {
 	clients := []string{}
@@ -138,4 +145,218 @@ func testAllExportListMarshal(t *testing.T, list []byte) {
 	}
 
 	assert.EqualValues(t, map1, map2)
+}
+
+func TestExportsList(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+
+	client.On("Get", anyArgs...).Return(nil).Once()
+	_, err := ExportsList(ctx, client)
+	if err != nil {
+		assert.Equal(t, "Test scenario failed", err)
+	}
+
+	client.On("Get", anyArgs...).Return(errors.New("error")).Once()
+	_, err = ExportsList(ctx, client)
+	assert.Equal(t, errors.New("error"), err)
+}
+
+func TestExportsListWithZone(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+
+	client.On("Get", anyArgs...).Return(nil).Once()
+	_, err := ExportsListWithZone(ctx, client, "")
+	if err != nil {
+		assert.Equal(t, "Test scenario failed", err)
+	}
+
+	client.On("Get", anyArgs...).Return(errors.New("error")).Once()
+	_, err = ExportsListWithZone(ctx, client, "")
+	assert.Equal(t, errors.New("error"), err)
+}
+
+func TestExportInspect(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+
+	client.On("Get", anyArgs...).Return(nil).Once()
+	_, err := ExportInspect(ctx, client, 0)
+	if err != nil {
+		assert.Equal(t, "Test scenario failed", err)
+	}
+
+	client.On("Get", anyArgs...).Return(errors.New("error")).Once()
+	_, err = ExportInspect(ctx, client, 0)
+	assert.Equal(t, errors.New("error"), err)
+}
+
+func TestExportCreate(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+	export := Export{
+		ID: 0,
+	}
+	client.On("Post", anyArgs...).Return(nil).Once()
+	_, err := ExportCreate(ctx, client, &export)
+	if err != nil {
+		assert.Equal(t, "Test scenario failed", err)
+	}
+
+	client.On("Post", anyArgs...).Return(errors.New("error")).Once()
+	_, err = ExportCreate(ctx, client, &export)
+	assert.Equal(t, errors.New("error"), err)
+}
+
+func TestExportCreateWithZone(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+	export := Export{
+		ID: 0,
+	}
+
+	_, err := ExportCreateWithZone(ctx, client, &export, "")
+	assert.Equal(t, errors.New("zone cannot be empty"), err)
+
+	client.On("Post", anyArgs...).Return(nil).Once()
+	_, err = ExportCreateWithZone(ctx, client, &export, "zone")
+	if err != nil {
+		assert.Equal(t, "Test scenario failed", err)
+	}
+	client.On("Post", anyArgs...).Return(errors.New("error")).Once()
+	_, err = ExportCreateWithZone(ctx, client, &export, "zone")
+	assert.Equal(t, errors.New("error"), err)
+}
+
+func TestSetExportRootClients(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+	client.On("Put", anyArgs...).Return(nil).Once()
+	err := SetExportRootClients(ctx, client, 0, "addrs")
+	if err != nil {
+		assert.Equal(t, "Test scenario failed", err)
+	}
+}
+
+func TestExportUpdateWithZone(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+	export := Export{
+		ID: 0,
+	}
+	client.On("Put", anyArgs...).Return(nil).Once()
+	err := ExportUpdateWithZone(ctx, client, &export, "", true)
+	if err != nil {
+		assert.Equal(t, "Test scenario failed", err)
+	}
+}
+
+func TestUnexport(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+
+	client.On("Delete", anyArgs...).Return(nil).Once()
+	err := Unexport(ctx, client, 0)
+	if err != nil {
+		assert.Equal(t, "Test scenario failed", err)
+	}
+}
+
+func TestUnexportWithZone(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+
+	client.On("Delete", anyArgs...).Return(nil).Once()
+	err := UnexportWithZone(ctx, client, 0, "")
+	if err != nil {
+		assert.Equal(t, "Test scenario failed", err)
+	}
+}
+
+func TestExportsListWithResume(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+
+	client.On("Get", anyArgs...).Return(nil).Once()
+	_, err := ExportsListWithResume(ctx, client, "")
+	if err != nil {
+		assert.Equal(t, "Test scenario failed", err)
+	}
+
+	client.On("Get", anyArgs...).Return(errors.New("error")).Once()
+	_, err = ExportsListWithResume(ctx, client, "")
+	assert.Equal(t, errors.New("error"), err)
+}
+
+func TestExportsListWithLimit(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+
+	client.On("Get", anyArgs...).Return(nil).Once()
+	_, err := ExportsListWithLimit(ctx, client, "")
+	if err != nil {
+		assert.Equal(t, "Test scenario failed", err)
+	}
+
+	client.On("Get", anyArgs...).Return(errors.New("error")).Once()
+	_, err = ExportsListWithLimit(ctx, client, "")
+	assert.Equal(t, errors.New("error"), err)
+}
+
+func TestGetExportWithPath(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+
+	client.On("Get", anyArgs...).Return(nil).Once()
+	_, err := GetExportWithPath(ctx, client, "")
+	if err != nil {
+		assert.Equal(t, "Test scenario failed", err)
+	}
+
+	client.On("Get", anyArgs...).Return(errors.New("error")).Once()
+	_, err = GetExportWithPath(ctx, client, "")
+	assert.Equal(t, errors.New("error"), err)
+}
+
+func TestGetExportWithPathAndZone(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+
+	client.On("Get", anyArgs...).Return(nil).Once()
+	_, err := GetExportWithPathAndZone(ctx, client, "", "")
+	if err != nil {
+		assert.Equal(t, "Test scenario failed", err)
+	}
+	client.On("Get", anyArgs...).Return(errors.New("error")).Once()
+	_, err = GetExportWithPathAndZone(ctx, client, "", "")
+	assert.Equal(t, errors.New("error"), err)
+}
+
+func TestGetExportByIDWithZone(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+
+	client.On("Get", anyArgs...).Return(nil).Once()
+	_, err := GetExportByIDWithZone(ctx, client, 0, "")
+	if err != nil {
+		assert.Equal(t, "Test scenario failed", err)
+	}
+	client.On("Get", anyArgs...).Return(errors.New("error")).Once()
+	_, err = GetExportByIDWithZone(ctx, client, 0, "")
+	assert.Equal(t, errors.New("error"), err)
+}
+
+func TestExportsListWithParams(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+	orderedValues := api.NewOrderedValues([][]string{
+		{"detail", "owner", "group"},
+		{"info", "?"},
+	})
+	client.On("Get", anyArgs...).Return(nil).Once()
+	_, err := ExportsListWithParams(ctx, client, orderedValues)
+	if err != nil {
+		assert.Equal(t, "Test scenario failed", err)
+	}
 }

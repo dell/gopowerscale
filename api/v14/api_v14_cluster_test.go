@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022-2025 Dell Inc, or its subsidiaries.
+Copyright (c) 2025 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,27 +13,27 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package v1
+
+package v14
 
 import (
 	"context"
+	"testing"
 
-	"github.com/dell/goisilon/api"
+	"github.com/dell/goisilon/mocks"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-// GetZoneByName returns a specific access zone which matches the name parsed in
-func GetZoneByName(ctx context.Context,
-	client api.Client,
-	name string,
-) (*IsiZone, error) {
-	var resp GetIsiZonesResp
-	// PAPI call: GET https://1.2.3.4:8080/platform/1/zones/zone
-	err := client.Get(ctx, zonesPath, name, nil, nil, &resp)
+var anyArgs = []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
+
+func TestGetIsiClusterAcs(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+
+	client.On("Get", anyArgs...).Return(nil).Twice()
+	_, err := GetIsiClusterAcs(ctx, client)
 	if err != nil {
-		return nil, err
+		assert.Equal(t, "Test scenario failed", err)
 	}
-	if resp.Zones == nil {
-		return nil, nil
-	}
-	return resp.Zones[0], nil
 }
