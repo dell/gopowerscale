@@ -53,3 +53,13 @@ type IsiWriteableSnapshot struct {
 	// Writable Snapshot state.
 	State string `json:"state"`
 }
+
+// IsiWriteableSnapshotQueryResponse is the response to a writable snapshot query.
+type IsiWriteableSnapshotQueryResponse struct {
+	// Total number of items available.
+	Total int64 `json:"total,omitempty"`
+	// Used to continue a query. This is null for the last page.
+	Resume string `json:"resume,omitempty"`
+	// List of writable snapshots.
+	Writeable []*IsiWriteableSnapshot `json:"writable"`
+}

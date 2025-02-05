@@ -42,6 +42,9 @@ type Snapshot *api.IsiSnapshot
 // WriteableSnapshot represents an Isilon writeable snapshot.
 type WriteableSnapshot *apiv14.IsiWriteableSnapshot
 
+// WriteableSnapshotList represents a list of Isilon writeable snapshots.
+type WriteableSnapshotList []*apiv14.IsiWriteableSnapshot
+
 // GetSnapshots returns a list of snapshots from the cluster.
 func (c *Client) GetSnapshots(ctx context.Context) (SnapshotList, error) {
 	snapshots, err := api.GetIsiSnapshots(ctx, c.API)
@@ -290,8 +293,36 @@ func (c *Client) RemoveWriteableSnapshot(
 	snapshotPath string,
 ) error {
 	if !strings.HasPrefix(snapshotPath, "/ifs/") {
-		return fmt.Errorf("invalid snapshot path, must start with /ifs: %s", snapshotPath)
+		return fmt.Errorf("invalid snapshot path, must start with /ifs/: %s", snapshotPath)
 	}
 
 	return apiv14.RemoveWriteableSnapshot(ctx, c.API, snapshotPath)
+}
+
+// GetWriteableSnapshot retrieves a writeable snapshot.
+//
+// ctx: the context.
+// snapshotPath: the path of the snapshot.
+//
+// Returns the snapshot on success and error in case of failure.
+func (c *Client) GetWriteableSnapshot(
+	ctx context.Context,
+	snapshotPath string,
+) (WriteableSnapshot, error) {
+	if !strings.HasPrefix(snapshotPath, "/ifs/") {
+		return nil, fmt.Errorf("invalid snapshot path, must start with /ifs/: %s", snapshotPath)
+	}
+
+	return apiv14.GetIsiWriteableSnapshot(ctx, c.API, snapshotPath)
+}
+
+// GetWriteableSnapshots retrieves a list of all writeable snapshots.
+//
+// ctx: the context.
+//
+// Returns the list of writeable snapshots and an error in case of failure.
+func (c *Client) GetWriteableSnapshots(
+	ctx context.Context,
+) (WriteableSnapshotList, error) {
+	return apiv14.GetIsiWriteableSnapshots(ctx, c.API)
 }

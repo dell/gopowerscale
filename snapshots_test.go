@@ -578,6 +578,19 @@ func TestCreateWriteableSnapshot(_ *testing.T) {
 		panic(err)
 	}
 	defer client.RemoveWriteableSnapshot(defaultCtx, writeableSnapshotName)
+	fmt.Printf("Writeable snapshot created: %v\n", resp)
 
-	fmt.Printf("Writeable snapshot created: %s\n", resp.DstPath)
+	resp2, err2 := client.GetWriteableSnapshot(defaultCtx, writeableSnapshotName)
+	if err2 != nil {
+		panic(err)
+	}
+	fmt.Printf("GetWriteableSnapshot returned: %v\n", resp2)
+
+	// Unrelated to the above but test ListWriteableSnapshots
+	resp3, err3 := client.GetWriteableSnapshots(defaultCtx)
+	if err3 != nil {
+		panic(err3)
+	}
+
+	fmt.Printf("ListWriteableSnapshots returned %d items\n", len(resp3))
 }
