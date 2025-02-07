@@ -21,6 +21,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/dell/goisilon/api"
 	"github.com/dell/goisilon/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -123,6 +124,17 @@ func TestGetJobsByPolicyName(t *testing.T) {
 	client.On("Get", anyArgs...).Return(nil).Twice()
 	_, err := GetJobsByPolicyName(ctx, client, "")
 	assert.Equal(t, nil, err)
+
+	client.ExpectedCalls = nil
+	client.On("Get", anyArgs...).Return(errors.New("unable to get jobs")).Twice()
+	_, err = GetJobsByPolicyName(ctx, client, "test-policy")
+	assert.Error(t, err)
+
+	client.ExpectedCalls = nil
+	client.On("Get", anyArgs...).Return(&api.JSONError{StatusCode: 404}).Twice()
+	jobs, err := GetJobsByPolicyName(ctx, client, "test-policy")
+	assert.NoError(t, err)
+	assert.Equal(t, []Job{}, jobs)
 }
 
 func TestDeleteTargetPolicy(t *testing.T) {

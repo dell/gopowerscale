@@ -48,6 +48,15 @@ func TestGetIsiRole(t *testing.T) {
 	}).Once()
 	_, err = GetIsiRole(ctx, client, "")
 	assert.Equal(t, nil, err)
+
+	client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**IsiRoleListResp)
+		*resp = &IsiRoleListResp{
+			Roles: []*IsiRole{},
+		}
+	}).Once()
+	_, err = GetIsiRole(ctx, client, "")
+	assert.Error(t, err)
 }
 
 func TestGetIsiRoleList(t *testing.T) {
@@ -62,6 +71,33 @@ func TestGetIsiRoleList(t *testing.T) {
 		assert.Equal(t, "Test case failed", err)
 	}
 
+	client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**IsiRoleListRespResume)
+		*resp = &IsiRoleListRespResume{
+			Roles: []*IsiRole{
+				{
+					ID: "test",
+				},
+			},
+			Resume: "",
+		}
+	}).Once()
+	_, err = GetIsiRoleList(ctx, client, &x, &y)
+	assert.Equal(t, nil, err)
+
+	client.ExpectedCalls = nil
+	client.Calls = nil
+	client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**IsiRoleListRespResume)
+		*resp = &IsiRoleListRespResume{
+			Roles: []*IsiRole{
+				{
+					ID: "test",
+				},
+			},
+			Resume: "resume",
+		}
+	}).Once()
 	client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
 		resp := args.Get(5).(**IsiRoleListRespResume)
 		*resp = &IsiRoleListRespResume{
@@ -114,4 +150,11 @@ func TestRemoveIsiRoleMember(t *testing.T) {
 	if err == nil {
 		assert.Equal(t, "Test case failed", err)
 	}
+
+	client.ExpectedCalls = nil
+	authMember.Type = fileGroupTypeUser
+	authMember.ID = nil
+	client.On("Delete", anyArgs...).Return(nil).Twice()
+	err = RemoveIsiRoleMember(ctx, client, "", authMember)
+	assert.Equal(t, nil, err)
 }

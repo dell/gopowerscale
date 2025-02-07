@@ -45,6 +45,35 @@ func TestGetIsiGroupList(t *testing.T) {
 	if err == nil {
 		assert.Equal(t, "Test case failed", err)
 	}
+
+	client.ExpectedCalls = nil
+	client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**IsiGroupListRespResume)
+		*resp = &IsiGroupListRespResume{
+			Groups: []*IsiGroup{
+				{
+					ID:   "test-id",
+					Name: "test-name",
+				},
+			},
+			Resume: "resume",
+		}
+	}).Once()
+	client.On("Get", anyArgs...).Return(errors.New("error found")).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**IsiGroupListRespResume)
+		*resp = &IsiGroupListRespResume{
+			Groups: []*IsiGroup{
+				{
+					ID:   "test-id",
+					Name: "test-name",
+				},
+			},
+			Resume: "",
+		}
+	}).Once()
+	_, err = GetIsiGroupList(ctx, client, &queryNamePrefix, &queryDomain, &queryZone, &queryProvider,
+		&queryCached, &queryResolveNames, &queryMemberOf, &queryLimit)
+	assert.Error(t, err)
 }
 
 func TestGetIsiGroupMembers(t *testing.T) {
@@ -167,9 +196,34 @@ func TestGetIsiGroup(t *testing.T) {
 	groupName := "groupName"
 	var gid int32
 
-	client.On("Get", anyArgs...).Return(errors.New("error found")).Twice()
+	client.On("Get", anyArgs...).Return(errors.New("error found")).Once()
 	_, err := GetIsiGroup(ctx, client, &groupName, &gid)
 	assert.Equal(t, errors.New("error found"), err)
+
+	client.ExpectedCalls = nil
+	client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**IsiGroupListResp)
+		*resp = &IsiGroupListResp{
+			Groups: []*IsiGroup{
+				{
+					ID:   "0",
+					Name: "name",
+				},
+			},
+		}
+	}).Once()
+	_, err = GetIsiGroup(ctx, client, &groupName, &gid)
+	assert.Equal(t, nil, err)
+
+	client.ExpectedCalls = nil
+	client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**IsiGroupListResp)
+		*resp = &IsiGroupListResp{
+			Groups: []*IsiGroup{},
+		}
+	}).Once()
+	_, err = GetIsiGroup(ctx, client, &groupName, &gid)
+	assert.Error(t, err)
 }
 
 func TestGetIsiGroupMemberListWithResume(t *testing.T) {

@@ -19,6 +19,7 @@ package v2
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/dell/goisilon/mocks"
@@ -135,6 +136,12 @@ func TestContainerChildrenMapAll(t *testing.T) {
 
 	_, err := ContainerChildrenMapAll(context.Background(), client, "")
 	assert.NoError(t, err)
+
+	client.On("VolumesPath", anyArgs...).Return(testVolumePath).Once()
+	client.On("Get", anyArgs...).Return(errors.New("failed to get container children")).Once()
+
+	_, err = ContainerChildrenMapAll(context.Background(), client, "")
+	assert.Error(t, err)
 }
 
 func TestContainerChildrenGetAll(t *testing.T) {

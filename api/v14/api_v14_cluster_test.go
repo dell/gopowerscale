@@ -18,6 +18,7 @@ package v14
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/dell/goisilon/mocks"
@@ -36,4 +37,9 @@ func TestGetIsiClusterAcs(t *testing.T) {
 	if err != nil {
 		assert.Equal(t, "Test scenario failed", err)
 	}
+
+	client.ExpectedCalls = nil
+	client.On("Get", anyArgs...).Return(errors.New("error in get cluster acs")).Twice()
+	_, err = GetIsiClusterAcs(ctx, client)
+	assert.Error(t, err)
 }

@@ -17,6 +17,7 @@ package v3
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/dell/goisilon/mocks"
@@ -35,6 +36,11 @@ func TestGetIsiClusterNode(t *testing.T) {
 	if err != nil {
 		assert.Equal(t, "Test scenario failed", err)
 	}
+
+	client.ExpectedCalls = nil
+	client.On("Get", anyArgs...).Return(errors.New("error in get isi cluster node")).Twice()
+	_, err = GetIsiClusterNode(ctx, client, 0)
+	assert.Error(t, err)
 }
 
 func TestGetIsiClusterNodes(t *testing.T) {
@@ -46,6 +52,11 @@ func TestGetIsiClusterNodes(t *testing.T) {
 	if err != nil {
 		assert.Equal(t, "Test scenario failed", err)
 	}
+
+	client.ExpectedCalls = nil
+	client.On("Get", anyArgs...).Return(errors.New("error in get isi cluster nodes")).Twice()
+	_, err = GetIsiClusterNodes(ctx, client)
+	assert.Error(t, err)
 }
 
 func TestGetIsiClusterIdentity(t *testing.T) {
@@ -57,6 +68,11 @@ func TestGetIsiClusterIdentity(t *testing.T) {
 	if err != nil {
 		assert.Equal(t, "Test scenario failed", err)
 	}
+
+	client.ExpectedCalls = nil
+	client.On("Get", anyArgs...).Return(errors.New("error in get cluster identity")).Twice()
+	_, err = GetIsiClusterIdentity(ctx, client)
+	assert.Error(t, err)
 }
 
 func TestGetIsiClusterConfig(t *testing.T) {
@@ -68,6 +84,11 @@ func TestGetIsiClusterConfig(t *testing.T) {
 	if err != nil {
 		assert.Equal(t, "Test scenario failed", err)
 	}
+
+	client.ExpectedCalls = nil
+	client.On("Get", anyArgs...).Return(errors.New("error in get isi cluster config")).Twice()
+	_, err = GetIsiClusterConfig(ctx, client)
+	assert.Error(t, err)
 }
 
 func TestIsIOInProgress(t *testing.T) {

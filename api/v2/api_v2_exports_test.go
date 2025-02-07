@@ -190,6 +190,15 @@ func TestExportInspect(t *testing.T) {
 	client.On("Get", anyArgs...).Return(errors.New("error")).Once()
 	_, err = ExportInspect(ctx, client, 0)
 	assert.Equal(t, errors.New("error"), err)
+
+	client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*ExportList)
+		*resp = ExportList{
+			&Export{ID: 0},
+		}
+	}).Once()
+	_, err = ExportInspect(ctx, client, 0)
+	assert.Equal(t, nil, err)
 }
 
 func TestExportCreate(t *testing.T) {
@@ -207,6 +216,13 @@ func TestExportCreate(t *testing.T) {
 	client.On("Post", anyArgs...).Return(errors.New("error")).Once()
 	_, err = ExportCreate(ctx, client, &export)
 	assert.Equal(t, errors.New("error"), err)
+
+	export = Export{
+		Paths: &[]string{},
+	}
+	client.On("Post", anyArgs...).Return(errors.New("no path set")).Once()
+	_, err = ExportCreate(ctx, client, &export)
+	assert.Equal(t, errors.New("no path set"), err)
 }
 
 func TestExportCreateWithZone(t *testing.T) {
@@ -227,6 +243,13 @@ func TestExportCreateWithZone(t *testing.T) {
 	client.On("Post", anyArgs...).Return(errors.New("error")).Once()
 	_, err = ExportCreateWithZone(ctx, client, &export, "zone")
 	assert.Equal(t, errors.New("error"), err)
+
+	export = Export{
+		Paths: &[]string{},
+	}
+	client.On("Post", anyArgs...).Return(errors.New("no path set")).Once()
+	_, err = ExportCreateWithZone(ctx, client, &export, "zone")
+	assert.Equal(t, errors.New("no path set"), err)
 }
 
 func TestSetExportRootClients(t *testing.T) {
@@ -234,6 +257,16 @@ func TestSetExportRootClients(t *testing.T) {
 	client := &mocks.Client{}
 	client.On("Put", anyArgs...).Return(nil).Once()
 	err := SetExportRootClients(ctx, client, 0, "addrs")
+	if err != nil {
+		assert.Equal(t, "Test scenario failed", err)
+	}
+}
+
+func TestSetExportClients(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+	client.On("Put", anyArgs...).Return(nil).Once()
+	err := SetExportClients(ctx, client, 0, "addrs")
 	if err != nil {
 		assert.Equal(t, "Test scenario failed", err)
 	}
@@ -317,6 +350,15 @@ func TestGetExportWithPath(t *testing.T) {
 	client.On("Get", anyArgs...).Return(errors.New("error")).Once()
 	_, err = GetExportWithPath(ctx, client, "")
 	assert.Equal(t, errors.New("error"), err)
+
+	client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*ExportList)
+		*resp = ExportList{
+			&Export{ID: 0},
+		}
+	}).Once()
+	_, err = GetExportWithPath(ctx, client, "")
+	assert.Equal(t, nil, err)
 }
 
 func TestGetExportWithPathAndZone(t *testing.T) {
@@ -331,6 +373,15 @@ func TestGetExportWithPathAndZone(t *testing.T) {
 	client.On("Get", anyArgs...).Return(errors.New("error")).Once()
 	_, err = GetExportWithPathAndZone(ctx, client, "", "")
 	assert.Equal(t, errors.New("error"), err)
+
+	client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*ExportList)
+		*resp = ExportList{
+			&Export{ID: 0},
+		}
+	}).Once()
+	_, err = GetExportWithPathAndZone(ctx, client, "", "")
+	assert.Equal(t, nil, err)
 }
 
 func TestGetExportByIDWithZone(t *testing.T) {
@@ -345,6 +396,15 @@ func TestGetExportByIDWithZone(t *testing.T) {
 	client.On("Get", anyArgs...).Return(errors.New("error")).Once()
 	_, err = GetExportByIDWithZone(ctx, client, 0, "")
 	assert.Equal(t, errors.New("error"), err)
+
+	client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*ExportList)
+		*resp = ExportList{
+			&Export{ID: 0},
+		}
+	}).Once()
+	_, err = GetExportByIDWithZone(ctx, client, 0, "")
+	assert.Equal(t, nil, err)
 }
 
 func TestExportsListWithParams(t *testing.T) {
@@ -359,4 +419,8 @@ func TestExportsListWithParams(t *testing.T) {
 	if err != nil {
 		assert.Equal(t, "Test scenario failed", err)
 	}
+
+	client.On("Get", anyArgs...).Return(errors.New("error in export list")).Once()
+	_, err = ExportsListWithParams(ctx, client, orderedValues)
+	assert.Error(t, err)
 }

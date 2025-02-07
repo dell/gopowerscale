@@ -18,6 +18,7 @@ package v2
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/dell/goisilon/mocks"
@@ -34,6 +35,12 @@ func TestACLInspect(t *testing.T) {
 	if err != nil {
 		assert.Equal(t, "Test scenario failed", err)
 	}
+
+	client.ExpectedCalls = nil
+	client.On("Get", anyArgs...).Return(errors.New("error in acl inspect")).Once()
+	client.On("VolumesPath", anyArgs...).Return("").Once()
+	_, err = ACLInspect(ctx, client, "")
+	assert.Error(t, err)
 }
 
 func TestACLUpdate(t *testing.T) {
@@ -49,6 +56,12 @@ func TestACLUpdate(t *testing.T) {
 	if err != nil {
 		assert.Equal(t, "Test scenario failed", err)
 	}
+
+	client.ExpectedCalls = nil
+	client.On("Put", anyArgs...).Return(errors.New("error in acl update")).Once()
+	client.On("VolumesPath", anyArgs...).Return("").Once()
+	err = ACLUpdate(ctx, client, "", &acl)
+	assert.Error(t, err)
 }
 
 func TestParseAuthoritativeType(t *testing.T) {

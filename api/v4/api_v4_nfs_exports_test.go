@@ -17,6 +17,7 @@ package v4
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/dell/goisilon/mocks"
@@ -39,6 +40,10 @@ func TestListNfsExports(t *testing.T) {
 	if err != nil {
 		assert.Equal(t, "Test scenario failed", err)
 	}
+
+	client.On("Get", anyArgs...).Return(errors.New("error in list nfs exports")).Once()
+	_, err = ListNfsExports(ctx, params, client)
+	assert.Error(t, err)
 }
 
 func TestGetNfsExport(t *testing.T) {
@@ -53,6 +58,10 @@ func TestGetNfsExport(t *testing.T) {
 	if err != nil {
 		assert.Equal(t, "Test scenario failed", err)
 	}
+
+	client.On("Get", anyArgs...).Return(errors.New("error in get nfs exports")).Once()
+	_, err = GetNfsExport(ctx, params, client)
+	assert.Error(t, err)
 }
 
 func TestCreateNfsExport(t *testing.T) {
@@ -67,6 +76,10 @@ func TestCreateNfsExport(t *testing.T) {
 	if err != nil {
 		assert.Equal(t, "Test scenario failed", err)
 	}
+
+	client.On("Post", anyArgs...).Return(errors.New("error in create nfs exports")).Once()
+	_, err = CreateNfsExport(ctx, params, client)
+	assert.Error(t, err)
 }
 
 func TestUpdateNfsExport(t *testing.T) {

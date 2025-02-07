@@ -17,6 +17,7 @@ package v12
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/dell/goisilon/mocks"
@@ -39,6 +40,10 @@ func TestListSmbShares(t *testing.T) {
 	if err != nil {
 		assert.Equal(t, "Test scenario failed", err)
 	}
+
+	client.On("Get", anyArgs...).Return(errors.New("error in list smb shares")).Once()
+	_, err = ListSmbShares(ctx, params, client)
+	assert.Error(t, err)
 }
 
 func TestGetSmbShare(t *testing.T) {
@@ -53,6 +58,10 @@ func TestGetSmbShare(t *testing.T) {
 	if err != nil {
 		assert.Equal(t, "Test scenario failed", err)
 	}
+
+	client.On("Get", anyArgs...).Return(errors.New("error in get smb shares")).Once()
+	_, err = GetSmbShare(ctx, params, client)
+	assert.Error(t, err)
 }
 
 func TestCreateSmbShare(t *testing.T) {
@@ -67,6 +76,10 @@ func TestCreateSmbShare(t *testing.T) {
 	if err != nil {
 		assert.Equal(t, "Test scenario failed", err)
 	}
+
+	client.On("Post", anyArgs...).Return(errors.New("error in create smb shares")).Once()
+	_, err = CreateSmbShare(ctx, params, client)
+	assert.Error(t, err)
 }
 
 func TestUpdateSmbShare(t *testing.T) {

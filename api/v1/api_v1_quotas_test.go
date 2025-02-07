@@ -45,6 +45,21 @@ func TestGetIsiQuota(t *testing.T) {
 	client.On("Get", anyArgs...).Return(nil).Twice()
 	_, err = GetIsiQuota(ctx, client, "")
 	assert.Equal(t, errors.New("Quota not found: "), err)
+
+	client.ExpectedCalls = nil
+	client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*IsiQuotaListResp)
+		*resp = IsiQuotaListResp{
+			Quotas: []IsiQuota{
+				{
+					ID: "test",
+				},
+			},
+		}
+	}).Once()
+	client.On("Get", anyArgs...).Return(nil).Run(nil).Once()
+	_, err = GetIsiQuota(ctx, client, "")
+	assert.Equal(t, nil, err)
 }
 
 func TestGetAllIsiQuota(t *testing.T) {
@@ -73,6 +88,11 @@ func TestGetAllIsiQuota(t *testing.T) {
 	assert.Equal(t, nil, err)
 
 	client.On("Get", anyArgs...).Return(errors.New("error")).Twice()
+	_, err = GetAllIsiQuota(ctx, client)
+	assert.Equal(t, errors.New("error"), err)
+
+	client.ExpectedCalls = nil
+	client.On("Get", anyArgs...).Return(errors.New("error")).Once()
 	_, err = GetAllIsiQuota(ctx, client)
 	assert.Equal(t, errors.New("error"), err)
 }
@@ -121,6 +141,15 @@ func TestGetIsiQuotaByID(t *testing.T) {
 	}).Once()
 	_, err = GetIsiQuotaByID(ctx, client, "test-id")
 	assert.Equal(t, nil, err)
+
+	client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*IsiQuotaListResp)
+		*resp = IsiQuotaListResp{
+			Quotas: []IsiQuota{},
+		}
+	}).Once()
+	_, err = GetIsiQuotaByID(ctx, client, "test-id")
+	assert.Equal(t, errors.New("Quota not found: test-id"), err)
 }
 
 func TestSetIsiQuotaHardThreshold(t *testing.T) {
@@ -139,6 +168,21 @@ func TestUpdateIsiQuotaHardThreshold(t *testing.T) {
 	client.On("Get", anyArgs...).Return(nil).Twice()
 	err := UpdateIsiQuotaHardThreshold(ctx, client, "", 5, 0, 0, 0)
 	assert.Equal(t, errors.New("Quota not found: "), err)
+
+	client.ExpectedCalls = nil
+	client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*IsiQuotaListResp)
+		*resp = IsiQuotaListResp{
+			Quotas: []IsiQuota{
+				{
+					ID: "test",
+				},
+			},
+		}
+	}).Once()
+	client.On("Put", anyArgs...).Return(nil).Once()
+	err = UpdateIsiQuotaHardThreshold(ctx, client, "", 5, 0, 0, 0)
+	assert.Equal(t, nil, err)
 }
 
 func TestUpdateIsiQuotaHardThresholdByID(t *testing.T) {
