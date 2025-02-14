@@ -88,7 +88,7 @@ func TestNew(t *testing.T) {
 
 	getReqHandler := func(serverVersion string) func(http.ResponseWriter, *http.Request) {
 		if serverVersion != "" {
-			return func(w http.ResponseWriter, _) {
+			return func(w http.ResponseWriter, req *http.Request) {
 				res := &apiVerResponse{Latest: &serverVersion}
 				w.WriteHeader(http.StatusOK)
 				body, err := json.Marshal(res)
@@ -103,7 +103,7 @@ func TestNew(t *testing.T) {
 				}
 			}
 		}
-		return func(w http.ResponseWriter, _) {
+		return func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}
 	}
