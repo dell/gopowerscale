@@ -283,6 +283,10 @@ func (d *decodeState) saveError(err error) {
 // next cuts off and returns the next full JSON value in d.data[d.off:].
 // The next value is known to be an object or array, not a literal.
 func (d *decodeState) next() []byte {
+	return nextFunc(d)
+}
+
+var nextFunc = func(d *decodeState) []byte {
 	c := d.data[d.off]
 	item, rest, err := nextValue(d.data[d.off:], &d.nextscan)
 	if err != nil {
@@ -306,6 +310,10 @@ func (d *decodeState) next() []byte {
 // receives a scan code not equal to op.
 // It updates d.off and returns the new scan code.
 func (d *decodeState) scanWhile(op int) int {
+	return scanWhileFunc(d, op)
+}
+
+var scanWhileFunc = func(d *decodeState, op int) int {
 	var newOp int
 	for {
 		if d.off >= len(d.data) {
@@ -402,6 +410,10 @@ func (d *decodeState) valueQuoted() interface{} {
 // if it encounters an Unmarshaler, indirect stops and returns that.
 // if decodingNull is true, indirect stops at the last pointer so it can be set to nil.
 func (d *decodeState) indirect(v reflect.Value, decodingNull bool) (Unmarshaler, encoding.TextUnmarshaler, reflect.Value) {
+	return indirectFunc(v, decodingNull)
+}
+
+var indirectFunc = func(v reflect.Value, decodingNull bool) (Unmarshaler, encoding.TextUnmarshaler, reflect.Value) {
 	// If v is a named type and is addressable,
 	// start with its address, so that if the type has pointer methods,
 	// we find them.

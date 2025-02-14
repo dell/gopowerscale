@@ -17,7 +17,9 @@ limitations under the License.
 package json
 
 import (
+	"encoding"
 	"errors"
+	"fmt"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -770,20 +772,40 @@ func TestValueQuoted(t *testing.T) {
 }
 
 func TestArray(t *testing.T) {
+	defaultIndirectFunc := indirectFunc
+
+	afterEach := func() {
+		indirectFunc = defaultIndirectFunc
+	}
 	tests := []struct {
 		name     string
 		input    string
 		expected interface{}
+		setup    func()
 	}{
 		{
 			name:     "Empty Array",
 			input:    `[]`,
 			expected: nil,
 		},
+		{
+			name:     "inject errors from indirectFunc",
+			input:    `[]`,
+			expected: nil,
+			setup: func() {
+				indirectFunc = func(v reflect.Value, decodingNull bool) (Unmarshaler, encoding.TextUnmarshaler, reflect.Value) {
+					return nil, nil, reflect.ValueOf(fmt.Errorf("error"))
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			defer afterEach()
+			if tt.setup != nil {
+				tt.setup()
+			}
 			d := &decodeState{
 				data: []byte(tt.input),
 				off:  0,
