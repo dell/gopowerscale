@@ -252,6 +252,7 @@ var hex = "0123456789abcdef"
 type encodeState struct {
 	bytes.Buffer // accumulated output
 	scratch      [64]byte
+	result       string
 }
 
 var encodeStatePool sync.Pool
@@ -469,8 +470,11 @@ func textMarshalerEncoder(e *encodeState, v reflect.Value, opts encOpts) {
 }
 
 func addrTextMarshalerEncoder(e *encodeState, v reflect.Value, opts encOpts) {
-	va := v.Addr()
-	if va.IsNil() {
+	var va reflect.Value
+	if v.CanAddr() {
+		va = v.Addr()
+	}
+	if !va.IsValid() {
 		_, _ = e.WriteString("null")
 		return
 	}
