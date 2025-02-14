@@ -582,7 +582,7 @@ func TestCreateWriteableSnapshot(_ *testing.T) {
 
 	resp2, err2 := client.GetWriteableSnapshot(defaultCtx, writeableSnapshotName)
 	if err2 != nil {
-		panic(err)
+		panic(err2)
 	}
 	fmt.Printf("GetWriteableSnapshot returned: %v\n", resp2)
 
@@ -593,4 +593,7 @@ func TestCreateWriteableSnapshot(_ *testing.T) {
 	}
 
 	fmt.Printf("ListWriteableSnapshots returned %d items\n", len(resp3))
+	for _, v := range resp3 {
+		fmt.Fprintf(os.Stderr, "%v\n", v)
+	}
 }
