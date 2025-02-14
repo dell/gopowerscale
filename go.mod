@@ -2,6 +2,8 @@ module github.com/dell/goisilon
 
 go 1.23
 
+toolchain go1.23.4
+
 require (
 	github.com/PuerkitoBio/goquery v1.10.1
 	github.com/akutz/gournal v0.5.0
