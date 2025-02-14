@@ -76,7 +76,7 @@ func assertNotNil(t *testing.T, i interface{}) {
 	}
 }
 
-func newMockHttpServer(handleReq func(http.ResponseWriter, *http.Request)) *httptest.Server {
+func newMockHTTPServer(handleReq func(http.ResponseWriter, *http.Request)) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handleReq(w, r)
 	}))
@@ -86,7 +86,7 @@ func TestNew(t *testing.T) {
 
 	getReqHandler := func(serverVersion string) func(http.ResponseWriter, *http.Request) {
 		if serverVersion != "" {
-			return func(w http.ResponseWriter, r *http.Request) {
+			return func(w http.ResponseWriter) {
 				res := &apiVerResponse{Latest: &serverVersion}
 				w.WriteHeader(http.StatusOK)
 				body, err := json.Marshal(res)
@@ -95,7 +95,67 @@ func TestNew(t *testing.T) {
 					return
 				}
 				_, err = w.Write(body)
-				if err != nil {
+				if err != nil {package api
+				
+				import (
+					"encoding/json"
+					"net/http"
+					"net/http/httptest"
+					"os"
+					"testing"
+				
+					"github.com/stretchr/testify/assert"
+				)
+				
+				func assertNoError(t *testing.T, err error) {
+					if !assert.NoError(t, err) {
+						t.FailNow()
+					}
+				}
+				
+				func assertNil(t *testing.T, i interface{}) {
+					if !assert.Nil(t, i) {
+						t.FailNow()
+					}
+				}
+				
+				func assertNotNil(t *testing.T, i interface{}) {
+					if !assert.NotNil(t, i) {
+						t.FailNow()
+					}
+				}
+				
+				func newMockHTTPServer(handleReq func(http.ResponseWriter, *http.Request)) *httptest.Server {
+					return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						handleReq(w, r)
+					}))
+				}
+				
+				func TestNew(t *testing.T) {
+					getReqHandler := func(serverVersion string) func(http.ResponseWriter, *http.Request) {
+						if serverVersion != "" {
+							return func(w http.ResponseWriter) {
+								res := &apiVerResponse{Latest: &serverVersion}
+								w.WriteHeader(http.StatusOK)
+								body, err := json.Marshal(res)
+								if err != nil {
+									w.WriteHeader(http.StatusInternalServerError)
+									return
+								}
+								_, err = w.Write(body)
+								if err != nil {
+									w.WriteHeader(http.StatusInternalServerError)
+									return
+								}
+							}
+						}
+						return func(w http.ResponseWriter, r *http.Request) {
+							w.WriteHeader(http.StatusOK)
+						}
+					}
+				
+					// Rest of the code...
+				}
 					w.WriteHeader(http.StatusInternalServerError)
 					return
 				}
