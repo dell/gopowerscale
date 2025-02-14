@@ -77,7 +77,7 @@ func GetIsiWriteableSnapshot(
 	var resp *IsiWriteableSnapshotQueryResponse
 	err := client.Get(ctx, writeableSnapshotPath+snapshotPath, "", nil, nil, &resp)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create writeable snapshot: %v", err)
+		return nil, fmt.Errorf("failed to get writeable snapshot: %v", err)
 	}
 
 	return resp.Writeable[0], nil
