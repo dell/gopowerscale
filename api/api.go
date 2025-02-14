@@ -389,6 +389,10 @@ func (c *client) DoWithHeaders(
 	params OrderedValues, headers map[string]string,
 	body, resp interface{},
 ) error {
+	return doWithHeadersFunc(c, ctx, method, uri, id, params, headers, body, resp)
+}
+
+var doWithHeadersFunc = func(c *client, ctx context.Context, method string, uri string, id string, params OrderedValues, headers map[string]string, body, resp interface{}) error {
 	res, _, err := c.DoAndGetResponseBody(
 		ctx, method, uri, id, params, headers, body)
 	if err != nil {
@@ -421,6 +425,16 @@ func (c *client) DoWithHeaders(
 }
 
 func (c *client) DoAndGetResponseBody(
+	ctx context.Context,
+	method, uri, id string,
+	params OrderedValues, headers map[string]string,
+	body interface{},
+) (*http.Response, bool, error) {
+	return doAndGetResponseBodyFunc(c, ctx, method, uri, id, params, headers, body)
+}
+
+var doAndGetResponseBodyFunc = func(
+	c *client,
 	ctx context.Context,
 	method, uri, id string,
 	params OrderedValues, headers map[string]string,
@@ -650,6 +664,10 @@ func parseJSONHTMLError(r *http.Response) error {
 // Authenticate make a REST API call [/session/1/session] to PowerScale to authenticate the given credentials.
 // The response contains the session Cookie, X-CSRF-Token and the client uses it for further communication.
 func (c *client) authenticate(ctx context.Context, username string, password string, endpoint string) error {
+	return authenticateFunc(c, ctx, username, password, endpoint)
+}
+
+var authenticateFunc = func(c *client, ctx context.Context, username string, password string, endpoint string) error {
 	headers := make(map[string]string, 1)
 	headers[headerKeyContentType] = headerValContentTypeJSON
 	data := &setupConnection{Services: []string{"platform", "namespace"}, Username: username, Password: password}

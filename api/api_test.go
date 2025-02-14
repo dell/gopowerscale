@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -26,8 +27,9 @@ import (
 	"time"
 
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"strings"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type (
@@ -249,11 +251,16 @@ func TestDoAndGetResponseBody(t *testing.T) {
 			return nil
 		},
 	}
-	res, _, err = c.DoAndGetResponseBody(ctx, http.MethodGet, "api/v1/endpoint", "ID", orderedValues, headers, body)
+	res, _, _ = c.DoAndGetResponseBody(ctx, http.MethodGet, "api/v1/endpoint", "ID", orderedValues, headers, body)
 	assert.Equal(t, http.StatusOK, res.StatusCode)
 }
 
 func TestAuthenticate(t *testing.T) {
+	defaultDoAndGetResponseBodyFunc := doAndGetResponseBodyFunc
+	defer func() {
+		doAndGetResponseBodyFunc = defaultDoAndGetResponseBodyFunc
+	}()
+
 	c := &client{
 		http: http.DefaultClient,
 	}
@@ -287,7 +294,7 @@ func TestAuthenticate(t *testing.T) {
 	}))
 	defer server.Close()
 	c.hostname = server.URL
-	err = c.authenticate(ctx, username, password, endpoint)
+	_ = c.authenticate(ctx, username, password, endpoint)
 	assert.Equal(t, "", c.GetReferer())
 
 	// create a mock server for 401 response code
@@ -301,9 +308,29 @@ func TestAuthenticate(t *testing.T) {
 	c.hostname = server.URL
 	err = c.authenticate(ctx, username, password, endpoint)
 	assert.EqualError(t, err, "authentication failed. unable to login to powerscale. verify username and password")
+
+	// force an error with a failed doAndGetResponseBody
+	doAndGetResponseBodyFunc = func(
+		_ *client,
+		_ context.Context,
+		_, _, _ string,
+		_ OrderedValues, _ map[string]string,
+		_ interface{},
+	) (*http.Response, bool, error) {
+		return nil, false, errors.New("failed doAndGetResponseBody")
+	}
+	err = c.authenticate(ctx, username, password, endpoint)
+	assert.EqualError(t, err, "Authentication error: failed doAndGetResponseBody")
 }
 
 func TestExecuteWithRetryAuthenticate(t *testing.T) {
+	// error injection
+	defaultDoWithHeadersFunc := doWithHeadersFunc
+	defaultAuthenticateFunc := authenticateFunc
+	defer func() {
+		doWithHeadersFunc = defaultDoWithHeadersFunc
+		authenticateFunc = defaultAuthenticateFunc
+	}()
 	// Create a mock client
 	c := &client{
 		http:     http.DefaultClient,
@@ -393,6 +420,23 @@ func TestExecuteWithRetryAuthenticate(t *testing.T) {
 	assert.Error(t, err)
 
 	err = c.executeWithRetryAuthenticate(ctx, http.MethodGet, "/bad-html-auth-400", "", nil, headers, nil, nil)
+	assert.Error(t, err)
+
+	// force doWithHeaders to return unexpected error
+	doWithHeadersFunc = func(c *client, ctx context.Context, method string, uri string, id string, params OrderedValues, headers map[string]string, body, resp interface{}) error {
+		return fmt.Errorf("mock error")
+	}
+	err = c.executeWithRetryAuthenticate(ctx, http.MethodGet, "/bad-html-auth-400", "", nil, headers, nil, nil)
+	assert.Error(t, err)
+	doWithHeadersFunc = defaultDoWithHeadersFunc
+
+	// force authenticate to return an error
+	authenticateFunc = func(c *client, ctx context.Context, username, password, hostname string) error {
+		return errors.New("failed auth")
+	}
+	err = c.executeWithRetryAuthenticate(ctx, http.MethodGet, "/bad-html-auth-401", "", nil, headers, nil, nil)
+	assert.Error(t, err)
+	err = c.executeWithRetryAuthenticate(ctx, http.MethodGet, "/bad-auth-401", "", nil, headers, nil, nil)
 	assert.Error(t, err)
 }
 
