@@ -18,16 +18,15 @@ package api
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
-
-	"encoding/json"
-	"strings"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -85,10 +84,9 @@ func newMockHTTPServer(handleReq func(http.ResponseWriter, *http.Request)) *http
 }
 
 func TestNew(t *testing.T) {
-
 	getReqHandler := func(serverVersion string) func(http.ResponseWriter, *http.Request) {
 		if serverVersion != "" {
-			return func(w http.ResponseWriter, req *http.Request) {
+			return func(w http.ResponseWriter, _ *http.Request) {
 				res := &apiVerResponse{Latest: &serverVersion}
 				w.WriteHeader(http.StatusOK)
 				body, err := json.Marshal(res)
@@ -423,7 +421,7 @@ func TestExecuteWithRetryAuthenticate(t *testing.T) {
 	assert.Error(t, err)
 
 	// force doWithHeaders to return unexpected error
-	doWithHeadersFunc = func(c *client, ctx context.Context, method string, uri string, id string, params OrderedValues, headers map[string]string, body, resp interface{}) error {
+	doWithHeadersFunc = func(_ *client, _ context.Context, _ string, _ string, _ string, _ OrderedValues, _ map[string]string, _, _ interface{}) error {
 		return fmt.Errorf("mock error")
 	}
 	err = c.executeWithRetryAuthenticate(ctx, http.MethodGet, "/bad-html-auth-400", "", nil, headers, nil, nil)
@@ -431,7 +429,7 @@ func TestExecuteWithRetryAuthenticate(t *testing.T) {
 	doWithHeadersFunc = defaultDoWithHeadersFunc
 
 	// force authenticate to return an error
-	authenticateFunc = func(c *client, ctx context.Context, username, password, hostname string) error {
+	authenticateFunc = func(_ *client, _ context.Context, _, _, _ string) error {
 		return errors.New("failed auth")
 	}
 	err = c.executeWithRetryAuthenticate(ctx, http.MethodGet, "/bad-html-auth-401", "", nil, headers, nil, nil)

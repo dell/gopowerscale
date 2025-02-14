@@ -734,97 +734,93 @@ func TestMarshalerEncoder(t *testing.T) {
 	}
 }
 
-
 // Custom type implementing encoding.TextMarshaler
 type Person struct {
-		Name string
-		Age  int
+	Name string
+	Age  int
 }
 
 func (p Person) MarshalText() ([]byte, error) {
-		if p.Name == "" {
-				return nil, errors.New("name is empty")
-		}
-		return []byte(p.Name), nil
+	if p.Name == "" {
+		return nil, errors.New("name is empty")
+	}
+	return []byte(p.Name), nil
 }
 
-
 func TestTextMarshalerEncoder(t *testing.T) {
-		tests := []struct {
-				name   string
-				value  interface{}
-				expected string
-		}{
-				{"NilPointer", (*Person)(nil), ""},
-				{"ValidPerson", Person{Name: "Alice", Age: 30}, ""},
-		}
+	tests := []struct {
+		name     string
+		value    interface{}
+		expected string
+	}{
+		{"NilPointer", (*Person)(nil), ""},
+		{"ValidPerson", Person{Name: "Alice", Age: 30}, ""},
+	}
 
-		for _, tt := range tests {
-				t.Run(tt.name, func(t *testing.T) {
-						e := &encodeState{}
-						v := reflect.ValueOf(tt.value)
-						opts := encOpts{escapeHTML: false}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &encodeState{}
+			v := reflect.ValueOf(tt.value)
+			opts := encOpts{escapeHTML: false}
 
-						textMarshalerEncoder(e, v, opts)
+			textMarshalerEncoder(e, v, opts)
 
-						if e.result != tt.expected {
-								t.Errorf("expected %q, got %q", tt.expected, e.result)
-						}
-				})
-		}
+			if e.result != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, e.result)
+			}
+		})
+	}
 }
 
 type mockTextMarshaler struct {
-		text []byte
-		err  error
+	text []byte
+	err  error
 }
 
 func (m *mockTextMarshaler) MarshalText() ([]byte, error) {
-		return m.text, m.err
+	return m.text, m.err
 }
 
 func TestAddrTextMarshalerEncoder(t *testing.T) {
-		tests := []struct {
-				name     string
-				input    encoding.TextMarshaler
-				opts     encOpts
-				expected string
-				err      error
-		}{
-				{
-						name:     "Nil pointer",
-						input:    nil,
-						opts:     encOpts{escapeHTML: false},
-						expected: "",
-				},
-				{
-						name:     "Successful marshal",
-						input:    &mockTextMarshaler{text: []byte("test")},
-						opts:     encOpts{escapeHTML: false},
-						expected: "",
-				},
-				{
-						name:     "Marshal error",
-						input:    &mockTextMarshaler{text: []byte("test"), err: errors.New("marshal error")},
-						opts:     encOpts{escapeHTML: false},
-						expected: "",
-				},
-		}
+	tests := []struct {
+		name     string
+		input    encoding.TextMarshaler
+		opts     encOpts
+		expected string
+		err      error
+	}{
+		{
+			name:     "Nil pointer",
+			input:    nil,
+			opts:     encOpts{escapeHTML: false},
+			expected: "",
+		},
+		{
+			name:     "Successful marshal",
+			input:    &mockTextMarshaler{text: []byte("test")},
+			opts:     encOpts{escapeHTML: false},
+			expected: "",
+		},
+		{
+			name:     "Marshal error",
+			input:    &mockTextMarshaler{text: []byte("test"), err: errors.New("marshal error")},
+			opts:     encOpts{escapeHTML: false},
+			expected: "",
+		},
+	}
 
-		for _, tt := range tests {
-				t.Run(tt.name, func(t *testing.T) {
-						e := &encodeState{}
-						v := reflect.ValueOf(tt.input)
-						addrTextMarshalerEncoder(e, v, tt.opts)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &encodeState{}
+			v := reflect.ValueOf(tt.input)
+			addrTextMarshalerEncoder(e, v, tt.opts)
 
-						if e.result != tt.expected {
-								t.Errorf("expected %s, got %s", tt.expected, e.result)
-						}
-
-				})
-		}
+			if e.result != tt.expected {
+				t.Errorf("expected %s, got %s", tt.expected, e.result)
+			}
+		})
+	}
 }
-
 
 func TestInterfaceEncoder(t *testing.T) {
 	tests := []struct {
