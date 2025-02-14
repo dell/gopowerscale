@@ -182,7 +182,7 @@ func TestNew(t *testing.T) {
 	for _, td := range testData {
 		t.Run(td.testName, func(t *testing.T) {
 			if td.reqHandler != nil {
-				server := newMockHttpServer(td.reqHandler)
+				server := newMockHTTPServer(td.reqHandler)
 				if td.hostname == serverURL {
 					td.hostname = server.URL
 				}
