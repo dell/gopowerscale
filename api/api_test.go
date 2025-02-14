@@ -25,7 +25,9 @@ import (
 	"testing"
 	"time"
 
+	"encoding/json"
 	"github.com/stretchr/testify/assert"
+	"strings"
 )
 
 type (
@@ -74,49 +76,135 @@ func assertNotNil(t *testing.T, i interface{}) {
 	}
 }
 
+func newMockHTTPServer(handleReq func(http.ResponseWriter, *http.Request)) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handleReq(w, r)
+	}))
+}
+
 func TestNew(t *testing.T) {
-	ctx := context.Background()
-	hostname := "example.com"
-	username := "testuser"
-	password := "testpassword"
-	groupname := "testgroup"
-	verboseLogging := uint(1)
-	authType := uint8(42)
-	authType = authTypeBasic
 
-	// Create a mock ClientOptions
-	opts := &ClientOptions{
-		VolumesPath:             "test/volumes",
-		VolumesPathPermissions:  "test/permissions",
-		IgnoreUnresolvableHosts: true,
-		Timeout:                 10 * time.Second,
-		Insecure:                true,
+	getReqHandler := func(serverVersion string) func(http.ResponseWriter, *http.Request) {
+		if serverVersion != "" {
+			return func(w http.ResponseWriter, _) {
+				res := &apiVerResponse{Latest: &serverVersion}
+				w.WriteHeader(http.StatusOK)
+				body, err := json.Marshal(res)
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				_, err = w.Write(body)
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+			}
+		}
+		return func(w http.ResponseWriter, _) {
+			w.WriteHeader(http.StatusOK)
+		}
 	}
 
-	// Call the function
-	c, _ := New(ctx, hostname, username, password, groupname, verboseLogging, authType, opts)
-	assert.Equal(t, nil, c)
+	serverURL := "server.URL"
 
-	c, err := New(ctx, "", username, password, groupname, verboseLogging, authType, opts)
-	assert.Equal(t, errors.New("missing endpoint, username, or password"), err)
-
-	authType = 2
-	c, _ = New(ctx, hostname, username, password, groupname, verboseLogging, authType, opts)
-	assert.Equal(t, nil, c)
-
-	authType = authTypeSessionBased
-	c, _ = New(ctx, hostname, username, password, groupname, verboseLogging, authType, opts)
-	assert.Equal(t, nil, c)
-
-	opts = &ClientOptions{
-		VolumesPath:             "test/volumes",
-		VolumesPathPermissions:  "test/permissions",
-		IgnoreUnresolvableHosts: true,
-		Timeout:                 10 * time.Second,
-		Insecure:                false,
+	testData := []struct {
+		testName       string
+		hostname       string
+		username       string
+		password       string
+		groupName      string
+		verboseLogging uint
+		authType       uint8
+		opts           *ClientOptions
+		reqHandler     func(http.ResponseWriter, *http.Request)
+		expectedErr    string
+	}{
+		{
+			testName:    "Negative: empty call params",
+			expectedErr: "missing endpoint, username, or password",
+		},
+		{
+			testName: "Negative: bad hostname",
+			hostname: "test",
+			username: "testuser",
+			password: "testpassword",
+			authType: 42, // unknown auth type should default to basic
+			opts: &ClientOptions{
+				VolumesPath:             "test/volumes",
+				VolumesPathPermissions:  "test/permissions",
+				IgnoreUnresolvableHosts: true,
+				Timeout:                 10 * time.Second,
+				Insecure:                true,
+			},
+			expectedErr: "unsupported protocol scheme",
+		},
+		{
+			testName:       "Negative: empty server response",
+			hostname:       serverURL,
+			username:       "testuser",
+			password:       "testpassword",
+			groupName:      "testgroup",
+			verboseLogging: 1,
+			authType:       authTypeSessionBased,
+			opts: &ClientOptions{
+				Insecure: false,
+			},
+			reqHandler:  getReqHandler(""),
+			expectedErr: "OneFS releases older than",
+		},
+		{
+			testName:    "Negative: malformed major version in response",
+			hostname:    serverURL,
+			username:    "testuser",
+			password:    "testpassword",
+			reqHandler:  getReqHandler("a.3"),
+			expectedErr: "strconv.ParseUint: parsing ",
+		},
+		{
+			testName:    "Negative: malformed minor version in response",
+			hostname:    serverURL,
+			username:    "testuser",
+			password:    "testpassword",
+			reqHandler:  getReqHandler("8.b"),
+			expectedErr: "strconv.ParseUint: parsing ",
+		},
+		{
+			testName:    "Positive: correct version in response",
+			hostname:    serverURL,
+			username:    "testuser",
+			password:    "testpassword",
+			reqHandler:  getReqHandler("8.3"),
+			expectedErr: "",
+		},
 	}
-	c, _ = New(ctx, hostname, username, password, groupname, verboseLogging, authType, opts)
-	assert.Equal(t, nil, c)
+
+	for _, td := range testData {
+		t.Run(td.testName, func(t *testing.T) {
+			if td.reqHandler != nil {
+				server := newMockHTTPServer(td.reqHandler)
+				if td.hostname == serverURL {
+					td.hostname = server.URL
+				}
+				defer server.Close()
+			}
+			c, err := New(
+				context.Background(),
+				td.hostname,
+				td.username,
+				td.password,
+				td.groupName,
+				td.verboseLogging,
+				td.authType,
+				td.opts)
+			if td.expectedErr != "" {
+				assert.ErrorContains(t, err, td.expectedErr)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, c)
+			}
+		})
+	}
 }
 
 func TestDoAndGetResponseBody(t *testing.T) {
@@ -219,29 +307,93 @@ func TestExecuteWithRetryAuthenticate(t *testing.T) {
 	// Create a mock client
 	c := &client{
 		http:     http.DefaultClient,
-		authType: authTypeSessionBased,
+		authType: authTypeBasic,
 		username: "testuser",
 		password: "testpassword",
-		hostname: "https://example.com",
 	}
 	ctx := context.Background()
+
 	// Create a mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodGet, r.Method)
-		assert.Equal(t, "/api/v1/endpoint/", r.URL.String())
-		w.WriteHeader(http.StatusUnauthorized)
+		if r.Method == http.MethodGet {
+			if strings.HasPrefix(r.URL.Path, "/bad-auth-") {
+				var res *JSONError
+				if strings.HasSuffix(r.URL.Path, "401/") {
+					res = &JSONError{StatusCode: http.StatusUnauthorized, Err: []Error{{Message: "Unauthorized", Code: "401"}}}
+					w.WriteHeader(http.StatusUnauthorized)
+				} else if strings.HasSuffix(r.URL.Path, "400/") {
+					res = &JSONError{StatusCode: http.StatusBadRequest, Err: []Error{{Message: "Bad Request", Code: "400"}}}
+					w.WriteHeader(http.StatusBadRequest)
+				} else {
+					res = &JSONError{StatusCode: http.StatusNotFound, Err: []Error{{Message: "Unknown URL", Code: "404"}}}
+					w.WriteHeader(http.StatusNotFound)
+				}
+				body, err := json.Marshal(res)
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				_, err = w.Write(body)
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+				return
+			} else if strings.HasPrefix(r.URL.Path, "/bad-html-auth-") {
+				var body string
+				w.Header().Set("Content-Type", "text/html")
+				if strings.HasSuffix(r.URL.Path, "401/") {
+					body = "<html><head><title>HTML error 401 title</title></head><body></body></html>"
+					w.WriteHeader(http.StatusUnauthorized)
+				} else if strings.HasSuffix(r.URL.Path, "400/") {
+					body = "<html><head><title>HTML error 400 title</title></head><body></body></html>"
+					w.WriteHeader(http.StatusBadRequest)
+				} else {
+					body = "<html><head><title>HTML error title</title></head><body></body></html>"
+					w.WriteHeader(http.StatusNotFound)
+				}
+				_, err := w.Write([]byte(body))
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+				return
+			} else if r.URL.Path == "/good-path/" {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+		} else if r.Method == http.MethodPost {
+			// Authentication successful
+			w.Header().Set(isiSessCsrfToken, "isisessid=123;isicsrf=abc;")
+			w.WriteHeader(http.StatusCreated)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
 	}))
 	defer server.Close()
+
 	c.hostname = server.URL
 	headers := map[string]string{
 		"Content-Type": "text/html",
 	}
-	err := c.executeWithRetryAuthenticate(ctx, http.MethodGet, "api/v1/endpoint", "", nil, headers, nil, nil)
-	expectedError := Error{}
-	jsonExpectedError := JSONError{
-		Err: []Error{expectedError},
-	}
-	assert.NotEqual(t, jsonExpectedError, err)
+
+	err := c.executeWithRetryAuthenticate(ctx, http.MethodGet, "/good-path", "", nil, headers, nil, nil)
+	assert.NoError(t, err)
+
+	c.authType = authTypeSessionBased
+
+	err = c.executeWithRetryAuthenticate(ctx, http.MethodGet, "/good-path", "", nil, headers, nil, nil)
+	assert.NoError(t, err)
+
+	err = c.executeWithRetryAuthenticate(ctx, http.MethodGet, "/bad-auth-401", "", nil, headers, nil, nil)
+	assert.Error(t, err)
+
+	err = c.executeWithRetryAuthenticate(ctx, http.MethodGet, "/bad-auth-400", "", nil, headers, nil, nil)
+	assert.Error(t, err)
+
+	err = c.executeWithRetryAuthenticate(ctx, http.MethodGet, "/bad-html-auth-401", "", nil, headers, nil, nil)
+	assert.Error(t, err)
+
+	err = c.executeWithRetryAuthenticate(ctx, http.MethodGet, "/bad-html-auth-400", "", nil, headers, nil, nil)
+	assert.Error(t, err)
 }
 
 func TestDoWithHeaders(t *testing.T) {

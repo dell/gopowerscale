@@ -722,9 +722,9 @@ func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri s
 				return fmt.Errorf("authentication failure due to: %v", err)
 			}
 			return c.DoWithHeaders(ctx, method, uri, id, params, headers, body, resp)
-		} else {
-			log.Error(ctx, "Error in response. Method:%s URI:%s Error: %v JSON Error: %+v", method, uri, err, e)
 		}
+		log.Error(ctx, "Error in response. Method:%s URI:%s Error: %v JSON Error: %+v", method, uri, err, e)
+
 	case *HTMLError:
 		if e.StatusCode == 401 {
 			log.Debug(ctx, "Authentication failed. Trying to re-authenticate")
@@ -732,9 +732,8 @@ func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri s
 				return fmt.Errorf("authentication failure due to: %v", err)
 			}
 			return c.DoWithHeaders(ctx, method, uri, id, params, headers, body, resp)
-		} else {
-			log.Error(ctx, "Error in response. Method:%s URI:%s Error: %v HTML Error: %+v", method, uri, err, e)
 		}
+		log.Error(ctx, "Error in response. Method:%s URI:%s Error: %v HTML Error: %+v", method, uri, err, e)
 	default:
 		log.Error(ctx, "Error is not a type of \"*JSONError or *HTMLError\". Error:", err)
 	}
