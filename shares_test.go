@@ -137,6 +137,7 @@ func TestDeleteSmbShareWithStructParams(t *testing.T) {
 }
 
 func TestUpdateSmbShareWithStructParams(t *testing.T) {
+	client.API = &mocks.Client{}
 	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
 	err := client.UpdateSmbShareWithStructParams(defaultCtx, v12.UpdateV12SmbShareRequest{})
 	assert.Nil(t, err)

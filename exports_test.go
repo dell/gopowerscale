@@ -23,13 +23,12 @@ import (
 	"strconv"
 	"testing"
 
+	log "github.com/akutz/gournal"
+	api "github.com/dell/goisilon/api"
 	apiv2 "github.com/dell/goisilon/api/v2"
 	apiv4 "github.com/dell/goisilon/api/v4"
 	"github.com/dell/goisilon/mocks"
 	"github.com/dell/goisilon/openapi"
-
-	log "github.com/akutz/gournal"
-	"github.com/dell/goisilon/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -2218,4 +2217,80 @@ func testClientExportLifeCycleWithStructParams(t *testing.T) {
 		V2NFSExportID: exportID,
 	})
 	assertNotNil(t, err)
+}
+
+func TestClient_SetExportClients(t *testing.T) {
+	client := &Client{}
+	client.API = &mocks.Client{}
+	ctx := context.Background()
+
+	// test when getting export returns error
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(errors.New("Could not find export")).Once()
+	err := client.SetExportClients(ctx, "test", "1.2.3.4", "1.2.3.5")
+	assert.ErrorContains(t, err, "Could not find export")
+
+	// test when getting export returns nil
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Once()
+
+	client.API.(*mocks.Client).On("VolumePath", anyArgs...).Return("test/vol/path").Twice()
+
+	err = client.SetExportClients(ctx, "test", "1.2.3.4", "1.2.3.5")
+	assert.NoError(t, err)
+
+	// test when export is returned
+	exports := apiv2.ExportList{
+		{
+			ID: 1,
+			Paths: &[]string{
+				"test/vol/path",
+				"test/vol/path2",
+			},
+		},
+	}
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = exports
+	}).Once()
+	err = client.SetExportClients(ctx, "test", "1.2.3.4", "1.2.3.5")
+	assert.NoError(t, err)
+}
+
+func TestSetExportClientsByID(t *testing.T) {
+	client := &Client{}
+	client.API = &mocks.Client{}
+	ctx := context.Background()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.SetExportClientsByID(ctx, 1, "1.2.3.4", "1.2.3.5")
+	assert.NoError(t, err)
+}
+
+func TestSetExportClientsByIDWithZone(t *testing.T) {
+	client := &Client{}
+	client.API = &mocks.Client{}
+	ctx := context.Background()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.SetExportClientsByIDWithZone(ctx, 1, "1.2.3.4", true, "test")
+	assert.NoError(t, err)
+}
+
+func TestClearExportClients(t *testing.T) {
+	client := &Client{}
+	client.API = &mocks.Client{}
+	ctx := context.Background()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs...).Return("test/vol/path").Once()
+	err := client.ClearExportClients(ctx, "test")
+	assert.NoError(t, err)
+}
+
+func TestClearExportClientsByID(t *testing.T) {
+	client := &Client{}
+	client.API = &mocks.Client{}
+	ctx := context.Background()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Once()
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	client.API.(*mocks.Client).On("VolumePath", anyArgs...).Return("test/vol/path").Once()
+	err := client.ClearExportClientsByID(ctx, 1)
+	assert.NoError(t, err)
 }
