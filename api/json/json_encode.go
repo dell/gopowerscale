@@ -440,20 +440,23 @@ func marshalerEncoder(e *encodeState, v reflect.Value, opts encOpts) {
 }
 
 func addrMarshalerEncoder(e *encodeState, v reflect.Value, _ encOpts) {
-	va := v.Addr()
-	if va.IsNil() {
+	var va reflect.Value
+	if v.CanAddr() {
+		va = v.Addr()
+	}
+	if !va.IsValid() {
 		_, _ = e.WriteString("null")
 		return
 	}
+
+	if va.IsNil() { _, _ = e.WriteString("null"); return; }
 	m := va.Interface().(Marshaler)
 	b, err := m.MarshalJSON()
 	if err == nil {
 		// copy JSON into buffer, checking validity.
 		err = compact(&e.Buffer, b, true)
 	}
-	if err != nil {
-		e.error(&MarshalerError{v.Type(), err})
-	}
+	if err != nil { e.error(&MarshalerError{v.Type(), err}); }
 }
 
 func textMarshalerEncoder(e *encodeState, v reflect.Value, opts encOpts) {
