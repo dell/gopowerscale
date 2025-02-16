@@ -32,8 +32,13 @@ type IsiClusterAcs struct {
 	UnresponsiveSn []string `json:"unresponsive_sn,omitempty"`
 }
 
-// An IsiWriteableSnapshot is a writable snapshot.
-type IsiWriteableSnapshot struct {
+const (
+	WritableSnapshotStateActive   = "active"
+	WritableSnapshotStateDeleting = "deleting"
+)
+
+// An IsiWritableSnapshot is a writable snapshot.
+type IsiWritableSnapshot struct {
 	// The Unix Epoch time the writable snapshot was created.
 	Created int64 `json:"created"`
 	// The /ifs path of user supplied source snapshot. This will be null for writable snapshots pending delete.
@@ -50,16 +55,16 @@ type IsiWriteableSnapshot struct {
 	LogSize int64 `json:"log_size"`
 	// The amount of storage in bytes used to store this writable snapshot.
 	PhysicalSize int64 `json:"phys_size"`
-	// Writable Snapshot state.
+	// Writable Snapshot state. [WritableSnapshotStateActive, WritableSnapshotStateDeleting]
 	State string `json:"state"`
 }
 
-// IsiWriteableSnapshotQueryResponse is the response to a writable snapshot query.
-type IsiWriteableSnapshotQueryResponse struct {
+// IsiWritableSnapshotQueryResponse is the response to a writable snapshot query.
+type IsiWritableSnapshotQueryResponse struct {
 	// Total number of items available.
 	Total int64 `json:"total,omitempty"`
 	// Used to continue a query. This is null for the last page.
 	Resume string `json:"resume,omitempty"`
 	// List of writable snapshots.
-	Writeable []*IsiWriteableSnapshot `json:"writable"`
+	Writable []*IsiWritableSnapshot `json:"writable"`
 }

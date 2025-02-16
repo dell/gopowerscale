@@ -550,10 +550,10 @@ func TestSnapshotSizeGet(_ *testing.T) {
 	}
 }
 
-func TestCreateWriteableSnapshot(_ *testing.T) {
+func TestCreateWritableSnapshot(_ *testing.T) {
 	snapshotPath := "test_snapshot_create_volume"
 	snapshotName := "test_snapshot_create_snapshot"
-	writeableSnapshotName := "/ifs/data/csi/test_snapshot_create_writeable_snapshot"
+	writableSnapshotName := "/ifs/data/csi/test_snapshot_create_writable_snapshot"
 
 	_, err := client.CreateVolume(defaultCtx, snapshotPath)
 	if err != nil {
@@ -573,26 +573,26 @@ func TestCreateWriteableSnapshot(_ *testing.T) {
 	}
 	defer client.RemoveSnapshot(defaultCtx, testSnapshot.ID, snapshotName)
 
-	resp, err := client.CreateWriteableSnapshot(defaultCtx, snapshotName, writeableSnapshotName)
+	resp, err := client.CreateWritableSnapshot(defaultCtx, snapshotName, writableSnapshotName)
 	if err != nil {
 		panic(err)
 	}
-	defer client.RemoveWriteableSnapshot(defaultCtx, writeableSnapshotName)
-	fmt.Printf("Writeable snapshot created: %v\n", resp)
+	defer client.RemoveWritableSnapshot(defaultCtx, writableSnapshotName)
+	fmt.Printf("Writable snapshot created: %v\n", resp)
 
-	resp2, err2 := client.GetWriteableSnapshot(defaultCtx, writeableSnapshotName)
+	resp2, err2 := client.GetWritableSnapshot(defaultCtx, writableSnapshotName)
 	if err2 != nil {
 		panic(err2)
 	}
-	fmt.Printf("GetWriteableSnapshot returned: %v\n", resp2)
+	fmt.Printf("GetWritableSnapshot returned: %v\n", resp2)
 
-	// Unrelated to the above but test ListWriteableSnapshots
-	resp3, err3 := client.GetWriteableSnapshots(defaultCtx)
+	// Unrelated to the above but test ListWritableSnapshots
+	resp3, err3 := client.GetWritableSnapshots(defaultCtx)
 	if err3 != nil {
 		panic(err3)
 	}
 
-	fmt.Printf("ListWriteableSnapshots returned %d items\n", len(resp3))
+	fmt.Printf("ListWritableSnapshots returned %d items\n", len(resp3))
 	for _, v := range resp3 {
 		fmt.Fprintf(os.Stderr, "%v\n", v)
 	}

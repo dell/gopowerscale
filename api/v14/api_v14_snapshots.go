@@ -23,23 +23,23 @@ import (
 	"github.com/dell/goisilon/api"
 )
 
-// GetIsiWriteableSnapshots retrieves a list of writeable snapshots.
+// GetIsiWritableSnapshots retrieves a list of writable snapshots.
 //
 // ctx: the context.
 // client: the API client.
-// Returns a list of writeable snapshots and an error in case of failure.
-func GetIsiWriteableSnapshots(
+// Returns a list of writable snapshots and an error in case of failure.
+func GetIsiWritableSnapshots(
 	ctx context.Context,
 	client api.Client,
-) ([]*IsiWriteableSnapshot, error) {
-	var resp *IsiWriteableSnapshotQueryResponse
-	err := client.Get(ctx, writeableSnapshotPath, "", nil, nil, &resp)
+) ([]*IsiWritableSnapshot, error) {
+	var resp *IsiWritableSnapshotQueryResponse
+	err := client.Get(ctx, writableSnapshotPath, "", nil, nil, &resp)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get writeable snapshots from array: %v", err)
+		return nil, fmt.Errorf("failed to get writable snapshots from array: %v", err)
 	}
 
-	result := make([]*IsiWriteableSnapshot, 0, resp.Total)
-	result = append(result, resp.Writeable...)
+	result := make([]*IsiWritableSnapshot, 0, resp.Total)
+	result = append(result, resp.Writable...)
 
 	for {
 		if resp.Resume == "" {
@@ -51,39 +51,39 @@ func GetIsiWriteableSnapshots(
 		}
 
 		resp = nil
-		err = client.Get(ctx, writeableSnapshotPath, "", query, nil, &resp)
+		err = client.Get(ctx, writableSnapshotPath, "", query, nil, &resp)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get writeable snapshots (query mode) from array: %v", err)
+			return nil, fmt.Errorf("failed to get writable snapshots (query mode) from array: %v", err)
 		}
 
-		result = append(result, resp.Writeable...)
+		result = append(result, resp.Writable...)
 	}
 
 	return result, err
 }
 
-// GetIsiWriteableSnapshot retrieves a writeable snapshot.
+// GetIsiWritableSnapshot retrieves a writable snapshot.
 //
 // ctx: the context.
 // client: the API client.
 // snapshotPath: the path of the snapshot.
 //
 // Returns the snapshot on success and error in case of failure.
-func GetIsiWriteableSnapshot(
+func GetIsiWritableSnapshot(
 	ctx context.Context,
 	client api.Client,
 	snapshotPath string,
-) (*IsiWriteableSnapshot, error) {
-	var resp *IsiWriteableSnapshotQueryResponse
-	err := client.Get(ctx, writeableSnapshotPath+snapshotPath, "", nil, nil, &resp)
+) (*IsiWritableSnapshot, error) {
+	var resp *IsiWritableSnapshotQueryResponse
+	err := client.Get(ctx, writableSnapshotPath+snapshotPath, "", nil, nil, &resp)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get writeable snapshot: %v", err)
+		return nil, fmt.Errorf("failed to get writable snapshot: %v", err)
 	}
 
-	return resp.Writeable[0], nil
+	return resp.Writable[0], nil
 }
 
-// CreateWriteableSnapshot creates a writeable snapshot.
+// CreateWritableSnapshot creates a writable snapshot.
 //
 // ctx: the context.
 // client: the API client.
@@ -91,12 +91,12 @@ func GetIsiWriteableSnapshot(
 // destination: the destination path, must not be nested under the source snapshot.
 //
 // Returns the response and error.
-func CreateWriteableSnapshot(
+func CreateWritableSnapshot(
 	ctx context.Context,
 	client api.Client,
 	sourceSnapshot string,
 	destination string,
-) (resp *IsiWriteableSnapshot, err error) {
+) (resp *IsiWritableSnapshot, err error) {
 	// PAPI calls: PUT https://1.2.3.4:8080//platform/14/snapshot/writable
 	//             Body: {"src_snap": sourceSnapshot, "dst_path": destination}
 
@@ -105,18 +105,18 @@ func CreateWriteableSnapshot(
 		"dst_path": destination,
 	}
 
-	err = client.Post(ctx, writeableSnapshotPath, "", nil, nil, body, &resp)
+	err = client.Post(ctx, writableSnapshotPath, "", nil, nil, body, &resp)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create writeable snapshot: %v", err)
+		return nil, fmt.Errorf("failed to create writable snapshot: %v", err)
 	}
 
 	return resp, err
 }
 
-func RemoveWriteableSnapshot(
+func RemoveWritableSnapshot(
 	ctx context.Context,
 	client api.Client,
 	snapshotPath string,
 ) error {
-	return client.Delete(ctx, writeableSnapshotPath+snapshotPath, "", nil, nil, nil)
+	return client.Delete(ctx, writableSnapshotPath+snapshotPath, "", nil, nil, nil)
 }
