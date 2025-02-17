@@ -781,6 +781,8 @@ func TestNullableTime_MarshalJSON(t *testing.T) {
 
 	// Format the time to second precision
 	expected := `"` + val.Format("2006-01-02T15:04:05-07:00") + `"`
+	// ignore suffix since this can fail depending on env.
+	// in GH actions we see: expected ends in +00:00 but string(data) in Z
 	if string(data)[0:20] != expected[0:20] {
 		t.Fatalf("Expected %s, got %s", expected[0:20], string(data)[0:20])
 	}
