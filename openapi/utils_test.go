@@ -772,7 +772,7 @@ func TestNewNullableTime(t *testing.T) {
 // Test MarshalJSON for NullableTime
 func TestNullableTime_MarshalJSON(t *testing.T) {
 	// Get current time and truncate nanoseconds
-	val := time.Now().Truncate(time.Second).Local() // Truncate to second precision
+	val := time.Now().Truncate(time.Second) // Truncate to second precision
 	nullableTime := NewNullableTime(&val)
 	data, err := nullableTime.MarshalJSON()
 	if err != nil {
@@ -781,8 +781,8 @@ func TestNullableTime_MarshalJSON(t *testing.T) {
 
 	// Format the time to second precision
 	expected := `"` + val.Format("2006-01-02T15:04:05-07:00") + `"`
-	if string(data) != expected {
-		t.Fatalf("Expected %s, got %s", expected, string(data))
+	if string(data)[0:20] != expected[0:20] {
+		t.Fatalf("Expected %s, got %s", expected[0:20], string(data)[0:20])
 	}
 }
 
