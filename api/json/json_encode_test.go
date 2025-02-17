@@ -824,44 +824,44 @@ func TestAddrTextMarshalerEncoder(t *testing.T) {
 }
 
 func TestAddrMarshalerEncoder(t *testing.T) {
-		tests := []struct {
-				name     string
-				input    Marshaler
-				expected string
-				err      error
-		}{
-				{
-						name:     "Nil pointer value",
-						input:    nil,
-						expected: "null",
-				},
-				{
-						name:     "Successful marshal",
-						input:    &mockMarshaler{json: []byte(`{"key":"value"}`)},
-						expected: `{"key":"value"}`,
-				},
-				{
-						name:     "Marshal error",
-						input:    &mockMarshaler{err: errors.New("marshal error")},
-						expected: `{"key":"value"}`,
-				},
-		}
+	tests := []struct {
+		name     string
+		input    Marshaler
+		expected string
+		err      error
+	}{
+		{
+			name:     "Nil pointer value",
+			input:    nil,
+			expected: "null",
+		},
+		{
+			name:     "Successful marshal",
+			input:    &mockMarshaler{json: []byte(`{"key":"value"}`)},
+			expected: `{"key":"value"}`,
+		},
+		{
+			name:     "Marshal error",
+			input:    &mockMarshaler{err: errors.New("marshal error")},
+			expected: `{"key":"value"}`,
+		},
+	}
 
-		for _, tt := range tests {
-				t.Run(tt.name, func(t *testing.T) {
-						e := &encodeState{}
-						var v reflect.Value
-						if tt.input != nil {
-							v = reflect.ValueOf(tt.input).Elem()
-						} else {
-							v = reflect.ValueOf(tt.input)
-						}
-						addrMarshalerEncoder(e, v, encOpts{})
-						if e.Buffer.String() != tt.expected {
-								t.Errorf("expected %s, got %s", tt.expected, e.Buffer.String())
-						}
-				})
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &encodeState{}
+			var v reflect.Value
+			if tt.input != nil {
+				v = reflect.ValueOf(tt.input).Elem()
+			} else {
+				v = reflect.ValueOf(tt.input)
+			}
+			addrMarshalerEncoder(e, v, encOpts{})
+			if e.Buffer.String() != tt.expected {
+				t.Errorf("expected %s, got %s", tt.expected, e.Buffer.String())
+			}
+		})
+	}
 }
 
 func TestInterfaceEncoder(t *testing.T) {
