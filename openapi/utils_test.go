@@ -772,7 +772,7 @@ func TestNewNullableTime(t *testing.T) {
 // Test MarshalJSON for NullableTime
 func TestNullableTime_MarshalJSON(t *testing.T) {
 	// Get current time and truncate nanoseconds
-	val := time.Now().Truncate(time.Second) // Truncate to second precision
+	val := time.Now().Truncate(time.Second).Local() // Truncate to second precision
 	nullableTime := NewNullableTime(&val)
 	data, err := nullableTime.MarshalJSON()
 	if err != nil {
