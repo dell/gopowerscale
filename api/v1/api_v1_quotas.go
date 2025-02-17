@@ -126,7 +126,7 @@ func CreateIsiQuota(
 ) (string, error) {
 	// PAPI call: POST https://1.2.3.4:8080/platform/1/quota/quotas
 	//             { "enforced" : true,
-	//               "include_snapshots" : false,
+	//               "include_snapshots" : true,
 	//               "path" : "/ifs/volumes/volume_name",
 	//               "container" : true,
 	//               "thresholds_include_overhead" : false,
@@ -136,7 +136,7 @@ func CreateIsiQuota(
 	//                                "soft" : null
 	//                              }
 	//             }
-	// body={'path': '/ifs/data/quotatest', 'thresholds': {'soft_grace': 86400L, 'soft': 1048576L}, 'include_snapshots': False, 'force': False, 'type': 'directory'}
+	// body={'path': '/ifs/data/quotatest', 'thresholds': {'soft_grace': 86400L, 'soft': 1048576L}, 'include_snapshots': True, 'force': False, 'type': 'directory'}
 	// softGrace := 86400U
 	thresholds := isiThresholdsReq{Advisory: advisoryLimit, Hard: size, Soft: softLimit, SoftGrace: softGracePrd}
 	if advisoryLimit == 0 {
@@ -150,7 +150,7 @@ func CreateIsiQuota(
 	}
 	data := &IsiQuotaReq{
 		Enforced:                  true,
-		IncludeSnapshots:          false,
+		IncludeSnapshots:          true,
 		Path:                      path,
 		Container:                 container,
 		ThresholdsIncludeOverhead: false,
