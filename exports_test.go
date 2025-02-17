@@ -2835,6 +2835,11 @@ func TestListAllExportsWithStructParams(t *testing.T) {
 		Resume: &resume,
 	}
 
+	emptyExports := openapi.V2NfsExports{
+		Digest:  &digest,
+		Exports: nil,
+		Resume:  nil,
+	}
 	// test when export is returned
 	// first get should return expectedExport
 	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
@@ -2842,8 +2847,11 @@ func TestListAllExportsWithStructParams(t *testing.T) {
 		*resp = expectedExport
 	}).Once()
 
-	// second get should return nil, to avoid infinite loop
-	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Once()
+	// second get should return empty exports list, to avoid infinite loop
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*openapi.V2NfsExports)
+		*resp = emptyExports
+	}).Once()
 
 	gotExport, err := client.ListAllExportsWithStructParams(defaultCtx, params)
 	assertNoError(t, err)
