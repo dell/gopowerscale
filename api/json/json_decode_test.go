@@ -793,7 +793,7 @@ func TestArray(t *testing.T) {
 			input:    `[]`,
 			expected: nil,
 			setup: func() {
-				indirectFunc = func(_ reflect.Value, decodingNull bool) (Unmarshaler, encoding.TextUnmarshaler, reflect.Value) {
+				indirectFunc = func(_ reflect.Value, _ bool) (Unmarshaler, encoding.TextUnmarshaler, reflect.Value) {
 					return nil, nil, reflect.ValueOf(fmt.Errorf("error"))
 				}
 			},
