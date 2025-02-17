@@ -86,19 +86,19 @@ func (c *Client) GetQuotaWithPath(ctx context.Context, path string) (Quota, erro
 // CreateQuota creates a new hard directory quota with the specified size
 // and container option
 func (c *Client) CreateQuota(
-	ctx context.Context, name string, container bool, size, softLimit, advisoryLimit, softGracePrd int64,
+	ctx context.Context, name string, container bool, size, softLimit, advisoryLimit, softGracePrd int64, includeSnapshots bool,
 ) (string, error) {
 	return api.CreateIsiQuota(
-		ctx, c.API, c.API.VolumePath(name), container, size, softLimit, advisoryLimit, softGracePrd)
+		ctx, c.API, c.API.VolumePath(name), container, size, softLimit, advisoryLimit, softGracePrd, includeSnapshots)
 }
 
 // CreateQuotaWithPath creates a new hard directory quota with the specified size
 // and container option
 func (c *Client) CreateQuotaWithPath(
-	ctx context.Context, path string, container bool, size, softLimit, advisoryLimit, softGracePrd int64,
+	ctx context.Context, path string, container bool, size, softLimit, advisoryLimit, softGracePrd int64, includeSnapshots bool,
 ) (string, error) {
 	return api.CreateIsiQuota(
-		ctx, c.API, path, container, size, softLimit, advisoryLimit, softGracePrd)
+		ctx, c.API, path, container, size, softLimit, advisoryLimit, softGracePrd, includeSnapshots)
 }
 
 // SetQuotaSize sets the max size (hard threshold) of a quota for a volume

@@ -123,6 +123,7 @@ func CreateIsiQuota(
 	ctx context.Context,
 	client api.Client,
 	path string, container bool, size, softLimit, advisoryLimit, softGracePrd int64,
+	includeSnapshots bool,
 ) (string, error) {
 	// PAPI call: POST https://1.2.3.4:8080/platform/1/quota/quotas
 	//             { "enforced" : true,
@@ -150,7 +151,7 @@ func CreateIsiQuota(
 	}
 	data := &IsiQuotaReq{
 		Enforced:                  true,
-		IncludeSnapshots:          true,
+		IncludeSnapshots:          includeSnapshots,
 		Path:                      path,
 		Container:                 container,
 		ThresholdsIncludeOverhead: false,
@@ -170,7 +171,7 @@ func SetIsiQuotaHardThreshold(
 	client api.Client,
 	path string, size, softLimit, advisoryLimit, softGracePrd int64,
 ) (string, error) {
-	return CreateIsiQuota(ctx, client, path, false, size, softLimit, advisoryLimit, softGracePrd)
+	return CreateIsiQuota(ctx, client, path, false, size, softLimit, advisoryLimit, softGracePrd, true)
 }
 
 // UpdateIsiQuotaHardThreshold modifies the hard threshold of a quota for a directory
