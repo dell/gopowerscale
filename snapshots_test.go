@@ -16,11 +16,16 @@ limitations under the License.
 package goisilon
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"os"
 	"testing"
 
 	apiv1 "github.com/dell/goisilon/api/v1"
+	"github.com/dell/gounity/mocks"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestSnapshotsGet(_ *testing.T) {
@@ -550,50 +555,103 @@ func TestSnapshotSizeGet(_ *testing.T) {
 	}
 }
 
-func TestCreateWritableSnapshot(_ *testing.T) {
-	snapshotPath := "test_snapshot_create_volume"
-	snapshotName := "test_snapshot_create_snapshot"
-	writableSnapshotName := "/ifs/data/csi/test_snapshot_create_writable_snapshot"
+func TestGetWritableSnapshots(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
 
-	_, err := client.CreateVolume(defaultCtx, snapshotPath)
-	if err != nil {
-		panic(err)
-	}
-	defer client.DeleteVolume(defaultCtx, snapshotPath)
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv14.IsiWritableSnapshotQueryResponse)
+		*resp = &apiv14.IsiWritableSnapshotQueryResponse{
+			Writable: []*apiv14.IsiWritableSnapshot{
+				{
+					ID: 100,
+				},
+			},
+		}
+	}).Once()
 
-	snapshot, err := client.GetSnapshot(defaultCtx, -1, snapshotName)
-	if err == nil && snapshot != nil {
-		panic(fmt.Sprintf("Snapshot (%s) already exists.\n", snapshotName))
-	}
+	result, err := client.GetWritableSnapshots(context.Background())
+	assert.Nil(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, int64(100), result[0].ID)
+}
 
-	testSnapshot, err := client.CreateSnapshot(
-		defaultCtx, snapshotPath, snapshotName)
-	if err != nil {
-		panic(err)
-	}
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot.ID, snapshotName)
+func TestGetWritableSnapshot(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
 
-	resp, err := client.CreateWritableSnapshot(defaultCtx, snapshotName, writableSnapshotName)
-	if err != nil {
-		panic(err)
-	}
-	defer client.RemoveWritableSnapshot(defaultCtx, writableSnapshotName)
-	fmt.Printf("Writable snapshot created: %v\n", resp)
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv14.IsiWritableSnapshotQueryResponse)
+		*resp = &apiv14.IsiWritableSnapshotQueryResponse{
+			Writable: []*apiv14.IsiWritableSnapshot{
+				{
+					ID: 100,
+				},
+			},
+		}
+	}).Once()
 
-	resp2, err2 := client.GetWritableSnapshot(defaultCtx, writableSnapshotName)
-	if err2 != nil {
-		panic(err2)
-	}
-	fmt.Printf("GetWritableSnapshot returned: %v\n", resp2)
+	result, err := client.GetWritableSnapshot(context.Background(), "/ifs/data1")
+	assert.Nil(t, err)
+	assert.Equal(t, int64(100), result.ID)
 
-	// Unrelated to the above but test ListWritableSnapshots
-	resp3, err3 := client.GetWritableSnapshots(defaultCtx)
-	if err3 != nil {
-		panic(err3)
-	}
+	result, err = client.GetWritableSnapshot(context.Background(), "/data1")
+	assert.NotNil(t, err)
+	assert.ErrorContains(t, err, "invalid snapshot path, must start with /ifs/: /data1")
+}
 
-	fmt.Printf("ListWritableSnapshots returned %d items\n", len(resp3))
-	for _, v := range resp3 {
-		fmt.Fprintf(os.Stderr, "%v\n", v)
-	}
+func TestCreateWritableSnapshot(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+
+	snapshotPath := "/ifs/data1"
+	sourceSnapshot := "snapshot_source_1"
+	destinationPath := "/ifs/data2"
+
+	client.API.(*mocks.Client).On("Post", anyArgs[0:7]...).Return(nil).Run(func(args mock.Arguments) {
+		body := args.Get(5).(map[string]string)
+		assert.Equal(t, sourceSnapshot, body["src_snap"])
+		assert.Equal(t, destinationPath, body["dst_path"])
+
+		resp := args.Get(6).(**apiv14.IsiWritableSnapshot)
+		*resp = &apiv14.IsiWritableSnapshot{
+			ID:           100,
+			SrcPath:      snapshotPath,
+			DstPath:      destinationPath,
+			SrcSnap:      sourceSnapshot,
+			State:        apiv14.WritableSnapshotStateActive,
+			LogSize:      100,
+			PhysicalSize: 200,
+		}
+	}).Once()
+
+	result, err := client.CreateWritableSnapshot(context.Background(), sourceSnapshot, destinationPath)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(100), result.ID)
+	assert.Equal(t, snapshotPath, result.SrcPath)
+	assert.Equal(t, destinationPath, result.DstPath)
+	assert.Equal(t, sourceSnapshot, result.SrcSnap)
+	assert.Equal(t, apiv14.WritableSnapshotStateActive, result.State)
+	assert.Equal(t, int64(100), result.LogSize)
+	assert.Equal(t, int64(200), result.PhysicalSize)
+
+	// Test case: error in API call
+	client.API.(*mocks.Client).On("Post", anyArgs[0:7]...).Return(errors.New("API call failed")).Once()
+
+	result, err = client.CreateWritableSnapshot(context.Background(), sourceSnapshot, destinationPath)
+	assert.ErrorContains(t, err, "API call failed")
+	assert.Nil(t, result)
+}
+
+func TestRemoveWritableSnapshot(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+
+	client.API.(*mocks.Client).On("Delete", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		tgt := args.Get(1).(string)
+		assert.Equal(t, "platform/14/snapshot/writable/ifs/data1", tgt)
+	}).Once()
+
+	err := client.RemoveWritableSnapshot(context.Background(), "/ifs/data1")
+	assert.Nil(t, err)
+
+	// Test case: error in API call
+	err = client.RemoveWritableSnapshot(context.Background(), "/data1")
+	assert.ErrorContains(t, err, "invalid snapshot path, must start with /ifs/: /data1")
 }
