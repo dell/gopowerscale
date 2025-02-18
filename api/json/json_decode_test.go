@@ -225,6 +225,7 @@ func TestUnquoteBytes(t *testing.T) {
 	_, _ = unquoteBytes([]byte(`"hello\uworld"`))
 	_, _ = unquoteBytes([]byte(`"""`))
 	_, _ = unquoteBytes([]byte(`"00100100"`))
+	_, _ = unquoteBytes([]byte(`"hello`))
 }
 
 func TestUnmarshalFunctions(t *testing.T) {
