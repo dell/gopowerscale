@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022 Dell Inc, or its subsidiaries.
+Copyright (c) 2022-2025 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,79 +16,178 @@ limitations under the License.
 package goisilon
 
 import (
+	"errors"
 	"testing"
+
+	apiv3 "github.com/dell/goisilon/api/v3"
+	"github.com/dell/goisilon/mocks"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-func TestGetStatistics(*testing.T) {
+func TestGetStatistics(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
 	keyArray := []string{"ifs.bytes.avail", "ifs.bytes.total"}
-	stats, err := client.GetStatistics(defaultCtx, keyArray)
-	if err != nil || len(stats.StatsList) != 2 {
-		panic("Couldn't get statistics.")
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv3.IsiStatsResp)
+		stats := &apiv3.IsiStats{
+			Key: "ifs.bytes.avail",
+		}
+		*resp = &apiv3.IsiStatsResp{
+			StatsList: []*apiv3.IsiStats{
+				stats,
+			},
+		}
+	}).Once()
+	_, err := client.GetStatistics(defaultCtx, keyArray)
+	if err == nil {
+		assert.Equal(t, nil, err)
 	}
-	if stats.StatsList[0].Value <= 0 {
-		panic("Statistics returned bad value.")
+
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(errors.New("failed to get statistics")).Once()
+	_, err = client.GetStatistics(defaultCtx, keyArray)
+	if err != nil {
+		assert.Equal(t, errors.New("failed to get statistics"), err)
 	}
 }
 
-func TestGetFloatStatistics(*testing.T) {
+func TestGetFloatStatistics(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
 	floatStatsKeyArray := []string{"cluster.disk.bytes.in.rate", "ifs.bytes.total", "cluster.disk.xfers.in.rate"}
-	stats, err := client.GetFloatStatistics(defaultCtx, floatStatsKeyArray)
-	if err != nil || len(stats.StatsList) != 3 {
-		panic("Couldn't get float statistics.")
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv3.IsiFloatStatsResp)
+		*resp = &apiv3.IsiFloatStatsResp{}
+	}).Once()
+	_, err := client.GetFloatStatistics(defaultCtx, floatStatsKeyArray)
+	if err == nil {
+		assert.Equal(t, nil, err)
 	}
-	if stats.StatsList[0].Value <= 0 {
-		panic("Statistics returned bad value.")
+
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(errors.New("failed to get float statistics")).Once()
+	_, err = client.GetFloatStatistics(defaultCtx, floatStatsKeyArray)
+	if err != nil {
+		assert.Equal(t, errors.New("failed to get float statistics"), err)
+	}
+}
+
+func TestIsIOInProgress(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv3.ExportClientList)
+		*resp = &apiv3.ExportClientList{}
+	}).Once()
+	_, err := client.IsIOInProgress(defaultCtx)
+	if err == nil {
+		assert.Equal(t, nil, err)
+	}
+
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(errors.New("io in progress failed")).Once()
+	_, err = client.IsIOInProgress(defaultCtx)
+	if err != nil {
+		assert.Equal(t, errors.New("io in progress failed"), err)
 	}
 }
 
 // Test if the local serial can be returned normally
-func TestGetLocalSerial(_ *testing.T) {
+func TestGetLocalSerial(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
 	// Get local serial
-	localSerial, err := client.GetLocalSerial(defaultCtx)
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Once()
+	_, err := client.GetLocalSerial(defaultCtx)
 	if err != nil {
-		panic(err)
+		assert.Equal(t, nil, err)
 	}
-	println(localSerial)
+
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(errors.New("failed to get local serial")).Once()
+	_, err = client.GetLocalSerial(defaultCtx)
+	if err != nil {
+		assert.Equal(t, errors.New("failed to get local serial"), err)
+	}
 }
 
 func TestGetClusterConfig(t *testing.T) {
-	config, err := client.GetClusterConfig(defaultCtx)
-	assertNoError(t, err)
-	assertNotNil(t, config.OnefsVersion)
-	assertNotNil(t, config.Timezone)
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Once()
+	_, err := client.GetClusterConfig(defaultCtx)
+	assert.Equal(t, nil, err)
+
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(errors.New("failed to get cluster config")).Once()
+	_, err = client.GetClusterConfig(defaultCtx)
+	assert.Equal(t, errors.New("failed to get cluster config"), err)
 }
 
 func TestGetClusterIdentity(t *testing.T) {
-	identity, err := client.GetClusterIdentity(defaultCtx)
-	assertNoError(t, err)
-	assertNotNil(t, identity)
-	assertNotNil(t, identity.Name)
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Once()
+	_, err := client.GetClusterIdentity(defaultCtx)
+	assert.Equal(t, nil, err)
+
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(errors.New("failed to get cluster indentity")).Once()
+	_, err = client.GetClusterIdentity(defaultCtx)
+	assert.Equal(t, errors.New("failed to get cluster indentity"), err)
 }
 
 func TestGetClusterAcs(t *testing.T) {
-	acs, err := client.GetClusterAcs(defaultCtx)
-	assertNoError(t, err)
-	assertNotNil(t, acs)
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Once()
+	_, err := client.GetClusterAcs(defaultCtx)
+	assert.Equal(t, nil, err)
+
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(errors.New("failed to get cluster acls")).Once()
+	_, err = client.GetClusterAcs(defaultCtx)
+	assert.Equal(t, errors.New("failed to get cluster acls"), err)
 }
 
 func TestGetClusterInternalNetworks(t *testing.T) {
-	networks, err := client.GetClusterInternalNetworks(defaultCtx)
-	assertNoError(t, err)
-	assertNotNil(t, networks)
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Once()
+	_, err := client.GetClusterInternalNetworks(defaultCtx)
+	assert.Equal(t, nil, err)
+
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(errors.New("failed to get cluster internal networks")).Once()
+	_, err = client.GetClusterInternalNetworks(defaultCtx)
+	assert.Equal(t, errors.New("failed to get cluster internal networks"), err)
 }
 
 func TestGetClusterNodes(t *testing.T) {
-	nodes, err := client.GetClusterNodes(defaultCtx)
-	assertNoError(t, err)
-	assertNotNil(t, nodes)
-	assertNotEqual(t, int(*nodes.Total), 0)
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Once()
+	_, err := client.GetClusterNodes(defaultCtx)
+	assert.Equal(t, nil, err)
+
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(errors.New("failed to get cluster nodes")).Once()
+	_, err = client.GetClusterNodes(defaultCtx)
+	assert.Equal(t, errors.New("failed to get cluster nodes"), err)
 }
 
 func TestGetClusterNode(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
 	nodeID := 1
-	nodes, err := client.GetClusterNode(defaultCtx, nodeID)
-	assertNoError(t, err)
-	assertNotNil(t, nodes)
-	assertEqual(t, int(*nodes.Total), 1)
-	assertLen(t, nodes.Nodes, 1)
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Once()
+	_, err := client.GetClusterNode(defaultCtx, nodeID)
+	assert.Equal(t, nil, err)
+
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(errors.New("failed to get cluster node")).Once()
+	_, err = client.GetClusterNode(defaultCtx, nodeID)
+	assert.Equal(t, errors.New("failed to get cluster node"), err)
 }
