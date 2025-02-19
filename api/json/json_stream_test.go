@@ -493,6 +493,17 @@ func TestClearOffset(t *testing.T) {
 	}
 }
 
+func TestDecodeError(t *testing.T) {
+	dec := &Decoder{
+		buf: []byte("dummy"),
+	}
+	dec.err = errors.New("json: error")
+	expected := "json: error"
+	err := dec.Decode(nil)
+	assert.Error(t, err)
+	assert.EqualError(t, err, expected)
+}
+
 func TestReadValue(t *testing.T) {
 	tests := []struct {
 		name    string
