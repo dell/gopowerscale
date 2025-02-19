@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 Dell Inc, or its subsidiaries.
+Copyright (c) 2023-2025 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,85 +16,129 @@ limitations under the License.
 package goisilon
 
 import (
+	"fmt"
 	"testing"
 
 	v12 "github.com/dell/goisilon/api/v12"
+	"github.com/dell/goisilon/mocks"
 	"github.com/dell/goisilon/openapi"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-func TestClient_SmbShareWithStructParams(t *testing.T) {
-	// use limit to test pagination, would still output all shares
+func TestListAllSmbSharesWithStructParams(t *testing.T) {
 	limit := int32(1)
+	firstPageResume := "resume_token"
+
+	// Test case 1: Mock the call to return a "not found" error
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(fmt.Errorf("not found")).Once()
 	_, err := client.ListALlSmbSharesWithStructParams(defaultCtx, v12.ListV12SmbSharesParams{
 		Limit: &limit,
 	})
-	assertNil(t, err)
-}
+	assert.NotNil(t, err)
 
-func TestClient_SmbShareLifeCycleWithStructParams(t *testing.T) {
-	trusteeID := "SID:S-1-1-0"
-	trusteeName := "Everyone"
-	trusteeType := "wellknown"
-	shareName := "tf_share"
-	createResponse, err := client.CreateSmbShareWithStructParams(defaultCtx, v12.CreateV12SmbShareRequest{
-		V12SmbShare: &openapi.V12SmbShare{
-			Name: shareName,
-			Path: "/ifs/data",
-			Permissions: []openapi.V1SmbSharePermission{{
-				Permission:     "full",
-				PermissionType: "allow",
-				Trustee: openapi.V1AuthAccessAccessItemFileGroup{
-					ID:   &trusteeID,
-					Name: &trusteeName,
-					Type: &trusteeType,
-				},
-			}},
-		},
-	})
-	assertNil(t, err)
-	assert.Equal(t, shareName, createResponse.ID)
+	// Test case 2: Mock the first call to return a non-nil Resume value
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*openapi.V12SmbShares)
+		*resp = openapi.V12SmbShares{
+			Shares: []openapi.V12SmbShareExtended{
+				{Name: "share1"},
+			},
+			Resume: &firstPageResume,
+		}
+	}).Once()
 
-	// Test list SMB
-	limit := int32(1)
-	getShares, err := client.ListSmbSharesWithStructParams(defaultCtx, v12.ListV12SmbSharesParams{
+	// Test case 3: Mock the second call to return an error
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(fmt.Errorf("mock error")).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*openapi.V12SmbShares)
+		*resp = openapi.V12SmbShares{}
+	}).Once()
+
+	_, err = client.ListALlSmbSharesWithStructParams(defaultCtx, v12.ListV12SmbSharesParams{
 		Limit: &limit,
 	})
-	assertNil(t, err)
-	assert.Equal(t, 1, len(getShares.Shares))
+	assert.NotNil(t, err)
 
-	// Test get SMB
-	getShare, err := client.GetSmbShareWithStructParams(defaultCtx, v12.GetV12SmbShareParams{
-		V12SmbShareID: shareName,
-	})
-	assertNil(t, err)
-	assert.NotZero(t, len(getShare.Shares))
-	assert.Equal(t, shareName, getShare.Shares[0].Name)
+	// Test case 4: Mock the third call to return a nil Resume value
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*openapi.V12SmbShares)
+		*resp = openapi.V12SmbShares{
+			Shares: []openapi.V12SmbShareExtended{
+				{Name: "share2"},
+			},
+			Resume: nil,
+		}
+	}).Once()
 
-	// Test update SMB
-	updateCaTimeout := int32(112)
-	err = client.UpdateSmbShareWithStructParams(defaultCtx, v12.UpdateV12SmbShareRequest{
-		V12SmbShareID: shareName,
-		V12SmbShare: &openapi.V12SmbShareExtendedExtended{
-			CaTimeout: &updateCaTimeout,
-		},
+	_, err = client.ListALlSmbSharesWithStructParams(defaultCtx, v12.ListV12SmbSharesParams{
+		Limit: &limit,
 	})
-	assertNil(t, err)
-	getShare, err = client.GetSmbShareWithStructParams(defaultCtx, v12.GetV12SmbShareParams{
-		V12SmbShareID: shareName,
-	})
-	assertNil(t, err)
-	assert.NotZero(t, len(getShare.Shares))
-	assert.Equal(t, &updateCaTimeout, getShare.Shares[0].CaTimeout)
+	assert.Nil(t, err)
 
-	// Test Delete SMB
-	err = client.DeleteSmbShareWithStructParams(defaultCtx, v12.DeleteV12SmbShareRequest{
-		V12SmbShareID: shareName,
+	// Test case 5: Mock the first call to return a non-nil Resume value and the second call to return a nil Resume value
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*openapi.V12SmbShares)
+		*resp = openapi.V12SmbShares{
+			Shares: []openapi.V12SmbShareExtended{
+				{Name: "share1"},
+			},
+			Resume: &firstPageResume,
+		}
+	}).Once()
+
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*openapi.V12SmbShares)
+		*resp = openapi.V12SmbShares{
+			Shares: []openapi.V12SmbShareExtended{
+				{Name: "share2"},
+			},
+			Resume: nil,
+		}
+	}).Once()
+
+	_, err = client.ListALlSmbSharesWithStructParams(defaultCtx, v12.ListV12SmbSharesParams{
+		Limit: &limit,
 	})
-	assertNil(t, err)
-	// ensure smb is cleaned
-	getShare, err = client.GetSmbShareWithStructParams(defaultCtx, v12.GetV12SmbShareParams{
-		V12SmbShareID: shareName,
+	assert.Nil(t, err)
+}
+
+func TestListSmbSharesWithStructParams(t *testing.T) {
+	// use limit to test pagination, would still output all shares
+	limit := int32(1)
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*openapi.V12SmbShares)
+		*resp = openapi.V12SmbShares{}
+	}).Once()
+	_, err := client.ListSmbSharesWithStructParams(defaultCtx, v12.ListV12SmbSharesParams{
+		Limit: &limit,
 	})
-	assertNotNil(t, err)
+	assert.Nil(t, err)
+}
+
+func TestGetSmbShareWithStructParams(t *testing.T) {
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*openapi.V12SmbSharesExtended)
+		*resp = openapi.V12SmbSharesExtended{}
+	}).Once()
+	_, err := client.GetSmbShareWithStructParams(defaultCtx, v12.GetV12SmbShareParams{})
+	assert.Nil(t, err)
+}
+
+func TestCreateSmbShareWithStructParams(t *testing.T) {
+	client.API.(*mocks.Client).On("Post", anyArgs...).Return(nil).Once()
+	_, err := client.CreateSmbShareWithStructParams(defaultCtx, v12.CreateV12SmbShareRequest{})
+	assert.Nil(t, err)
+}
+
+func TestDeleteSmbShareWithStructParams(t *testing.T) {
+	client.API.(*mocks.Client).On("Delete", anyArgs[0:6]...).Return(nil).Once()
+	err := client.DeleteSmbShareWithStructParams(defaultCtx, v12.DeleteV12SmbShareRequest{})
+	assert.Nil(t, err)
+}
+
+func TestUpdateSmbShareWithStructParams(t *testing.T) {
+	client.API = &mocks.Client{}
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Once()
+	err := client.UpdateSmbShareWithStructParams(defaultCtx, v12.UpdateV12SmbShareRequest{})
+	assert.Nil(t, err)
 }

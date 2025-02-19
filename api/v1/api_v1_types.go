@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2019 Dell Inc, or its subsidiaries.
+Copyright (c) 2019-2025 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -190,7 +190,7 @@ type IsiUpdateQuotaReq struct {
 	ThresholdsIncludeOverhead bool             `json:"thresholds_include_overhead"`
 }
 
-type isiQuotaListResp struct {
+type IsiQuotaListResp struct {
 	Quotas []IsiQuota `json:"quotas"`
 }
 
@@ -200,7 +200,7 @@ type IsiQuotaListRespResume struct {
 }
 
 // getIsiZonesResp returns an array of all related access zones
-type getIsiZonesResp struct {
+type GetIsiZonesResp struct {
 	Zones []*IsiZone `json:"zones"`
 }
 
@@ -356,7 +356,7 @@ type IsiUpdateUserReq struct {
 	Unlock *bool `json:"unlock,omitempty"`
 }
 
-type isiUserListResp struct {
+type IsiUserListResp struct {
 	Users []*IsiUser `json:"users,omitempty"`
 }
 
@@ -388,7 +388,7 @@ type IsiRole struct {
 	ID string `json:"id"`
 }
 
-type isiRoleListResp struct {
+type IsiRoleListResp struct {
 	Roles []*IsiRole `json:"roles,omitempty"`
 }
 
@@ -446,7 +446,7 @@ type IsiGroupMemberListRespResume struct {
 	Resume  string                    `json:"resume,omitempty"`
 }
 
-type isiGroupListResp struct {
+type IsiGroupListResp struct {
 	Groups []*IsiGroup `json:"groups,omitempty"`
 }
 
