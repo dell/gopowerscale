@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022 Dell Inc, or its subsidiaries.
+Copyright (c) 2022-2025 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@ limitations under the License.
 */
 package v3
 
-type isiStats struct {
+type IsiStats struct {
 	ID        int    `json:"devid"`
 	Error     string `json:"error"`
 	ErrorCode int    `json:"error_code"`
@@ -35,7 +35,7 @@ type isiFloatStats struct {
 
 // IsiStatsResp PAPI stats response attributes JSON structure
 type IsiStatsResp struct {
-	StatsList []*isiStats `json:"stats"`
+	StatsList []*IsiStats `json:"stats"`
 }
 
 // IsiFloatStatsResp PAPI stats response float attributes JSON structure
