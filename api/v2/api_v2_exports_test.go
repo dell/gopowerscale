@@ -32,7 +32,36 @@ import (
 
 var anyArgs = []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
 
-func TestExportEncodeJSON(t *testing.T) {
+func TestNewExportReq(t *testing.T) {
+
+	export := &Export{
+		ID:          1234,
+		Description: "exportDescription",
+		RootClients: &[]string{
+			"1.1.1.1",
+			"2.2.2.2",
+		},
+	}
+
+	exportReq := NewExportReq(export)
+	assert.NotNil(t, exportReq, "exportReq is nil")
+	assert.Equal(t, export.Description, exportReq.Description, "export description mismatch")
+	assert.Equal(t, export.RootClients, exportReq.RootClients, "root clients mismatch")
+
+	// Encode the exportReq to JSON
+	jsonData, err := json.Marshal(exportReq)
+	assert.NoError(t, err, "error encoding to JSON")
+
+	// Decode the JSON data into a new ExportReq
+	var newExportReq ExportReq
+	err = json.Unmarshal(jsonData, &newExportReq)
+	assert.NoError(t, err, "error decoding JSON")
+
+	// Make sure the exportReq and newExportReq are the same
+	assert.Equal(t, exportReq, &newExportReq, "exportReq and newExportReq are different")
+}
+
+func TestExportReqEncodeJSON(t *testing.T) {
 
 	tests := []struct {
 		id      int
@@ -42,7 +71,7 @@ func TestExportEncodeJSON(t *testing.T) {
 		{
 			id:      3,
 			clients: []string{},
-			want:    `{"id":3,"clients":[]}`,
+			want:    `{"clients":[]}`,
 		},
 		{
 			id:      0,
@@ -52,7 +81,7 @@ func TestExportEncodeJSON(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		ex := &Export{ID: tt.id, Clients: &tt.clients}
+		ex := &ExportReq{Clients: &tt.clients}
 		buf, err := json.Marshal(ex)
 		if err != nil {
 			t.Fatal(err)
@@ -71,7 +100,6 @@ func TestExportDecodeJSON(t *testing.T) {
 	if err := json.Unmarshal([]byte(j), &ex); err != nil {
 		t.Fatal(err)
 	}
-
 	assert.Equal(t, 3, ex.ID)
 	assert.Len(t, *ex.Clients, 0)
 

@@ -25,6 +25,20 @@ import (
 	"github.com/dell/goisilon/api"
 )
 
+type ExportReq struct {
+	Paths            *[]string    `json:"paths,omitempty"`
+	Clients          *[]string    `json:"clients,omitempty"`
+	RootClients      *[]string    `json:"root_clients,omitempty"`
+	ReadWriteClients *[]string    `json:"read_write_clients,omitempty"`
+	ReadOnlyClients  *[]string    `json:"read_only_clients,omitempty"`
+	MapAll           *UserMapping `json:"map_all,omitempty"`
+	MapRoot          *UserMapping `json:"map_root,omitempty"`
+	MapNonRoot       *UserMapping `json:"map_non_root,omitempty"`
+	MapFailure       *UserMapping `json:"map_failure,omitempty"`
+	Description      string       `json:"description,omitempty"`
+	Zone             string       `json:"zone,omitempty"`
+}
+
 // Export is an Isilon Export.
 type Export struct {
 	ID               int          `json:"id,omitempty"`
@@ -70,6 +84,22 @@ func (l *ExportList) UnmarshalJSON(text []byte) error {
 	}
 	*l = exports.Exports
 	return nil
+}
+
+func NewExportReq(export *Export) *ExportReq {
+	return &ExportReq{
+		Paths:            export.Paths,
+		Clients:          export.Clients,
+		RootClients:      export.RootClients,
+		ReadWriteClients: export.ReadWriteClients,
+		ReadOnlyClients:  export.ReadOnlyClients,
+		MapAll:           export.MapAll,
+		MapRoot:          export.MapRoot,
+		MapNonRoot:       export.MapNonRoot,
+		MapFailure:       export.MapFailure,
+		Description:      export.Description,
+		Zone:             export.Zone,
+	}
 }
 
 // ExportsList GETs all exports.
@@ -157,7 +187,7 @@ func ExportCreate(
 		"",
 		nil,
 		nil,
-		export,
+		NewExportReq(export),
 		&resp); err != nil {
 		return 0, err
 	}
@@ -188,7 +218,7 @@ func ExportCreateWithZone(
 			{[]byte("zone"), []byte(zone)},
 		},
 		nil,
-		export,
+		NewExportReq(export),
 		&resp); err != nil {
 		return 0, err
 	}
@@ -208,7 +238,7 @@ func ExportUpdate(
 		strconv.Itoa(export.ID),
 		nil,
 		nil,
-		export,
+		NewExportReq(export),
 		nil)
 }
 
@@ -236,7 +266,7 @@ func ExportUpdateWithZone(
 		strconv.Itoa(export.ID),
 		args,
 		nil,
-		export,
+		NewExportReq(export),
 		nil)
 }
 
