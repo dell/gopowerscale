@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -33,8 +34,6 @@ import (
 
 	log "github.com/akutz/gournal"
 	"github.com/sirupsen/logrus"
-
-	"encoding/json"
 
 	"github.com/PuerkitoBio/goquery"
 )

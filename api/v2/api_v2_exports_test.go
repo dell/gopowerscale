@@ -17,6 +17,7 @@ package v2
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -26,14 +27,11 @@ import (
 	"github.com/dell/goisilon/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-
-	"encoding/json"
 )
 
 var anyArgs = []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
 
 func TestNewExportReq(t *testing.T) {
-
 	export := &Export{
 		ID:          1234,
 		Description: "exportDescription",
@@ -62,7 +60,6 @@ func TestNewExportReq(t *testing.T) {
 }
 
 func TestExportReqEncodeJSON(t *testing.T) {
-
 	tests := []struct {
 		id      int
 		clients []string

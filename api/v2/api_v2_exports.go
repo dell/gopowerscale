@@ -17,10 +17,9 @@ package v2
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strconv"
-
-	"encoding/json"
 
 	"github.com/dell/goisilon/api"
 )
