@@ -1,27 +1,27 @@
 .PHONY: all
-all: go-build
+all: build
 
 ifneq (on,$(GO111MODULE))
 export GO111MODULE := on
 endif
 
-#.PHONY: go-dep
-go-dep:
+#.PHONY: dep
+dep:
 	go mod download && go mod verify
 
-.PHONY: go-build
-go-build:
+.PHONY: build
+build:
 	git config core.hooksPath hooks
 	go build .
 #
 # Tests-related tasks
 #
-.PHONY: go-unittest
-go-unittest: go-build
+.PHONY: unit-test
+unit-test: build
 	go test -json ./... -run ^Test
 
-.PHONY: go-coverage
-go-coverage: go-build
+.PHONY: coverage
+coverage: build
 	go test -json -covermode=atomic -coverpkg=./... -coverprofile goisilon_coverprofile.out ./... -run ^Test
 
 .PHONY: actions action-help

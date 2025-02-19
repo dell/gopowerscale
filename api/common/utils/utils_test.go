@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2022 Dell Inc, or its subsidiaries.
+Copyright (c) 2022-2025 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,15 +16,10 @@ limitations under the License.
 package utils
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func TestMain(_ *testing.M) {
-	fmt.Print("executing TestMain\n")
-}
 
 func TestIsStringInSlice(t *testing.T) {
 	list := []string{"hello", "world", "jason"}
@@ -32,6 +27,14 @@ func TestIsStringInSlice(t *testing.T) {
 	assert.True(t, IsStringInSlice("world", list))
 	assert.False(t, IsStringInSlice("mary", list))
 	assert.False(t, IsStringInSlice("harry", nil))
+}
+
+func TestIsStringInSlices(t *testing.T) {
+	list := []string{"hello", "world", "jason"}
+
+	assert.True(t, IsStringInSlices("world", list))
+	assert.False(t, IsStringInSlices("mary", list))
+	assert.False(t, IsStringInSlices("harry", nil))
 }
 
 func TestRemoveStringFromSlice(t *testing.T) {
