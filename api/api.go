@@ -34,8 +34,9 @@ import (
 	log "github.com/akutz/gournal"
 	"github.com/sirupsen/logrus"
 
+	"encoding/json"
+
 	"github.com/PuerkitoBio/goquery"
-	"github.com/dell/goisilon/api/json"
 )
 
 const (

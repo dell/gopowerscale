@@ -20,13 +20,14 @@ import (
 	"errors"
 	"strconv"
 
+	"encoding/json"
+
 	"github.com/dell/goisilon/api"
-	"github.com/dell/goisilon/api/json"
 )
 
 // Export is an Isilon Export.
 type Export struct {
-	ID               int          `json:"id,omitmarshal"`
+	ID               int          `json:"id,omitempty"`
 	Paths            *[]string    `json:"paths,omitempty"`
 	Clients          *[]string    `json:"clients,omitempty"`
 	RootClients      *[]string    `json:"root_clients,omitempty"`

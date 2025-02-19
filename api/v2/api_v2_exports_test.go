@@ -27,23 +27,42 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/dell/goisilon/api/json"
+	"encoding/json"
 )
 
 var anyArgs = []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
 
 func TestExportEncodeJSON(t *testing.T) {
-	clients := []string{}
-	ex := &Export{ID: 3, Clients: &clients}
-	buf, err := json.Marshal(ex)
-	if err != nil {
-		t.Fatal(err)
+
+	tests := []struct {
+		id      int
+		clients []string
+		want    string
+	}{
+		{
+			id:      3,
+			clients: []string{},
+			want:    `{"id":3,"clients":[]}`,
+		},
+		{
+			id:      0,
+			clients: []string{"client1", "client2"},
+			want:    `{"clients":["client1","client2"]}`,
+		},
 	}
-	s := string(buf)
-	if !assert.Equal(t, `{"clients":[]}`, s) {
-		t.FailNow()
+
+	for _, tt := range tests {
+		ex := &Export{ID: tt.id, Clients: &tt.clients}
+		buf, err := json.Marshal(ex)
+		if err != nil {
+			t.Fatal(err)
+		}
+		s := string(buf)
+		if !assert.Equal(t, tt.want, s) {
+			t.FailNow()
+		}
+		t.Log(s)
 	}
-	t.Log(s)
 }
 
 func TestExportDecodeJSON(t *testing.T) {
@@ -52,6 +71,18 @@ func TestExportDecodeJSON(t *testing.T) {
 	if err := json.Unmarshal([]byte(j), &ex); err != nil {
 		t.Fatal(err)
 	}
+
+	assert.Equal(t, 3, ex.ID)
+	assert.Len(t, *ex.Clients, 0)
+
+	k := `{"id":0,"clients":["client1", "client2"]}`
+	if err := json.Unmarshal([]byte(k), &ex); err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, 0, ex.ID)
+	assert.Len(t, *ex.Clients, 2)
+
 	fmt.Fprintf(os.Stdout, "%+v\n", ex)
 }
 
