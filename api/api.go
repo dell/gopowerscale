@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -35,7 +36,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/dell/goisilon/api/json"
 )
 
 const (
