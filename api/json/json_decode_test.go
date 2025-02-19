@@ -871,3 +871,65 @@ func TestArray(t *testing.T) {
 		})
 	}
 }
+
+func TestConvertNumber(t *testing.T) {
+	tests := []struct {
+		name      string
+		useNumber bool
+		input     string
+		expected  interface{}
+		wantErr   bool
+	}{
+		{
+			name:      "UseNumber true with valid number",
+			useNumber: true,
+			input:     "123",
+			expected:  Number("123"),
+			wantErr:   false,
+		},
+		{
+			name:      "UseNumber false with valid float",
+			useNumber: false,
+			input:     "123.45",
+			expected:  123.45,
+			wantErr:   false,
+		},
+		{
+			name:      "UseNumber false with valid integer",
+			useNumber: false,
+			input:     "123",
+			expected:  123.0,
+			wantErr:   false,
+		},
+		{
+			name:      "UseNumber false with invalid number",
+			useNumber: false,
+			input:     "abc",
+			expected:  nil,
+			wantErr:   true,
+		},
+		{
+			name:      "UseNumber true with invalid number",
+			useNumber: true,
+			input:     "abc",
+			expected:  Number("abc"),
+			wantErr:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := &decodeState{
+				useNumber: tt.useNumber,
+			}
+			result, err := d.convertNumber(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("convertNumber() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("convertNumber() = %v, expected %v", result, tt.expected)
+			}
+		})
+	}
+}
