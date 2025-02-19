@@ -728,6 +728,16 @@ func TestValueQuoted(t *testing.T) {
 			input:    `123`,
 			expected: unquotedValue{},
 		},
+		{
+			name:     "Invalid Literal",
+			input:    `invalid`,
+			expected: unquotedValue{},
+		},
+		{
+			name:     "Empty Input",
+			input:    ``,
+			expected: unquotedValue{},
+		},
 	}
 
 	for _, tt := range tests {
