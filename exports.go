@@ -1149,10 +1149,10 @@ func (c *Client) GetExportByIDWithZone(ctx context.Context, id int, zone string)
 func (c *Client) ListAllExportsWithStructParams(ctx context.Context, params apiv4.ListV4NfsExportsParams) ([]openapi.V2NfsExportExtended, error) {
 	var result []openapi.V2NfsExportExtended
 	exports, err := apiv4.ListNfsExports(ctx, params, c.API)
-	result = exports.Exports
 	if err != nil {
 		return nil, err
 	}
+	result = exports.Exports
 	for exports.Resume != nil {
 		resumeParam := apiv4.ListV4NfsExportsParams{Resume: exports.Resume}
 		exports, err = apiv4.ListNfsExports(ctx, resumeParam, c.API)

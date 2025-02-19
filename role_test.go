@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 Dell Inc, or its subsidiaries.
+Copyright (c) 2024-2025 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,112 +16,164 @@ limitations under the License.
 package goisilon
 
 import (
-	"strconv"
+	"context"
+	"fmt"
 	"testing"
 
-	api "github.com/dell/goisilon/api/v1"
+	apiv1 "github.com/dell/goisilon/api/v1"
+	"github.com/dell/goisilon/mocks"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-// Test GetAllRoles() and GetRolesWithFilter()
-func TestRoleGet(t *testing.T) {
-	// Get roles with filter
-	queryResolveNames := true
-	var queryLimit int32 = 1000
+var roleMemberPath = "platform/1/auth/roles/%s/members"
 
-	roles, err := client.GetRolesWithFilter(defaultCtx, &queryResolveNames, &queryLimit)
-	if err != nil {
-		panic(err)
-	}
+func TestGetRoleByID(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
 
-	// Get All the roles
-	allRoles, err := client.GetAllRoles(defaultCtx)
-	if err != nil {
-		panic(err)
-	}
+	// Test case: Role exists
+	client.API.(*mocks.Client).On("GetIsiRole", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.IsiRoleListResp)
+		*resp = &apiv1.IsiRoleListResp{
+			Roles: []*apiv1.IsiRole{{Name: "testRole", ID: "roleID"}},
+		}
+	}).Once()
+	role, err := client.GetRoleByID(ctx, "roleID")
+	assert.Nil(t, err)
+	assert.Equal(t, "testRole", role.Name)
 
-	assertTrue(t, len(roles) >= len(allRoles))
+	// Test case: Role does not exist
+	client.API.(*mocks.Client).On("GetIsiRole", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(fmt.Errorf("not found")).Once()
+	role, err = client.GetRoleByID(ctx, "roleID")
+	assert.NotNil(t, err)
+	assert.Nil(t, role)
 }
 
-// Test GetRoleByID(), AddRoleMember(), RemoveRoleMember() and IsRoleMemberOf()
-func TestRoleMemberAdd(t *testing.T) {
-	roleID := "SystemAdmin"
-	userName := "test_user_roleMember"
+func TestGetAllRoles(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
 
-	role, err := client.GetRoleByID(defaultCtx, roleID)
-	if err != nil {
-		panic(err)
-	}
-	assertNotNil(t, role)
+	// Test case: Roles exist
+	client.API.(*mocks.Client).On("GetIsiRoleList", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.IsiRoleListRespResume)
+		*resp = &apiv1.IsiRoleListRespResume{
+			Roles: []*apiv1.IsiRole{{Name: "role1"}, {Name: "role2"}},
+		}
+	}).Once()
+	roles, err := client.GetAllRoles(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(roles))
 
-	_, err = client.CreateUserByName(defaultCtx, userName)
-	if err != nil {
-		panic(err)
-	}
-	user, err := client.GetUserByNameOrUID(defaultCtx, &userName, nil)
-	if err != nil {
-		panic(err)
-	}
-	defer client.DeleteUserByNameOrUID(defaultCtx, &userName, nil)
+	// Test case: No roles found
+	client.API.(*mocks.Client).On("GetIsiRoleList", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(fmt.Errorf("not found")).Once()
+	roles, err = client.GetAllRoles(ctx)
+	assert.NotNil(t, err)
+	assert.Nil(t, roles)
+}
 
-	memberUserWithName := api.IsiAuthMemberItem{
+func TestIsRoleMemberOf(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+	roleID := "roleID"
+	memberName := "testMember"
+	memberID := int32(123)
+	member := apiv1.IsiAuthMemberItem{
+		Name: &memberName,
+		ID:   &memberID,
 		Type: "user",
-		Name: &userName,
 	}
 
-	isRoleMember, err := client.IsRoleMemberOf(defaultCtx, roleID, memberUserWithName)
-	if err != nil {
-		panic(err)
-	}
-	assertFalse(t, isRoleMember)
+	// Test case: Member is part of the role
+	client.API.(*mocks.Client).On("GetIsiRole", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.IsiRoleListResp)
+		*resp = &apiv1.IsiRoleListResp{
+			Roles: []*apiv1.IsiRole{{
+				ID: roleID,
+				Members: []apiv1.IsiAccessItemFileGroup{
+					{Name: memberName},
+				},
+			}},
+		}
+	}).Once()
+	isMember, err := client.IsRoleMemberOf(ctx, roleID, member)
+	assert.Nil(t, err)
+	assert.True(t, isMember)
 
-	err = client.AddRoleMember(defaultCtx, roleID, memberUserWithName)
-	if err != nil {
-		panic(err)
-	}
-	isRoleMember, err = client.IsRoleMemberOf(defaultCtx, roleID, memberUserWithName)
-	if err != nil {
-		panic(err)
-	}
-	assertTrue(t, isRoleMember)
+	// Test case: Member is not part of the role
+	client.API.(*mocks.Client).On("GetIsiRole", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.IsiRoleListResp)
+		*resp = &apiv1.IsiRoleListResp{
+			Roles: []*apiv1.IsiRole{{Name: memberName, ID: roleID}},
+		}
+	}).Once()
+	isMember, err = client.IsRoleMemberOf(ctx, roleID, member)
+	assert.Nil(t, err)
+	assert.False(t, isMember)
 
-	err = client.RemoveRoleMember(defaultCtx, roleID, memberUserWithName)
-	if err != nil {
-		panic(err)
-	}
-	isRoleMember, err = client.IsRoleMemberOf(defaultCtx, roleID, memberUserWithName)
-	if err != nil {
-		panic(err)
-	}
-	assertFalse(t, isRoleMember)
+	// Test case: GetIsiRole returns an error
+	client.API.(*mocks.Client).On("GetIsiRole", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(fmt.Errorf("not found")).Once()
+	isMember, err = client.IsRoleMemberOf(ctx, roleID, member)
+	assert.NotNil(t, err)
+	assert.False(t, isMember)
+}
 
-	// add/remove role member by uid
-	uid, err := strconv.ParseInt(user.UID.ID[4:], 10, 32)
-	// #nosec G115
-	uid32 := int32(uid)
-	if err != nil {
-		panic(err)
+func TestAddRoleMember(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+	roleID := "roleID"
+	memberName := "testMember"
+	memberType := "user"
+	member := apiv1.IsiAuthMemberItem{
+		Name: &memberName,
+		Type: memberType,
 	}
-	memberUserWithUID := api.IsiAuthMemberItem{
-		Type: "user",
-		ID:   &uid32,
-	}
-	err = client.AddRoleMember(defaultCtx, roleID, memberUserWithUID)
-	if err != nil {
-		panic(err)
-	}
-	isRoleMember, err = client.IsRoleMemberOf(defaultCtx, roleID, memberUserWithUID)
-	if err != nil {
-		panic(err)
-	}
-	assertTrue(t, isRoleMember)
 
-	err = client.RemoveRoleMember(defaultCtx, roleID, memberUserWithUID)
-	if err != nil {
-		panic(err)
+	expectedData := &apiv1.IsiAccessItemFileGroup{
+		Type: memberType,
+		Name: memberName,
 	}
-	isRoleMember, err = client.IsRoleMemberOf(defaultCtx, roleID, memberUserWithUID)
-	if err != nil {
-		panic(err)
+
+	// Expect the Post method to be called with the specified parameters
+	client.API.(*mocks.Client).On("Post", ctx, fmt.Sprintf(roleMemberPath, roleID), "", mock.Anything, mock.Anything, expectedData, nil).Return(nil).Once()
+
+	// Call the AddRoleMember method
+	err := client.AddRoleMember(ctx, roleID, member)
+
+	// Assert that no error is returned
+	assert.Nil(t, err)
+}
+
+func TestRemoveRoleMember(t *testing.T) {
+	ctx := context.Background()
+	client := &Client{API: new(mocks.Client)}
+	roleID := "roleID"
+	memberName := "testMember"
+	memberType := "user"
+	memberID := int32(123)
+	member := apiv1.IsiAuthMemberItem{
+		Name: &memberName,
+		ID:   &memberID,
+		Type: memberType,
 	}
-	assertFalse(t, isRoleMember)
+
+	// Simulate the authMemberID resolution within the test scope
+	authMemberID := fmt.Sprintf("UID:%d", memberID)
+	memberPath := fmt.Sprintf(roleMemberPath, roleID)
+
+	// Expect the Delete method to be called with the specified parameters
+	client.API.(*mocks.Client).On("Delete", ctx, memberPath, authMemberID, mock.Anything, mock.Anything, nil).Return(nil).Once()
+
+	// Call the RemoveRoleMember method
+	err := client.RemoveRoleMember(ctx, roleID, member)
+
+	// Assert that no error is returned
+	assert.Nil(t, err)
 }

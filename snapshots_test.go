@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2019 Dell Inc, or its subsidiaries.
+Copyright (c) 2019-2025 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,540 +19,484 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"testing"
 
 	apiv1 "github.com/dell/goisilon/api/v1"
-	"github.com/dell/gounity/mocks"
+	apiv14 "github.com/dell/goisilon/api/v14"
+	"github.com/dell/goisilon/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestSnapshotsGet(_ *testing.T) {
-	snapshotPath := "test_snapshots_get_volume"
-	snapshotName1 := "test_snapshots_get_snapshot_0"
-	snapshotName2 := "test_snapshots_get_snapshot_1"
+func TestGetSnapshots(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
 
-	// create the test volume
-	_, err := client.CreateVolume(defaultCtx, snapshotPath)
-	if err != nil {
-		panic(err)
-	}
-	defer client.DeleteVolume(defaultCtx, snapshotPath)
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiSnapshotsResp)
+		*resp = &apiv1.GetIsiSnapshotsResp{}
+	}).Once()
+	_, err = client.GetSnapshots(context.Background())
+	assert.Nil(t, err)
 
-	// identify all snapshots on the cluster
-	snapshotMap := make(map[int64]string)
-	snapshots, err := client.GetSnapshots(defaultCtx)
-	if err != nil {
-		panic(err)
-	}
-	for _, snapshot := range snapshots {
-		snapshotMap[snapshot.ID] = snapshot.Name
-	}
-	initialSnapshotCount := len(snapshots)
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(fmt.Errorf("not found")).Once()
+	_, err = client.GetSnapshots(context.Background())
+	assert.NotNil(t, err)
+}
 
-	// Add the test snapshots
-	testSnapshot1, err := client.CreateSnapshot(
-		defaultCtx, snapshotPath, snapshotName1)
-	if err != nil {
-		panic(err)
-	}
-	testSnapshot2, err := client.CreateSnapshot(
-		defaultCtx, snapshotPath, snapshotName2)
-	if err != nil {
-		panic(err)
-	}
-	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.ID, snapshotName1)
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot2.ID, snapshotName2)
+func TestCreateSnapshot(t *testing.T) {
+	volName := "testVol"
+	snapshotName := "testSnapshot"
+	volumePath := "/path/to/volume"
 
-	// get the updated snapshot list
-	snapshots, err = client.GetSnapshots(defaultCtx)
-	if err != nil {
-		panic(err)
+	// Successful snapshot creation
+	client.API.(*mocks.Client).On("VolumePath", volName).Return(volumePath).Once()
+	client.API.(*mocks.Client).On("Post", anyArgs...).Return(nil).Once()
+	// Call the function
+	_, err := client.CreateSnapshot(context.Background(), volName, snapshotName)
+	assert.Nil(t, err)
+}
+
+func TestGetSnapshotsByPath(t *testing.T) {
+	path := "testPath"
+	volumePath := "/path/to/volume"
+
+	// Mock snapshots
+	mockSnapshots := SnapshotList{
+		&apiv1.IsiSnapshot{Path: volumePath},
+		&apiv1.IsiSnapshot{Path: "/another/path"},
 	}
 
-	// verify that the new snapshots are there as well as all the old snapshots.
-	if len(snapshots) != initialSnapshotCount+2 {
-		panic(fmt.Sprintf("Incorrect number of snapshots.  Expected: %d Actual: %d\n", initialSnapshotCount+2, len(snapshots)))
-	}
-	// remove the original snapshots and add the new ones.  in the end, we
-	// should only have the snapshots we just created and nothing more.
-	for _, snapshot := range snapshots {
-		if _, found := snapshotMap[snapshot.ID]; found == true {
-			// this snapshot existed prior to the test start
-			delete(snapshotMap, snapshot.ID)
-		} else {
-			// this snapshot is new
-			snapshotMap[snapshot.ID] = snapshot.Name
+	// Successful retrieval of snapshots
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiSnapshotsResp)
+		*resp = &apiv1.GetIsiSnapshotsResp{
+			SnapshotList: mockSnapshots,
 		}
-	}
-	if len(snapshotMap) != 2 {
-		panic(fmt.Sprintf("Incorrect number of new snapshots.  Expected: 2 Actual: %d\n", len(snapshotMap)))
-	}
-	if _, found := snapshotMap[testSnapshot1.ID]; found == false {
-		panic("testSnapshot1 was not in the snapshot list\n")
-	}
-	if _, found := snapshotMap[testSnapshot2.ID]; found == false {
-		panic("testSnapshot2 was not in the snapshot list\n")
-	}
+	}).Once()
+	client.API.(*mocks.Client).On("VolumePath", path).Return(volumePath).Twice()
+
+	// Call the function
+	result, err := client.GetSnapshotsByPath(context.Background(), path)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(result))
+	assert.Equal(t, volumePath, result[0].Path)
+
+	// Retrieval failure
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(fmt.Errorf("retrieval failed")).Once()
+
+	// Call the function
+	result, err = client.GetSnapshotsByPath(context.Background(), path)
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, len(result))
 }
 
-func TestSnapshotsGetByPath(_ *testing.T) {
-	snapshotPath1 := "test_snapshots_get_by_path_volume_1"
-	snapshotPath2 := "test_snapshots_get_by_path_volume_2"
-	snapshotName1 := "test_snapshots_get_by_path_snapshot_1"
-	snapshotName2 := "test_snapshots_get_by_path_snapshot_2"
-	snapshotName3 := "test_snapshots_get_by_path_snapshot_3"
+func TestGetIsiSnapshotByIdentity(t *testing.T) {
+	// Test case 1: Successful retrieval of snapshot by identity
+	client.API.(*mocks.Client).ExpectedCalls = nil
 
-	// create the two test volumes
-	_, err := client.CreateVolume(defaultCtx, snapshotPath1)
-	if err != nil {
-		panic(err)
-	}
-	defer client.DeleteVolume(defaultCtx, snapshotPath1)
-	_, err = client.CreateVolume(defaultCtx, snapshotPath2)
-	if err != nil {
-		panic(err)
-	}
-	defer client.DeleteVolume(defaultCtx, snapshotPath2)
-
-	// identify all snapshots on the cluster
-	snapshotMap := make(map[int64]string)
-	snapshots, err := client.GetSnapshotsByPath(defaultCtx, snapshotPath1)
-	if err != nil {
-		panic(err)
-	}
-	for _, snapshot := range snapshots {
-		snapshotMap[snapshot.ID] = snapshot.Name
-	}
-	initialSnapshotCount := len(snapshots)
-
-	// Add the test snapshots
-	testSnapshot1, err := client.CreateSnapshot(
-		defaultCtx, snapshotPath1, snapshotName1)
-	if err != nil {
-		panic(err)
-	}
-	testSnapshot2, err := client.CreateSnapshot(
-		defaultCtx, snapshotPath2, snapshotName2)
-	if err != nil {
-		panic(err)
-	}
-	testSnapshot3, err := client.CreateSnapshot(
-		defaultCtx, snapshotPath1, snapshotName3)
-	if err != nil {
-		panic(err)
-	}
-	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.ID, snapshotName1)
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot2.ID, snapshotName2)
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot3.ID, snapshotName3)
-
-	// get the updated snapshot list
-	snapshots, err = client.GetSnapshotsByPath(defaultCtx, snapshotPath1)
-	if err != nil {
-		panic(err)
+	snapshot := &apiv1.IsiSnapshot{
+		ID:    1,
+		Name:  "test_snapshot",
+		Path:  "/path/to/snapshot",
+		State: "available",
 	}
 
-	// verify that the new snapshots in the given path are there as well
-	// as all the old snapshots in that path.
-	if len(snapshots) != initialSnapshotCount+2 {
-		panic(fmt.Sprintf("Incorrect number of snapshots for path (%s).  Expected: %d Actual: %d\n", snapshotPath1, initialSnapshotCount+2, len(snapshots)))
-	}
-	// remove the original snapshots and add the new ones.  in the end, we
-	// should only have the snapshots we just created and nothing more.
-	for _, snapshot := range snapshots {
-		if _, found := snapshotMap[snapshot.ID]; found == true {
-			// this snapshot existed prior to the test start
-			delete(snapshotMap, snapshot.ID)
-		} else {
-			// this snapshot is new
-			snapshotMap[snapshot.ID] = snapshot.Name
+	// Mock the Get method to simulate a successful response
+	client.API.(*mocks.Client).On("Get", mock.Anything, "platform/1/snapshot/snapshots/test_identity", "", mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiSnapshotsResp)
+		*resp = &apiv1.GetIsiSnapshotsResp{
+			SnapshotList: []*apiv1.IsiSnapshot{snapshot},
 		}
-	}
-	if len(snapshotMap) != 2 {
-		panic(fmt.Sprintf("Incorrect number of new snapshots.  Expected: 2 Actual: %d\n", len(snapshotMap)))
-	}
-	if _, found := snapshotMap[testSnapshot1.ID]; found == false {
-		panic("testSnapshot1 was not in the snapshot list\n")
-	}
-	if _, found := snapshotMap[testSnapshot3.ID]; found == false {
-		panic("testSnapshot3 was not in the snapshot list\n")
-	}
+	}).Once()
+
+	// Call the GetIsiSnapshotByIdentity function
+	result, err := client.GetIsiSnapshotByIdentity(context.Background(), "test_identity")
+
+	// Assertions
+	assert.Nil(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, snapshot.ID, result.ID)
+	assert.Equal(t, snapshot.Name, result.Name)
+	assert.Equal(t, snapshot.Path, result.Path)
+	assert.Equal(t, snapshot.State, result.State)
+
+	// Test case 2: Error when snapshot is not found
+	client.API.(*mocks.Client).On("Get", mock.Anything, "platform/1/snapshot/snapshots/test_identity", "", mock.Anything, mock.Anything, mock.Anything).
+		Return(fmt.Errorf("snapshot not found")).Once()
+
+	// Call the GetIsiSnapshotByIdentity function
+	result, err = client.GetIsiSnapshotByIdentity(context.Background(), "test_identity")
+
+	// Assertions
+	assert.NotNil(t, err)
+	assert.Nil(t, result)
+
+	// Test case 3: Error handling in Get method (e.g., network error)
+	client.API.(*mocks.Client).On("Get", mock.Anything, "platform/1/snapshot/snapshots/test_identity", "", mock.Anything, mock.Anything, mock.Anything).
+		Return(fmt.Errorf("network error")).Once()
+
+	// Call the GetIsiSnapshotByIdentity function
+	result, err = client.GetIsiSnapshotByIdentity(context.Background(), "test_identity")
+
+	// Assertions
+	assert.NotNil(t, err)
+	assert.Nil(t, result)
+
+	// Assert expectations on mocks
+	client.API.(*mocks.Client).AssertExpectations(t)
 }
 
-func TestSnapshotCreate(_ *testing.T) {
-	snapshotPath := "test_snapshot_create_volume"
-	snapshotName := "test_snapshot_create_snapshot"
+func TestIsSnapshotExistent(t *testing.T) {
+	// Test case 1: Snapshot exists
+	client.API.(*mocks.Client).ExpectedCalls = nil
 
-	// create the test volume
-	_, err := client.CreateVolume(defaultCtx, snapshotPath)
-	if err != nil {
-		panic(err)
-	}
-	defer client.DeleteVolume(defaultCtx, snapshotPath)
-
-	// make sure the snapshot doesn't exist yet
-	snapshot, err := client.GetSnapshot(defaultCtx, -1, snapshotName)
-	if err == nil && snapshot != nil {
-		panic(fmt.Sprintf("Snapshot (%s) already exists.\n", snapshotName))
+	snapshot := &apiv1.IsiSnapshot{
+		ID:    1,
+		Name:  "test_snapshot",
+		Path:  "/path/to/snapshot",
+		State: "available",
 	}
 
-	// Add the test snapshot
-	testSnapshot, err := client.CreateSnapshot(
-		defaultCtx, snapshotPath, snapshotName)
-	if err != nil {
-		panic(err)
-	}
-	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot.ID, snapshotName)
+	// Mock the GetIsiSnapshotByIdentity to simulate a successful response
+	client.API.(*mocks.Client).On("Get", mock.Anything, "platform/1/snapshot/snapshots/test_identity", "", mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiSnapshotsResp)
+		*resp = &apiv1.GetIsiSnapshotsResp{
+			SnapshotList: []*apiv1.IsiSnapshot{snapshot},
+		}
+	}).Once()
 
-	// get the updated snapshot list
-	snapshot, err = client.GetSnapshot(
-		defaultCtx, testSnapshot.ID, snapshotName)
-	if err != nil {
-		panic(err)
-	}
-	if snapshot == nil {
-		panic(fmt.Sprintf("Snapshot (%s) was not created.\n", snapshotName))
-	}
-	if snapshot.Name != snapshotName {
-		panic(fmt.Sprintf("Snapshot name not set properly.  Expected: (%s) Actual: (%s)\n", snapshotName, snapshot.Name))
-	}
-	if snapshot.Path != client.API.VolumePath(snapshotPath) {
-		panic(fmt.Sprintf("Snapshot path not set properly.  Expected: (%s) Actual: (%s)\n", snapshotPath, snapshot.Path))
-	}
+	// Call the IsSnapshotExistent function
+	result := client.IsSnapshotExistent(context.Background(), "test_identity")
+
+	// Assertions
+	assert.True(t, result) // Snapshot exists
+
+	// Test case 2: Snapshot does not exist
+	client.API.(*mocks.Client).On("Get", mock.Anything, "platform/1/snapshot/snapshots/test_identity", "", mock.Anything, mock.Anything, mock.Anything).
+		Return(fmt.Errorf("snapshot not found")).Once()
+
+	// Call the IsSnapshotExistent function
+	result = client.IsSnapshotExistent(context.Background(), "test_identity")
+
+	// Assertions
+	assert.False(t, result) // Snapshot does not exist
+
+	// Test case 3: Error when fetching snapshot (e.g., network error)
+	client.API.(*mocks.Client).On("Get", mock.Anything, "platform/1/snapshot/snapshots/test_identity", "", mock.Anything, mock.Anything, mock.Anything).
+		Return(fmt.Errorf("network error")).Once()
+
+	// Call the IsSnapshotExistent function
+	result = client.IsSnapshotExistent(context.Background(), "test_identity")
+
+	// Assertions
+	assert.False(t, result) // Snapshot fetch failed, so it does not exist
+
+	// Assert expectations on mocks
+	client.API.(*mocks.Client).AssertExpectations(t)
 }
 
-func TestSnapshotRemove(_ *testing.T) {
-	snapshotPath := "test_snapshot_remove_volume"
-	snapshotName := "test_snapshot_remove_snapshot"
+func TestRemoveSnapshot(t *testing.T) {
+	// Clear previous expectations
+	client.API.(*mocks.Client).ExpectedCalls = nil
 
-	// create the test volume
-	_, err := client.CreateVolume(defaultCtx, snapshotPath)
-	if err != nil {
-		panic(err)
-	}
-	defer client.DeleteVolume(defaultCtx, snapshotPath)
+	// Define snapshot ID and name for the test.
+	snapshotID := int64(123)
+	snapshotName := "test-snapshot"
 
-	// make sure the snapshot exists
-	client.CreateSnapshot(defaultCtx, snapshotPath, snapshotName)
-	snapshot, err := client.GetSnapshot(defaultCtx, -1, snapshotName)
-	if err != nil {
-		panic(err)
-	}
-	if snapshot == nil {
-		panic(fmt.Sprintf("Test not setup properly.  No test snapshot (%s).", snapshotName))
-	}
+	// Mock GetSnapshot to return a snapshot from GetIsiSnapshotsResp
+	client.API.(*mocks.Client).On("Get", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).Run(func(args mock.Arguments) {
+		// Create a response for GetIsiSnapshotsResp
+		resp := args.Get(5).(**apiv1.GetIsiSnapshotsResp)
+		*resp = &apiv1.GetIsiSnapshotsResp{
+			SnapshotList: []*apiv1.IsiSnapshot{
+				{
+					ID:   snapshotID,
+					Name: snapshotName,
+				},
+			},
+			Total: 1,
+		}
+	}).Once()
 
-	// remove the snapshot
-	err = client.RemoveSnapshot(defaultCtx, snapshot.ID, snapshotName)
-	if err != nil {
-		panic(err)
-	}
+	// Mock Delete to succeed (no error)
+	client.API.(*mocks.Client).On("Delete", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).Once()
 
-	// make sure the snapshot was removed
-	snapshot, err = client.GetSnapshot(defaultCtx, snapshot.ID, snapshotName)
-	if err != nil {
-		panic(err)
-	}
-	if snapshot != nil {
-		panic(fmt.Sprintf("Snapshot (%s) was not removed.\n%+v\n", snapshotName, snapshot))
-	}
+	// Call RemoveSnapshot
+	err := client.RemoveSnapshot(context.Background(), snapshotID, snapshotName)
+
+	// Assert that no error occurred
+	assert.Nil(t, err)
+
+	// Assert that the mock expectations were met
+	client.API.(*mocks.Client).AssertExpectations(t)
+
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(fmt.Errorf("not found")).Twice()
+	// client.API.(*mocks.Client).On("Delete", anyArgs[0:6]...).Return(fmt.Errorf("not found")).Once()
+	err = client.RemoveSnapshot(context.Background(), snapshotID, snapshotName)
+	assert.NotNil(t, err)
 }
 
-func TestSnapshotCopy(_ *testing.T) {
-	accessZone := "System"
-	sourceSnapshotPath := "test_snapshot_copy_src_volume"
-	sourceSnapshotName := "test_snapshot_copy_src_snapshot"
-	destinationVolume := "test_snapshot_copy_dst_volume"
-	subdirectoryName := "test_snapshot_copy_sub_dir"
-	sourceSubDirectory := fmt.Sprintf("%s/%s", sourceSnapshotPath, subdirectoryName)
-	destinationSubDirectory := fmt.Sprintf("%s/%s", destinationVolume, subdirectoryName)
+func TestCreateSnapshotWithPath(t *testing.T) {
+	path := "/path/to/snapshot"
+	var snapshotName string
 
-	// create the test volume
-	_, err := client.CreateVolume(defaultCtx, sourceSnapshotPath)
-	if err != nil {
-		panic(err)
-	}
-	//	defer client.DeleteVolume(snapshotPath)
-	// create a subdirectory in the test tvolume
-	_, err = client.CreateVolume(defaultCtx, sourceSubDirectory)
-	if err != nil {
-		panic(err)
-	}
-
-	// make sure the snapshot doesn't exist yet
-	snapshot, err := client.GetSnapshot(defaultCtx, -1, sourceSnapshotName)
-	if err == nil && snapshot != nil {
-		panic(fmt.Sprintf("Snapshot (%s) already exists.\n", sourceSnapshotName))
-	}
-
-	// Add the test snapshot
-	testSnapshot, err := client.CreateSnapshot(
-		defaultCtx, sourceSnapshotPath, sourceSnapshotName)
-	if err != nil {
-		panic(err)
-	}
-	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot.ID, sourceSnapshotName)
-	// remove the sub directory
-	err = client.DeleteVolume(defaultCtx, sourceSubDirectory)
-	if err != nil {
-		panic(err)
-	}
-
-	// copy the snapshot to the destination volume
-	_, err = client.CreateVolume(defaultCtx, destinationVolume)
-	if err != nil {
-		panic(err)
-	}
-	copiedVolume, err := client.CopySnapshot(
-		defaultCtx, testSnapshot.ID, testSnapshot.Name, accessZone, destinationVolume)
-	if err != nil {
-		panic(err)
-	}
-	defer client.DeleteVolume(defaultCtx, destinationVolume)
-
-	if copiedVolume.Name != destinationVolume {
-		panic(fmt.Sprintf("Copied volume has incorrect name.  Expected: (%s) Acutal: (%s)", destinationVolume, copiedVolume.Name))
-	}
-
-	// make sure the destination volume was created
-	volume, err := client.GetVolume(defaultCtx, "", destinationVolume)
-	if err != nil || volume == nil {
-		panic(fmt.Sprintf("Destination volume: (%s) was not created.\n", destinationVolume))
-	}
-	// make sure the sub directory was also created
-	subDirectory, err := client.GetVolume(defaultCtx, "", destinationSubDirectory)
-	if err != nil {
-		panic(fmt.Sprintf("Destination sub directory: (%s) was not created.\n", subdirectoryName))
-	}
-	if subDirectory.Name != destinationSubDirectory {
-		panic(fmt.Sprintf("Sub directory has incorrect name.  Expected: (%s) Acutal: (%s)", destinationSubDirectory, subDirectory.Name))
-	}
+	client.API.(*mocks.Client).On("Post", anyArgs...).Return(nil).Once()
+	_, err := client.CreateSnapshotWithPath(context.Background(), path, snapshotName)
+	assert.Nil(t, err)
 }
 
-func TestSnapshotCopyWithIsiPath(_ *testing.T) {
-	sourceSnapshotPath := "test_snapshot_copy_src_volume"
-	sourceSnapshotName := "test_snapshot_copy_src_snapshot"
-	destinationVolume := "test_snapshot_copy_dst_volume"
-	subdirectoryName := "test_snapshot_copy_sub_dir"
-	defaultAccessZone := "System"
-	sourceSubDirectory := fmt.Sprintf("%s/%s", sourceSnapshotPath, subdirectoryName)
-	destinationSubDirectory := fmt.Sprintf("%s/%s", destinationVolume, subdirectoryName)
-
-	// create the test volume
-	_, err := client.CreateVolume(defaultCtx, sourceSnapshotPath)
-	if err != nil {
-		panic(err)
-	}
-	//	defer client.DeleteVolume(snapshotPath)
-	// create a subdirectory in the test tvolume
-	_, err = client.CreateVolume(defaultCtx, sourceSubDirectory)
-	if err != nil {
-		panic(err)
+func TestGetSnapshotFolderSize(t *testing.T) {
+	client := &Client{
+		API: new(mocks.Client),
 	}
 
-	// make sure the snapshot doesn't exist yet
-	snapshot, err := client.GetSnapshot(defaultCtx, -1, sourceSnapshotName)
-	if err == nil && snapshot != nil {
-		panic(fmt.Sprintf("Snapshot (%s) already exists.\n", sourceSnapshotName))
-	}
+	ctx := context.Background()
+	var isiPath, accessZone, name string
 
-	// Add the test snapshot
-	testSnapshot, err := client.CreateSnapshot(
-		defaultCtx, sourceSnapshotPath, sourceSnapshotName)
-	if err != nil {
-		panic(err)
-	}
-	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot.ID, sourceSnapshotName)
-	// remove the sub directory
-	err = client.DeleteVolume(defaultCtx, sourceSubDirectory)
-	if err != nil {
-		panic(err)
-	}
+	// Mock GetSnapshot to return a snapshot from GetIsiSnapshotsResp
+	client.API.(*mocks.Client).On("Get", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiSnapshotsResp)
+		*resp = &apiv1.GetIsiSnapshotsResp{
+			SnapshotList: []*apiv1.IsiSnapshot{
+				{
+					ID:   1,
+					Name: "test_snapshot",
+					Path: "/path/to/snapshot",
+				},
+			},
+			Total:  1,
+			Resume: "",
+		}
+	}).Once()
 
-	// copy the snapshot to the destination volume
-	_, err = client.CreateVolume(defaultCtx, destinationVolume)
-	if err != nil {
-		panic(err)
-	}
-	newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
-	copiedVolume, err := client.CopySnapshotWithIsiPath(
-		defaultCtx, newIsiPath, newIsiPath, testSnapshot.ID, testSnapshot.Name, destinationVolume, defaultAccessZone)
-	if err != nil {
-		panic(err)
-	}
-	defer client.DeleteVolume(defaultCtx, destinationVolume)
+	// Mock GetZoneByName to return a zone
+	client.API.(*mocks.Client).On("Get", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv1.GetIsiZonesResp)
+		*resp = apiv1.GetIsiZonesResp{
+			Zones: []*apiv1.IsiZone{
+				{
+					Name: "zone1",
+					Path: "/ifs/data",
+				},
+			},
+		}
+	}).Once()
 
-	if copiedVolume.Name != destinationVolume {
-		panic(fmt.Sprintf("Copied volume has incorrect name.  Expected: (%s) Acutal: (%s)", destinationVolume, copiedVolume.Name))
-	}
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiVolumeSizeResp)
+		*resp = &apiv1.GetIsiVolumeSizeResp{
+			AttributeMap: []struct {
+				Name string `json:"name"`
+				Size int64  `json:"size"`
+			}{
+				{Name: "test", Size: 12345},
+			},
+		}
+	}).Once()
 
-	// make sure the destination volume was created
-	volume, err := client.GetVolume(defaultCtx, "", destinationVolume)
-	if err != nil || volume == nil {
-		panic(fmt.Sprintf("Destination volume: (%s) was not created.\n", destinationVolume))
-	}
-	// make sure the sub directory was also created
-	subDirectory, err := client.GetVolume(defaultCtx, "", destinationSubDirectory)
-	if err != nil {
-		panic(fmt.Sprintf("Destination sub directory: (%s) was not created.\n", subdirectoryName))
-	}
-	if subDirectory.Name != destinationSubDirectory {
-		panic(fmt.Sprintf("Sub directory has incorrect name.  Expected: (%s) Acutal: (%s)", destinationSubDirectory, subDirectory.Name))
-	}
+	// Call GetSnapshotFolderSize
+	_, err := client.GetSnapshotFolderSize(ctx, isiPath, name, accessZone)
+
+	// Assert that no error occurred
+	assert.Nil(t, err)
 }
 
-func TestSnapshotGetByIdentity(_ *testing.T) {
-	snapshotPath := "test_snapshots_get_volume"
-	snapshotName1 := "test_snapshots_get_snapshot_0"
-	snapshotName2 := "test_snapshots_get_snapshot_1"
+func TestCopySnapshot(t *testing.T) {
+	// Clear previous expectations
+	client.API.(*mocks.Client).ExpectedCalls = nil
 
-	// create the test volume
-	_, err := client.CreateVolume(defaultCtx, snapshotPath)
-	if err != nil {
-		panic(err)
-	}
-	defer client.DeleteVolume(defaultCtx, snapshotPath)
+	snapshotID := int64(123)
+	snapshotName := "test-snapshot"
 
-	// Add the test snapshots
-	testSnapshot1, err := client.CreateSnapshot(
-		defaultCtx, snapshotPath, snapshotName1)
-	if err != nil {
-		panic(err)
-	}
-	testSnapshot2, err := client.CreateSnapshot(
-		defaultCtx, snapshotPath, snapshotName2)
-	if err != nil {
-		panic(err)
-	}
-	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.ID, snapshotName1)
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot2.ID, snapshotName2)
+	// Mock GetSnapshot to return a snapshot from GetIsiSnapshotsResp
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).
+		Return(nil).Run(func(args mock.Arguments) {
+		// Create a response for GetIsiSnapshotsResp
+		resp := args.Get(5).(**apiv1.GetIsiSnapshotsResp)
+		*resp = &apiv1.GetIsiSnapshotsResp{
+			SnapshotList: []*apiv1.IsiSnapshot{
+				{
+					ID:   snapshotID,
+					Name: snapshotName,
+				},
+			},
+			Total: 1,
+		}
+	}).Once()
 
-	snapshot1, err := client.GetIsiSnapshotByIdentity(defaultCtx, snapshotName1)
-	if err != nil {
-		panic("failed to get testSnapshot1\n")
-	}
-	if snapshot1.ID != testSnapshot1.ID {
-		panic(fmt.Sprintf("testSnapshot1: id %d is incorrect\n", snapshot1.ID))
-	}
-	snapshot2, err := client.GetIsiSnapshotByIdentity(defaultCtx, snapshotName2)
-	if err != nil {
-		panic("failed to get testSnapshot2\n")
-	}
-	if snapshot2.ID != testSnapshot2.ID {
-		panic(fmt.Sprintf("testSnapshot2: id %d is incorrect\n", snapshot2.ID))
-	}
+	// Mock GetZoneByName to return a zones from GetIsiZonesResp
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).
+		Return(nil).Run(func(args mock.Arguments) {
+		// Create a response for GetIsiZonesResp
+		resp := args.Get(5).(*apiv1.GetIsiZonesResp)
+		*resp = apiv1.GetIsiZonesResp{
+			Zones: []*apiv1.IsiZone{
+				{
+					Name: snapshotName,
+					Path: "/ifs/data",
+				},
+			},
+		}
+	}).Once()
+
+	// Mock CopyIsiSnapshot to return a volumes from IsiVolume
+	client.API.(*mocks.Client).On("Put", anyArgs...).Return(nil).Run(nil).Once()
+
+	// Mock GetVolume to return a volumes from GetIsiVolumeAttributesResp
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).
+		Return(nil).Run(func(args mock.Arguments) {
+		// Create a response for GetIsiVolumeAttributesResp
+		resp := args.Get(5).(**apiv1.GetIsiVolumeAttributesResp)
+		*resp = &apiv1.GetIsiVolumeAttributesResp{}
+	}).Once()
+
+	_, err := client.CopySnapshot(context.Background(), snapshotID, snapshotName, "test-zone", "test-snapshot-copy")
+	assert.Nil(t, err)
+
+	// Negative Scenarios
+	// Case 1 - Unable to get snapshot
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(errors.New("unable to retrieve snapshot")).Run(nil).Once()
+	_, err = client.CopySnapshot(context.Background(), snapshotID, "", "test-zone", "test-snapshot-copy")
+	assert.Error(t, err)
+
+	// Case 2 - Unable to get zone
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).
+		Return(nil).Run(func(args mock.Arguments) {
+		// Create a response for GetIsiSnapshotsResp
+		resp := args.Get(5).(**apiv1.GetIsiSnapshotsResp)
+		*resp = &apiv1.GetIsiSnapshotsResp{
+			SnapshotList: []*apiv1.IsiSnapshot{
+				{
+					ID:   snapshotID,
+					Name: snapshotName,
+				},
+			},
+			Total: 1,
+		}
+	}).Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(errors.New("unable to retrieve zone")).Run(nil).Once()
+	_, err = client.CopySnapshot(context.Background(), snapshotID, snapshotName, "", "test-snapshot-copy")
+	assert.Error(t, err)
 }
 
-func TestSnapshotIsExistent(_ *testing.T) {
-	snapshotPath := "test_snapshots_exist_volume"
-	snapshotName1 := "test_snapshots_exist_snapshot_0"
+func TestGetSnapshotIsiPath(t *testing.T) {
+	// Clear previous expectations
+	client.API.(*mocks.Client).ExpectedCalls = nil
 
-	// create the test volume
-	_, err := client.CreateVolume(defaultCtx, snapshotPath)
-	if err != nil {
-		panic(err)
-	}
-	defer client.DeleteVolume(defaultCtx, snapshotPath)
+	snapshotID := int64(123)
+	snapshotName := "test-snapshot"
+	isiPath := "/ifs/data"
+	accessZone := "test-zone"
 
-	// check if snapshotName1 exists
-	if client.IsSnapshotExistent(defaultCtx, snapshotName1) {
-		panic(fmt.Sprintf("found snapshot %s, expected not found\n", snapshotName1))
-	}
+	// Mock GetIsiSnapshotByIdentity to return a snapshot from GetIsiSnapshotsResp
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).
+		Return(nil).Run(func(args mock.Arguments) {
+		// Create a response for GetIsiSnapshotsResp
+		resp := args.Get(5).(**apiv1.GetIsiSnapshotsResp)
+		*resp = &apiv1.GetIsiSnapshotsResp{
+			SnapshotList: []*apiv1.IsiSnapshot{
+				{
+					ID:   snapshotID,
+					Name: snapshotName,
+				},
+			},
+			Total: 1,
+		}
+	}).Once()
 
-	// Add the test snapshots
-	testSnapshot1, err := client.CreateSnapshot(
-		defaultCtx, snapshotPath, snapshotName1)
-	if err != nil {
-		panic(err)
-	}
+	// Mock GetZoneByName to return a zones from GetIsiZonesResp
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).
+		Return(nil).Run(func(args mock.Arguments) {
+		// Create a response for GetIsiZonesResp
+		resp := args.Get(5).(*apiv1.GetIsiZonesResp)
+		*resp = apiv1.GetIsiZonesResp{
+			Zones: []*apiv1.IsiZone{
+				{
+					Name: snapshotName,
+					Path: "/ifs/data",
+				},
+			},
+		}
+	}).Once()
 
-	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.ID, snapshotName1)
+	_, err := client.GetSnapshotIsiPath(context.Background(), isiPath, "test-snapshot", accessZone)
+	assert.Nil(t, err)
 
-	// check if snapshotName1 exists
-	if !client.IsSnapshotExistent(defaultCtx, snapshotName1) {
-		panic(fmt.Sprintf("not found snapshot %s, expected found\n", snapshotName1))
-	}
-}
+	// Negative Scenarios
+	// Case 1 - Unable to get Isi Snapshot By Identity
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(errors.New("unable to retrieve snapshot")).Run(nil).Once()
+	_, err = client.GetSnapshotIsiPath(context.Background(), isiPath, "", accessZone)
+	assert.Error(t, err)
 
-func TestSnapshotExportWithZone(_ *testing.T) {
-	snapshotPath := "test_snapshots_export_volume"
-	snapshotName1 := "test_snapshots_export_snapshot_0"
-	defaultAccessZone := "System"
+	// Case 2 - Unable to get zone
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).
+		Return(nil).Run(func(args mock.Arguments) {
+		// Create a response for GetIsiSnapshotsResp
+		resp := args.Get(5).(**apiv1.GetIsiSnapshotsResp)
+		*resp = &apiv1.GetIsiSnapshotsResp{
+			SnapshotList: []*apiv1.IsiSnapshot{
+				{
+					ID:   snapshotID,
+					Name: snapshotName,
+				},
+			},
+			Total: 1,
+		}
+	}).Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(errors.New("unable to retrieve zone")).Run(nil).Once()
+	_, err = client.GetSnapshotIsiPath(context.Background(), isiPath, "test-snapshot", "")
+	assert.Error(t, err)
 
-	// create the test volume
-	_, err := client.CreateVolume(defaultCtx, snapshotPath)
-	if err != nil {
-		panic(err)
-	}
-	defer client.DeleteVolume(defaultCtx, snapshotPath)
+	// Case 3 - when zone.Path and isiPath mismatch
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).
+		Return(nil).Run(func(args mock.Arguments) {
+		// Create a response for GetIsiSnapshotsResp
+		resp := args.Get(5).(**apiv1.GetIsiSnapshotsResp)
+		*resp = &apiv1.GetIsiSnapshotsResp{
+			SnapshotList: []*apiv1.IsiSnapshot{
+				{
+					ID:   snapshotID,
+					Name: snapshotName,
+				},
+			},
+			Total: 1,
+		}
+	}).Once()
 
-	// Add the test snapshots
-	testSnapshot1, err := client.CreateSnapshot(
-		defaultCtx, snapshotPath, snapshotName1)
-	if err != nil {
-		panic(err)
-	}
+	// Mock GetZoneByName to return a zones from GetIsiZonesResp
+	client.API.(*mocks.Client).On("VolumesPath", anyArgs...).Return("/ifs/data").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs...).
+		Return(nil).Run(func(args mock.Arguments) {
+		// Create a response for GetIsiZonesResp
+		resp := args.Get(5).(*apiv1.GetIsiZonesResp)
+		*resp = apiv1.GetIsiZonesResp{
+			Zones: []*apiv1.IsiZone{
+				{
+					Name: snapshotName,
+					Path: "/ifs/data1",
+				},
+			},
+		}
+	}).Once()
 
-	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.ID, snapshotName1)
-
-	// export snapshot
-	id, err := client.ExportSnapshotWithZone(defaultCtx, snapshotName1, snapshotPath, defaultAccessZone, "")
-	if err != nil {
-		panic(fmt.Sprintf("failed to export snapshot, name %s path %s \n", snapshotName1, snapshotPath))
-	}
-
-	// unexport snapshot
-	defer client.UnexportByIDWithZone(defaultCtx, id, defaultAccessZone)
-}
-
-func TestGetRealVolumeSnapshotPathWithIsiPath(_ *testing.T) {
-	volName := "volFromSnap0"
-	newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
-	accessZone := "System"
-	name := "snapshottest"
-	fmt.Println(apiv1.GetRealVolumeSnapshotPathWithIsiPath(newIsiPath, volName, name, accessZone))
-}
-
-func TestSnapshotSizeGet(_ *testing.T) {
-	snapshotPath := "test_snapshots_get_volume"
-	snapshotName1 := "test_snapshots_get_snapshot_0"
-	accessZone := "System"
-
-	// create the test volume
-	_, err := client.CreateVolume(defaultCtx, snapshotPath)
-	if err != nil {
-		panic(err)
-	}
-	defer client.DeleteVolume(defaultCtx, snapshotPath)
-
-	// Add the test snapshots
-	testSnapshot1, err := client.CreateSnapshot(
-		defaultCtx, snapshotPath, snapshotName1)
-	if err != nil {
-		panic(err)
-	}
-
-	// make sure we clean up when we're done
-	defer client.RemoveSnapshot(defaultCtx, testSnapshot1.ID, snapshotName1)
-
-	newIsiPath := os.Getenv("GOISILON_VOLUMEPATH")
-	// get the updated snapshot list
-	totalSize, err := client.GetSnapshotFolderSize(defaultCtx, newIsiPath, snapshotName1, accessZone)
-	if err != nil {
-		panic(err)
-	}
-	if totalSize < 0 {
-		panic(fmt.Sprintf("Snapshot folder size %d is not correct.\n", totalSize))
-	}
+	_, err = client.GetSnapshotIsiPath(context.Background(), isiPath, "test-snapshot", accessZone)
+	assert.Nil(t, err)
 }
 
 func TestGetWritableSnapshots(t *testing.T) {
