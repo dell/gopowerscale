@@ -77,7 +77,9 @@ func GetRealVolumeSnapshotPathWithIsiPath(isiPath, zonePath, name, accessZone st
 	volumeSnapshotPath := strings.Join([]string{zonePath, snapshotParentDir}, "/")
 	if accessZone == "System" {
 		parts := strings.SplitN(GetRealNamespacePathWithIsiPath(isiPath), "/ifs", 2)
-		return path.Join(parts[0], volumeSnapshotPath, name, parts[1])
+		if len(parts) == 2 {
+			return path.Join(parts[0], volumeSnapshotPath, name, parts[1])
+		}
 	}
 	// if Isi path is different then zone path get remaining isiPath
 	_, remainIsiPath, found := strings.Cut(isiPath, zonePath)
