@@ -251,6 +251,12 @@ func TestDoAndGetResponseBody(t *testing.T) {
 	}
 	res, _, _ = c.DoAndGetResponseBody(ctx, http.MethodGet, "api/v1/endpoint", "ID", orderedValues, headers, body)
 	assert.Equal(t, http.StatusOK, res.StatusCode)
+
+	// Test case: debug level is respected
+	debug = true
+	_, isDebug, _ := c.DoAndGetResponseBody(ctx, http.MethodGet, "api/v1/endpoint", "ID", orderedValues, headers, nil)
+	assert.True(t, isDebug)
+	debug = false
 }
 
 func TestAuthenticate(t *testing.T) {

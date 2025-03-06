@@ -554,14 +554,14 @@ var doAndGetResponseBodyFunc = func(
 		}
 	}
 
-	var (
-		isDebugLog bool
-		logReqBuf  = &bytes.Buffer{}
-	)
+	logReqBuf := &bytes.Buffer{}
 
-	if lvl, ok := ctx.Value(
-		log.LevelKey()).(log.Level); ok && lvl >= log.DebugLevel {
-		isDebugLog = true
+	if debug {
+		log.Info(ctx, "Setting log level to debug in goisilon")
+		ctx = context.WithValue(
+			ctx,
+			log.LevelKey(),
+			log.DebugLevel)
 	}
 
 	logRequest(ctx, logReqBuf, req, c.verboseLogging)
@@ -570,10 +570,10 @@ var doAndGetResponseBodyFunc = func(
 	// send the request
 	req = req.WithContext(ctx)
 	if res, err = c.http.Do(req); err != nil {
-		return nil, isDebugLog, err
+		return nil, debug, err
 	}
 
-	return res, isDebugLog, err
+	return res, debug, err
 }
 
 func (c *client) APIVersion() uint8 {
