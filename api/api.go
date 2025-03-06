@@ -554,12 +554,10 @@ var doAndGetResponseBodyFunc = func(
 		}
 	}
 
-	var (
-		logReqBuf = &bytes.Buffer{}
-	)
+	logReqBuf := &bytes.Buffer{}
 
 	if debug {
-		log.Info(ctx, "Setting log level to debug in gopowerscale")
+		log.Info(ctx, "Setting log level to debug in goisilon")
 		ctx = context.WithValue(
 			ctx,
 			log.LevelKey(),
