@@ -17,6 +17,7 @@ package goisilon
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -314,7 +315,7 @@ func (c *Client) CopyVolumeWithIsiPath(
 	}
 	if res != nil && res.Success == false {
 		log.Error(ctx, "error encountered while cloning volume. error : '%v'", res)
-		return nil, err
+		return nil, fmt.Errorf("error encountered while cloning volume. error : '%v'", res.CopyErrors)
 	}
 
 	return c.GetVolumeWithIsiPath(ctx, isiPath, dest, dest)
