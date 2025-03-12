@@ -308,8 +308,12 @@ func (c *Client) CopyVolume(
 func (c *Client) CopyVolumeWithIsiPath(
 	ctx context.Context, isiPath, src, dest string,
 ) (Volume, error) {
-	_, err := apiv1.CopyIsiVolumeWithIsiPath(ctx, c.API, isiPath, src, dest)
+	res, err := apiv1.CopyIsiVolumeWithIsiPath(ctx, c.API, isiPath, src, dest)
 	if err != nil {
+		return nil, err
+	}
+	if res != nil && res.Success == false {
+		log.Error(ctx, "error encountered while cloning volume. error : '%v'", res)
 		return nil, err
 	}
 
