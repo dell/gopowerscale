@@ -326,7 +326,7 @@ func CopyIsiVolumeWithIsiPath(
 	ctx context.Context,
 	client api.Client,
 	isiPath, sourceName, destinationName string,
-) (resp *GetIsiVolumesResp, err error) {
+) (resp *CopyIsiVolumesResp, err error) {
 	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/destination_volume_name?merge=True
 	//             x-isi-ifs-copy-source: /path/to/volumes/source_volume_name
 	//             x-isi-ifs-mode-mask: preserve
