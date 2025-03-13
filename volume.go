@@ -318,7 +318,7 @@ func (c *Client) CopyVolumeWithIsiPath(
 		resJSON, err := json.Marshal(res)
 		if err != nil {
 			log.Error(ctx, "error encountered while cloning volume. error : '%v'", res.CopyErrors)
-			return nil, fmt.Errorf("error encountered while cloning volume. error : '%v'",res.CopyErrors)
+			return nil, fmt.Errorf("error encountered while cloning volume. error : '%v'", res.CopyErrors)
 		} else {
 			log.Error(ctx, "error encountered while cloning volume. error : '%v'", string(resJSON))
 			return nil, fmt.Errorf("error encountered while cloning volume. error : '%v'", string(resJSON))

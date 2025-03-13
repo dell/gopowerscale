@@ -49,6 +49,7 @@ type CopyError struct {
 	Source   string `json:"source"`
 	Target   string `json:"target"`
 }
+
 // Isi PAPI Volume ACL JSON structs
 type Ownership struct {
 	Name string `json:"name"`

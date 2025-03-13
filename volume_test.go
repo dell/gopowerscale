@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	apiv1 "github.com/dell/goisilon/api/v1"
+	v1 "github.com/dell/goisilon/api/v1"
 	apiv2 "github.com/dell/goisilon/api/v2"
 	"github.com/dell/goisilon/mocks"
 	"github.com/stretchr/testify/assert"
@@ -381,6 +382,35 @@ func TestCopyVolumeWithIsiPath(t *testing.T) {
 	testVolume, err = client.CopyVolumeWithIsiPath(defaultCtx, isiPath, sourceVolumeName, destinationVolumeName)
 	assert.ErrorContains(t, err, "volume copy failed")
 	assert.Nil(t, testVolume)
+
+	// negative sceanrio where copy errors are returned
+
+	data1 := &v1.CopyIsiVolumesResp{
+		CopyErrors: []v1.CopyError{
+			{
+				ErrorSrc: "source side",
+				Message:  "Permission denied",
+				Source:   "/ifs/data/csivol-3e5e34ae41/file2.txt",
+				Target:   "/ifs/data/csivol-zae1d5c79d/file2.txt",
+			},
+		},
+		Success: false,
+	}
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	client.API.(*mocks.Client).On("Put",
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+		mock.AnythingOfType("**v1.CopyIsiVolumesResp"),
+	).Return(nil).Run(func(args mock.Arguments) {
+		respData := args.Get(6).(**v1.CopyIsiVolumesResp)
+		*respData = data1
+	})
+	_, err = client.CopyVolumeWithIsiPath(defaultCtx, isiPath, sourceVolumeName, destinationVolumeName)
+	assert.Error(t, err)
 }
 
 func TestExportVolume(t *testing.T) {
