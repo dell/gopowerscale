@@ -317,11 +317,11 @@ func (c *Client) CopyVolumeWithIsiPath(
 	if res != nil && res.Success == false {
 		resJSON, err := json.Marshal(res)
 		if err != nil {
-			log.Error(ctx, "error encountered while cloning volume. error : '%v'", res.CopyErrors)
-			return nil, fmt.Errorf("error encountered while cloning volume. error : '%v'", res.CopyErrors)
+			log.Error(ctx, "error encountered while cloning volume. error: '%v'", res.CopyErrors)
+			return nil, fmt.Errorf("error encountered while cloning volume. error: '%v'", res.CopyErrors)
 		}
-		log.Error(ctx, "error encountered while cloning volume. error : '%v'", string(resJSON))
-		return nil, fmt.Errorf("error encountered while cloning volume. error : '%v'", string(resJSON))
+		log.Error(ctx, "error encountered while cloning volume. error: '%v'", string(resJSON))
+		return nil, fmt.Errorf("error encountered while cloning volume. error: '%v'", string(resJSON))
 
 	}
 
