@@ -410,6 +410,41 @@ func TestCopyVolumeWithIsiPath(t *testing.T) {
 	})
 	_, err = client.CopyVolumeWithIsiPath(defaultCtx, isiPath, sourceVolumeName, destinationVolumeName)
 	assert.Error(t, err)
+
+	// negative sceanrio where list of copy errors are returned
+
+	data1 = &apiv1.CopyIsiVolumesResp{
+		CopyErrors: []apiv1.CopyError{
+			{
+				ErrorSrc: "source side",
+				Message:  "Permission denied",
+				Source:   "/ifs/data/csivol-3e5e34ae41/file2.txt",
+				Target:   "/ifs/data/csivol-zae1d5c79d/file2.txt",
+			},
+			{
+				ErrorSrc: "target side",
+				Message:  "target exists(not copied)",
+				Source:   "/ifs/data/csivol-3e5e34ae41/file1.txt",
+				Target:   "/ifs/data/csivol-zae1d5c79d/file1.txt",
+			},
+		},
+		Success: false,
+	}
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	client.API.(*mocks.Client).On("Put",
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+		mock.AnythingOfType("**v1.CopyIsiVolumesResp"),
+	).Return(nil).Run(func(args mock.Arguments) {
+		respData := args.Get(6).(**apiv1.CopyIsiVolumesResp)
+		*respData = data1
+	})
+	_, err = client.CopyVolumeWithIsiPath(defaultCtx, isiPath, sourceVolumeName, destinationVolumeName)
+	assert.Error(t, err)
 }
 
 func TestExportVolume(t *testing.T) {
