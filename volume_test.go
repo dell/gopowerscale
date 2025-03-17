@@ -24,7 +24,6 @@ import (
 	"testing"
 
 	apiv1 "github.com/dell/goisilon/api/v1"
-	v1 "github.com/dell/goisilon/api/v1"
 	apiv2 "github.com/dell/goisilon/api/v2"
 	"github.com/dell/goisilon/mocks"
 	"github.com/stretchr/testify/assert"
@@ -385,8 +384,8 @@ func TestCopyVolumeWithIsiPath(t *testing.T) {
 
 	// negative sceanrio where copy errors are returned
 
-	data1 := &v1.CopyIsiVolumesResp{
-		CopyErrors: []v1.CopyError{
+	data1 := &apiv1.CopyIsiVolumesResp{
+		CopyErrors: []apiv1.CopyError{
 			{
 				ErrorSrc: "source side",
 				Message:  "Permission denied",
@@ -406,7 +405,7 @@ func TestCopyVolumeWithIsiPath(t *testing.T) {
 		mock.Anything,
 		mock.AnythingOfType("**v1.CopyIsiVolumesResp"),
 	).Return(nil).Run(func(args mock.Arguments) {
-		respData := args.Get(6).(**v1.CopyIsiVolumesResp)
+		respData := args.Get(6).(**apiv1.CopyIsiVolumesResp)
 		*respData = data1
 	})
 	_, err = client.CopyVolumeWithIsiPath(defaultCtx, isiPath, sourceVolumeName, destinationVolumeName)
