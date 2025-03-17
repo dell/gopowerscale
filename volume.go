@@ -17,6 +17,8 @@ package goisilon
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -308,9 +310,19 @@ func (c *Client) CopyVolume(
 func (c *Client) CopyVolumeWithIsiPath(
 	ctx context.Context, isiPath, src, dest string,
 ) (Volume, error) {
-	_, err := apiv1.CopyIsiVolumeWithIsiPath(ctx, c.API, isiPath, src, dest)
+	res, err := apiv1.CopyIsiVolumeWithIsiPath(ctx, c.API, isiPath, src, dest)
 	if err != nil {
 		return nil, err
+	}
+	if res != nil && res.Success == false {
+		resJSON, err := json.Marshal(res)
+		if err != nil {
+			log.Error(ctx, "error encountered while cloning volume. error: '%v'", res.CopyErrors)
+			return nil, fmt.Errorf("error encountered while cloning volume. error: '%v'", res.CopyErrors)
+		}
+		log.Error(ctx, "error encountered while cloning volume. error: '%v'", string(resJSON))
+		return nil, fmt.Errorf("error encountered while cloning volume. error: '%v'", string(resJSON))
+
 	}
 
 	return c.GetVolumeWithIsiPath(ctx, isiPath, dest, dest)

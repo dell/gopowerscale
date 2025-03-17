@@ -38,6 +38,18 @@ type GetIsiVolumesResp struct {
 	Children []*VolumeName `json:"children"`
 }
 
+type CopyIsiVolumesResp struct {
+	CopyErrors []CopyError `json:"copy_errors"`
+	Success    bool        `json:"success"`
+}
+
+type CopyError struct {
+	ErrorSrc string `json:"error_src"`
+	Message  string `json:"message"`
+	Source   string `json:"source"`
+	Target   string `json:"target"`
+}
+
 // Isi PAPI Volume ACL JSON structs
 type Ownership struct {
 	Name string `json:"name"`
