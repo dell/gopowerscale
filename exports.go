@@ -23,7 +23,7 @@ import (
 	"github.com/dell/goisilon/openapi"
 
 	api "github.com/dell/goisilon/api"
-	"github.com/dell/goisilon/api/common/utils"
+	str "github.com/dell/goisilon/api/common/utils/stringutils"
 	apiv2 "github.com/dell/goisilon/api/v2"
 )
 
@@ -769,7 +769,7 @@ func (c *Client) getUpdatedClients(_ context.Context, _ int, clients *[]string, 
 		clients = &clientsToAdd
 	} else {
 		// ensure uniqueness, if the client to be added is already in, skip it
-		clientsToAdd = utils.RemoveStringsFromSlice(*clients, clientsToAdd)
+		clientsToAdd = str.RemoveStringsFromSlice(*clients, clientsToAdd)
 		*clients = append(*clients, clientsToAdd...)
 	}
 
@@ -846,7 +846,7 @@ func (c *Client) removeClients(clientsToRemove []string, sourceClients []string)
 	if sourceClients == nil {
 		return nil
 	}
-	return utils.RemoveStringsFromSlice(clientsToRemove, sourceClients)
+	return str.RemoveStringsFromSlice(clientsToRemove, sourceClients)
 }
 
 // SetExportClients sets the Export's clients property.
