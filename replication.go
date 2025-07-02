@@ -19,6 +19,7 @@ limitations under the License.
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -290,7 +291,11 @@ func (c *Client) WaitForNoActiveJobs(ctx context.Context, policyName string) err
 	return nil
 }
 
-func (c *Client) WaitForPolicyLastJobState(ctx context.Context, policyName string, state apiv11.JobState) error {
+// WaitForPolicyLastJobState queries the PowerScale system for the given policyName and waits for the LastJobState to
+// be equal to any state provided in state.
+//
+// The poll interval is 5 seconds and the timeout is 10 minutes.
+func (c *Client) WaitForPolicyLastJobState(ctx context.Context, policyName string, state ...apiv11.JobState) error {
 	pollErr := poll.ImmediateWithContext(ctx, defaultPoll, defaultTimeout,
 		func(iCtx context.Context) (bool, error) {
 			p, err := c.GetPolicyByName(iCtx, policyName)
@@ -298,11 +303,7 @@ func (c *Client) WaitForPolicyLastJobState(ctx context.Context, policyName strin
 				return false, err
 			}
 
-			if p.LastJobState != state {
-				return false, nil
-			}
-
-			return true, nil
+			return slices.Contains(state, p.LastJobState), nil
 		})
 
 	if pollErr != nil {
