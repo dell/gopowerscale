@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package utils
+package poll
 
 // Polling functionality inspired by https://github.com/kubernetes/apimachinery
 
@@ -30,7 +30,7 @@ type (
 	ConditionWithContextFunc func(context.Context) (done bool, err error)
 )
 
-func PollImmediateWithContext(ctx context.Context, interval, timeout time.Duration, condition ConditionWithContextFunc) error {
+func ImmediateWithContext(ctx context.Context, interval, timeout time.Duration, condition ConditionWithContextFunc) error {
 	return poll(ctx, true, poller(interval, timeout), condition)
 }
 

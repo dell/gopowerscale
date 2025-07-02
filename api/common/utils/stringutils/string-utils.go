@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package utils
+package stringutils
 
 // IsStringInSlice checks if a string is an element of a string slice
 func IsStringInSlice(str string, list []string) bool {
