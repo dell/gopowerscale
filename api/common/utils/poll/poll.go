@@ -30,7 +30,7 @@ type (
 	ConditionWithContextFunc func(context.Context) (done bool, err error)
 )
 
-func PollImmediateWithContext(ctx context.Context, interval, timeout time.Duration, condition ConditionWithContextFunc) error {
+func ImmediateWithContext(ctx context.Context, interval, timeout time.Duration, condition ConditionWithContextFunc) error {
 	return poll(ctx, true, poller(interval, timeout), condition)
 }
 

@@ -247,7 +247,7 @@ func (c *Client) GetReportsByPolicyName(ctx context.Context, policyName string, 
 }
 
 func (c *Client) WaitForPolicyEnabledFieldCondition(ctx context.Context, policyName string, enabled bool) error {
-	pollErr := poll.PollImmediateWithContext(ctx, defaultPoll, defaultTimeout,
+	pollErr := poll.ImmediateWithContext(ctx, defaultPoll, defaultTimeout,
 		func(iCtx context.Context) (bool, error) {
 			p, err := c.GetPolicyByName(iCtx, policyName)
 			if err != nil {
@@ -269,7 +269,7 @@ func (c *Client) WaitForPolicyEnabledFieldCondition(ctx context.Context, policyN
 }
 
 func (c *Client) WaitForNoActiveJobs(ctx context.Context, policyName string) error {
-	pollErr := poll.PollImmediateWithContext(ctx, defaultPoll, defaultTimeout,
+	pollErr := poll.ImmediateWithContext(ctx, defaultPoll, defaultTimeout,
 		func(iCtx context.Context) (bool, error) {
 			p, err := c.GetJobsByPolicyName(iCtx, policyName)
 			if err != nil {
@@ -291,7 +291,7 @@ func (c *Client) WaitForNoActiveJobs(ctx context.Context, policyName string) err
 }
 
 func (c *Client) WaitForPolicyLastJobState(ctx context.Context, policyName string, state apiv11.JobState) error {
-	pollErr := poll.PollImmediateWithContext(ctx, defaultPoll, defaultTimeout,
+	pollErr := poll.ImmediateWithContext(ctx, defaultPoll, defaultTimeout,
 		func(iCtx context.Context) (bool, error) {
 			p, err := c.GetPolicyByName(iCtx, policyName)
 			if err != nil {
@@ -313,7 +313,7 @@ func (c *Client) WaitForPolicyLastJobState(ctx context.Context, policyName strin
 }
 
 func (c *Client) WaitForTargetPolicyCondition(ctx context.Context, policyName string, condition apiv11.FailoverFailbackState) error {
-	pollErr := poll.PollImmediateWithContext(ctx, defaultPoll, defaultTimeout,
+	pollErr := poll.ImmediateWithContext(ctx, defaultPoll, defaultTimeout,
 		func(iCtx context.Context) (bool, error) {
 			tp, err := c.GetTargetPolicyByName(iCtx, policyName)
 			if err != nil {

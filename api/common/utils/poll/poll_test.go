@@ -34,7 +34,7 @@ func TestPollImmediateWithContext_Success(t *testing.T) {
 		return true, nil
 	}
 
-	err := PollImmediateWithContext(ctx, 1*time.Second, 3*time.Second, condition)
+	err := ImmediateWithContext(ctx, 1*time.Second, 3*time.Second, condition)
 	assert.NoError(t, err)
 }
 
@@ -47,7 +47,7 @@ func TestPollImmediateWithContext_Timeout(t *testing.T) {
 		return false, nil
 	}
 
-	err := PollImmediateWithContext(ctx, 1*time.Second, 2*time.Second, condition)
+	err := ImmediateWithContext(ctx, 1*time.Second, 2*time.Second, condition)
 	assert.Error(t, err)
 	assert.Equal(t, ErrWaitTimeout, err)
 }
@@ -127,7 +127,7 @@ func TestPollImmediateWithContext_Error(t *testing.T) {
 		return false, errors.New("condition error")
 	}
 
-	err := PollImmediateWithContext(ctx, 1*time.Second, 3*time.Second, condition)
+	err := ImmediateWithContext(ctx, 1*time.Second, 3*time.Second, condition)
 	assert.Error(t, err)
 	assert.Equal(t, "condition error", err.Error())
 }
