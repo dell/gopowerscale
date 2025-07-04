@@ -25,6 +25,7 @@ import (
 	api "github.com/dell/goisilon/api"
 	str "github.com/dell/goisilon/api/common/utils/stringutils"
 	apiv2 "github.com/dell/goisilon/api/v2"
+	apiv1 "github.com/dell/goisilon/api/v1"
 )
 
 // ExportList is a list of Isilon Exports.
@@ -113,7 +114,7 @@ func (c *Client) GetExportsCountAttachedToNode(
 ) (int, error) {
 	exports, err := apiv1.GetIsiExports(ctx, c.API)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
     volume_attach_count := 0
 	for _, each_export := range exports.ExportList {
