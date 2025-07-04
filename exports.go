@@ -111,7 +111,7 @@ func (c *Client) Export(ctx context.Context, name string) (int, error) {
 // node ip.
 func (c *Client) GetExportsCountAttachedToNode(
 	ctx context.Context, nodeip string,
-) (int, error) {
+) (int64, error) {
 	exports, err := apiv1.GetIsiExports(ctx, c.API)
 	if err != nil {
 		return 0, err
