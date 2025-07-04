@@ -25,6 +25,7 @@ import (
 	api "github.com/dell/goisilon/api"
 	str "github.com/dell/goisilon/api/common/utils/stringutils"
 	apiv2 "github.com/dell/goisilon/api/v2"
+	apiv1 "github.com/dell/goisilon/api/v1"
 )
 
 // ExportList is a list of Isilon Exports.
@@ -104,6 +105,28 @@ func (c *Client) Export(ctx context.Context, name string) (int, error) {
 	return apiv2.ExportCreate(
 		ctx, c.API,
 		&apiv2.Export{Paths: &paths})
+}
+
+// GetExportsCountAttachedToNode returns the volume export counth for the provided
+// node ip.
+func (c *Client) GetExportsCountAttachedToNode(
+	ctx context.Context, nodeip string,
+) (int64, error) {
+	exports, err := apiv1.GetIsiExports(ctx, c.API)
+	if err != nil {
+		return 0, err
+	}
+    var volume_attach_count int64
+	for _, each_export := range exports.ExportList {
+		for _, client := range each_export.Clients {
+			if client == nodeip {
+				volume_attach_count++
+				break
+			}
+		}
+	}
+
+	return volume_attach_count, nil
 }
 
 // ExportWithZone exports the volume with a given name and zone on the cluster
