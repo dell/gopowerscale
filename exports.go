@@ -106,6 +106,28 @@ func (c *Client) Export(ctx context.Context, name string) (int, error) {
 		&apiv2.Export{Paths: &paths})
 }
 
+// GetExportsCountAttachedToNode returns the volume export counth for the provided
+// node ip.
+func (c *Client) GetExportsCountAttachedToNode(
+	ctx context.Context, nodeip string,
+) (int, error) {
+	exports, err := apiv1.GetIsiExports(ctx, c.API)
+	if err != nil {
+		return nil, err
+	}
+    volume_attach_count := 0
+	for _, each_export := range exports.ExportList {
+		for _, client := range each_export.Clients {
+			if client == nodeip {
+				volume_attach_count++
+				break
+			}
+		}
+	}
+
+	return volume_attach_count, nil
+}
+
 // ExportWithZone exports the volume with a given name and zone on the cluster
 func (c *Client) ExportWithZone(ctx context.Context, name, zone, description string) (int, error) {
 	// Removed the call to c.IsExportedWithZone(ctx, name, zone) to check if the path has already been exported:
