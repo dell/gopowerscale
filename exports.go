@@ -116,7 +116,7 @@ func (c *Client) GetExportsCountAttachedToNode(
 	if err != nil {
 		return 0, err
 	}
-    volume_attach_count := 0
+    var volume_attach_count int64
 	for _, each_export := range exports.ExportList {
 		for _, client := range each_export.Clients {
 			if client == nodeip {
