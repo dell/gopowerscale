@@ -116,17 +116,17 @@ func (c *Client) GetExportsCountAttachedToNode(
 	if err != nil {
 		return 0, err
 	}
-	var volume_attach_count int64
-	for _, each_export := range exports.ExportList {
-		for _, client := range each_export.Clients {
+	var volumeattachcount int64
+	for _, eachexport := range exports.ExportList {
+		for _, client := range eachexport.Clients {
 			if client == nodeip {
-				volume_attach_count++
+				volumeattachcount++
 				break
 			}
 		}
 	}
 
-	return volume_attach_count, nil
+	return volumeattachcount, nil
 }
 
 // ExportWithZone exports the volume with a given name and zone on the cluster
