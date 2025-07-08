@@ -2867,6 +2867,7 @@ func TestListAllExportsWithStructParams(t *testing.T) {
 	_, err = client.ListAllExportsWithStructParams(defaultCtx, params)
 	assert.ErrorContains(t, err, "Could not find export")
 }
+
 func TestGetExportsCountAttachedToNode(t *testing.T) {
 	client := &Client{}
 	client.API = &mocks.Client{}
