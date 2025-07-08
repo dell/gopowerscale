@@ -25,6 +25,7 @@ import (
 
 	log "github.com/akutz/gournal"
 	api "github.com/dell/goisilon/api"
+	apiv1 "github.com/dell/goisilon/api/v1"
 	apiv2 "github.com/dell/goisilon/api/v2"
 	apiv4 "github.com/dell/goisilon/api/v4"
 	"github.com/dell/goisilon/mocks"
@@ -2865,4 +2866,29 @@ func TestListAllExportsWithStructParams(t *testing.T) {
 	client.API.(*mocks.Client).On("Get", anyArgs...).Return(errors.New("Could not find export")).Once()
 	_, err = client.ListAllExportsWithStructParams(defaultCtx, params)
 	assert.ErrorContains(t, err, "Could not find export")
+}
+func TestGetExportsCountAttachedToNode(t *testing.T) {
+	client := &Client{}
+	client.API = &mocks.Client{}
+	ctx := context.Background()
+
+	// Test case: API returns an error
+	expectedErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+	_, err := client.GetExportsCountAttachedToNode(ctx, "nodeip")
+	assert.Error(t, err, expectedErr)
+
+	// Test case: One export with matching client
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(**apiv1.GetIsiExportsResp)
+		*resp = &apiv1.GetIsiExportsResp{
+			ExportList: []*apiv1.IsiExport{
+				{Clients: []string{"nodeip"}},
+			},
+		}
+	}).Once()
+	count, err := client.GetExportsCountAttachedToNode(ctx, "nodeip")
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), count)
 }
