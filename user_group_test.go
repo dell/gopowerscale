@@ -13,17 +13,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package goisilon
+package gopowerscale
 
 import (
 	"testing"
 
-	api "github.com/dell/goisilon/api/v1"
-	apiv1 "github.com/dell/goisilon/api/v1"
+	api "github.com/dell/gopowerscale/api/v1"
+	apiv1 "github.com/dell/gopowerscale/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/dell/goisilon/mocks"
+	"github.com/dell/gopowerscale/mocks"
 )
 
 // Test GetAllGroups() and GetGroupsWithFilter()

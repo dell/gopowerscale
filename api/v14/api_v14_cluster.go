@@ -3,7 +3,7 @@ package v14
 import (
 	"context"
 
-	"github.com/dell/goisilon/api"
+	"github.com/dell/gopowerscale/api"
 )
 
 // GetIsiClusterAcs queries ACS status of OneFS cluster

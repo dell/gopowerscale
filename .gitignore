@@ -21,3 +21,5 @@
 
 # For .idea users
 .idea
+
+vendor/

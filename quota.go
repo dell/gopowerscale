@@ -13,13 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package goisilon
+package gopowerscale
 
 import (
 	"context"
 
-	api "github.com/dell/goisilon/api/v1"
-	apiV5 "github.com/dell/goisilon/api/v5"
+	api "github.com/dell/gopowerscale/api/v1"
+	apiV5 "github.com/dell/gopowerscale/api/v5"
 )
 
 // Quota maps to an Isilon filesystem quota.

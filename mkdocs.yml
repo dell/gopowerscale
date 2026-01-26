@@ -1,0 +1,7 @@
+site_name: 'gopowerscale'
+site_description: 'gopowerscale Documentation.'
+docs_dir: docs
+plugins:
+  - techdocs-core
+theme:
+  name: material

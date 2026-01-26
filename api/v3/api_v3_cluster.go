@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dell/goisilon/api"
+	"github.com/dell/gopowerscale/api"
 )
 
 // constants

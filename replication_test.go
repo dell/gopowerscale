@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package goisilon
+package gopowerscale
 
 import (
 	"context"
@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/dell/goisilon/api"
-	apiv11 "github.com/dell/goisilon/api/v11"
-	"github.com/dell/goisilon/mocks"
+	"github.com/dell/gopowerscale/api"
+	apiv11 "github.com/dell/gopowerscale/api/v11"
+	"github.com/dell/gopowerscale/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

@@ -13,14 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package goisilon
+package gopowerscale
 
 import (
 	"context"
 
-	apiv14 "github.com/dell/goisilon/api/v14"
-	apiv3 "github.com/dell/goisilon/api/v3"
-	apiv7 "github.com/dell/goisilon/api/v7"
+	apiv14 "github.com/dell/gopowerscale/api/v14"
+	apiv3 "github.com/dell/gopowerscale/api/v3"
+	apiv7 "github.com/dell/gopowerscale/api/v7"
 )
 
 // Stats is Isilon statistics data structure .

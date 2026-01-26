@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package goisilon
+package gopowerscale
 
 import (
 	"context"
@@ -23,13 +23,13 @@ import (
 	"strconv"
 	"testing"
 
-	log "github.com/akutz/gournal"
-	api "github.com/dell/goisilon/api"
-	apiv1 "github.com/dell/goisilon/api/v1"
-	apiv2 "github.com/dell/goisilon/api/v2"
-	apiv4 "github.com/dell/goisilon/api/v4"
-	"github.com/dell/goisilon/mocks"
-	"github.com/dell/goisilon/openapi"
+	api "github.com/dell/gopowerscale/api"
+	apiv1 "github.com/dell/gopowerscale/api/v1"
+	apiv2 "github.com/dell/gopowerscale/api/v2"
+	apiv4 "github.com/dell/gopowerscale/api/v4"
+	"github.com/dell/gopowerscale/mocks"
+	"github.com/dell/gopowerscale/openapi"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

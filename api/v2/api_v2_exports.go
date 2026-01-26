@@ -21,7 +21,7 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/dell/goisilon/api"
+	"github.com/dell/gopowerscale/api"
 )
 
 type ExportReq struct {

@@ -19,7 +19,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dell/goisilon/api"
+	"github.com/dell/gopowerscale/api"
 )
 
 // GetIsiQuota queries the quota for a directory

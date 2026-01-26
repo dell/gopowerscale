@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package goisilon
+package gopowerscale
 
 import (
 	"context"
 
-	api "github.com/dell/goisilon/api/v1"
+	api "github.com/dell/gopowerscale/api/v1"
 )
 
 // User maps to an Isilon User.

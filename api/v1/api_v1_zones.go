@@ -18,7 +18,7 @@ package v1
 import (
 	"context"
 
-	"github.com/dell/goisilon/api"
+	"github.com/dell/gopowerscale/api"
 )
 
 // GetZoneByName returns a specific access zone which matches the name parsed in

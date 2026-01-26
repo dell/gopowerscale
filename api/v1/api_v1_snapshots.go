@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/dell/goisilon/api"
+	"github.com/dell/gopowerscale/api"
 )
 
 // GetIsiSnapshots queries a list of all snapshots on the cluster

@@ -13,12 +13,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package goisilon
+package gopowerscale
 
 import (
 	"context"
 
-	api "github.com/dell/goisilon/api/v2"
+	api "github.com/dell/gopowerscale/api/v2"
 )
 
 // ACL is an Isilon Access Control List used for managing an object's security.

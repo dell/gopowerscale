@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dell/goisilon/api"
+	"github.com/dell/gopowerscale/api"
 )
 
 const (

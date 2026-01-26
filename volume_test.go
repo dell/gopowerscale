@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package goisilon
+package gopowerscale
 
 import (
 	"bytes"
@@ -23,9 +23,9 @@ import (
 	"path"
 	"testing"
 
-	apiv1 "github.com/dell/goisilon/api/v1"
-	apiv2 "github.com/dell/goisilon/api/v2"
-	"github.com/dell/goisilon/mocks"
+	apiv1 "github.com/dell/gopowerscale/api/v1"
+	apiv2 "github.com/dell/gopowerscale/api/v2"
+	"github.com/dell/gopowerscale/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

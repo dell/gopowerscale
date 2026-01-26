@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dell/goisilon/api"
+	"github.com/dell/gopowerscale/api"
 )
 
 // GetIsiGroup queries the group by group-id.
@@ -29,17 +29,17 @@ func GetIsiGroup(ctx context.Context, client api.Client, groupName *string, gid 
 
 	authGroupID, err := getAuthMemberID(fileGroupTypeGroup, groupName, gid)
 	if err != nil {
-		return
+		return group, err
 	}
 
 	var groupListResp *IsiGroupListResp
 	if err = client.Get(ctx, groupPath, authGroupID, nil, nil, &groupListResp); err != nil {
-		return
+		return group, err
 	}
 
 	if groupListResp.Groups != nil && len(groupListResp.Groups) > 0 {
 		group = groupListResp.Groups[0]
-		return
+		return group, err
 	}
 
 	return nil, fmt.Errorf("group not found: %s", authGroupID)
@@ -82,7 +82,7 @@ func GetIsiGroupList(ctx context.Context, client api.Client,
 	var groupListResp *IsiGroupListRespResume
 	// First call without Resume param
 	if err = client.Get(ctx, groupPath, "", values, nil, &groupListResp); err != nil {
-		return
+		return groups, err
 	}
 
 	for {
@@ -95,13 +95,13 @@ func GetIsiGroupList(ctx context.Context, client api.Client,
 			return nil, err
 		}
 	}
-	return
+	return groups, err
 }
 
 // getIsiGroupListWithResume queries the next page groups based on resume token.
 func getIsiGroupListWithResume(ctx context.Context, client api.Client, resume string) (groups *IsiGroupListRespResume, err error) {
 	err = client.Get(ctx, groupPath, "", api.OrderedValues{{[]byte("resume"), []byte(resume)}}, nil, &groups)
-	return
+	return groups, err
 }
 
 // GetIsiGroupMembers retrieves the members of a group.
@@ -110,13 +110,13 @@ func GetIsiGroupMembers(ctx context.Context, client api.Client, groupName *strin
 
 	authGroupID, err := getAuthMemberID(fileGroupTypeGroup, groupName, gid)
 	if err != nil {
-		return
+		return members, err
 	}
 
 	var groupMemberListResp *IsiGroupMemberListRespResume
 	// First call without Resume param
 	if err = client.Get(ctx, fmt.Sprintf(groupMemberPath, authGroupID), "", nil, nil, &groupMemberListResp); err != nil {
-		return
+		return members, err
 	}
 
 	for {
@@ -129,13 +129,13 @@ func GetIsiGroupMembers(ctx context.Context, client api.Client, groupName *strin
 			return nil, err
 		}
 	}
-	return
+	return members, err
 }
 
 // getIsiGroupMemberListWithResume queries the next page group members based on resume token.
 func getIsiGroupMemberListWithResume(ctx context.Context, client api.Client, groupID, resume string) (members *IsiGroupMemberListRespResume, err error) {
 	err = client.Get(ctx, fmt.Sprintf(groupMemberPath, groupID), "", api.OrderedValues{{[]byte("resume"), []byte(resume)}}, nil, &members)
-	return
+	return members, err
 }
 
 // AddIsiGroupMember adds a member to the group, member can be a user/group.
@@ -274,7 +274,7 @@ func UpdateIsiGroupGID(ctx context.Context, client api.Client, groupName *string
 
 	authGroupID, err := getAuthMemberID(fileGroupTypeGroup, groupName, gid)
 	if err != nil {
-		return
+		return err
 	}
 
 	return client.Put(ctx, groupPath, authGroupID, values, nil, &IsiUpdateGroupReq{newGid}, nil)
@@ -285,7 +285,7 @@ func DeleteIsiGroup(ctx context.Context, client api.Client, groupName *string, g
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/auth/groups/<group-id>
 	authGroupID, err := getAuthMemberID(fileGroupTypeGroup, groupName, gid)
 	if err != nil {
-		return
+		return err
 	}
 
 	return client.Delete(ctx, groupPath, authGroupID, nil, nil, nil)

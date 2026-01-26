@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package goisilon
+package gopowerscale
 
 import (
 	"context"
@@ -24,9 +24,9 @@ import (
 	"strings"
 	"sync"
 
-	log "github.com/akutz/gournal"
-	apiv1 "github.com/dell/goisilon/api/v1"
-	apiv2 "github.com/dell/goisilon/api/v2"
+	apiv1 "github.com/dell/gopowerscale/api/v1"
+	apiv2 "github.com/dell/gopowerscale/api/v2"
+	log "github.com/sirupsen/logrus"
 )
 
 // Volume represents an Isilon Volume (namespace API).

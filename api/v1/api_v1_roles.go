@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dell/goisilon/api"
+	"github.com/dell/gopowerscale/api"
 )
 
 // GetIsiRole queries the role by role-id.
@@ -29,12 +29,12 @@ func GetIsiRole(ctx context.Context, client api.Client, roleID string) (role *Is
 
 	var roleResp *IsiRoleListResp
 	if err = client.Get(ctx, rolePath, roleID, nil, nil, &roleResp); err != nil {
-		return
+		return role, err
 	}
 
 	if roleResp.Roles != nil && len(roleResp.Roles) > 0 {
 		role = roleResp.Roles[0]
-		return
+		return role, err
 	}
 
 	return nil, fmt.Errorf("role not found: %s", roleID)
@@ -54,7 +54,7 @@ func GetIsiRoleList(ctx context.Context, client api.Client, queryResolveNames *b
 	var roleListResp *IsiRoleListRespResume
 	// First call without Resume param
 	if err = client.Get(ctx, rolePath, "", values, nil, &roleListResp); err != nil {
-		return
+		return roles, err
 	}
 
 	for {
@@ -64,17 +64,17 @@ func GetIsiRoleList(ctx context.Context, client api.Client, queryResolveNames *b
 		}
 
 		if roleListResp, err = getIsiRoleListWithResume(ctx, client, roleListResp.Resume); err != nil {
-			return
+			return roles, err
 		}
 	}
 
-	return
+	return roles, err
 }
 
 // getIsiRoleListWithResume queries the next page roles based on resume token.
 func getIsiRoleListWithResume(ctx context.Context, client api.Client, resume string) (roles *IsiRoleListRespResume, err error) {
 	err = client.Get(ctx, rolePath, "", api.OrderedValues{{[]byte("resume"), []byte(resume)}}, nil, &roles)
-	return
+	return roles, err
 }
 
 // AddIsiRoleMember adds a member to the role, member can be user/group.
