@@ -19,7 +19,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dell/goisilon/api"
+	"github.com/dell/gopowerscale/api"
 )
 
 // GetIsiUser queries the user by user user-id.
@@ -28,17 +28,17 @@ func GetIsiUser(ctx context.Context, client api.Client, userName *string, uid *i
 
 	authUserID, err := getAuthMemberID(fileGroupTypeUser, userName, uid)
 	if err != nil {
-		return
+		return user, err
 	}
 
 	var userListResp *IsiUserListResp
 	if err = client.Get(ctx, userPath, authUserID, nil, nil, &userListResp); err != nil {
-		return
+		return user, err
 	}
 
 	if userListResp.Users != nil && len(userListResp.Users) > 0 {
 		user = userListResp.Users[0]
-		return
+		return user, err
 	}
 
 	return nil, fmt.Errorf("user not found: %s", authUserID)
@@ -81,7 +81,7 @@ func GetIsiUserList(ctx context.Context, client api.Client,
 	var userListResp *IsiUserListRespResume
 	// First call without Resume param
 	if err = client.Get(ctx, userPath, "", values, nil, &userListResp); err != nil {
-		return
+		return users, err
 	}
 	for {
 		users = append(users, userListResp.Users...)
@@ -93,13 +93,13 @@ func GetIsiUserList(ctx context.Context, client api.Client,
 			return nil, err
 		}
 	}
-	return
+	return users, err
 }
 
 // getIsiUserListWithResume queries the next page users based on resume token.
 func getIsiUserListWithResume(ctx context.Context, client api.Client, resume string) (users *IsiUserListRespResume, err error) {
 	err = client.Get(ctx, userPath, "", api.OrderedValues{{[]byte("resume"), []byte(resume)}}, nil, &users)
-	return
+	return users, err
 }
 
 // CreateIsiUser creates a new user.
@@ -205,7 +205,7 @@ func UpdateIsiUser(ctx context.Context, client api.Client, userName *string, uid
 	//				}
 	authUserID, err := getAuthMemberID(fileGroupTypeUser, userName, uid)
 	if err != nil {
-		return
+		return err
 	}
 
 	values := api.OrderedValues{}
@@ -256,7 +256,7 @@ func DeleteIsiUser(ctx context.Context, client api.Client, userName *string, uid
 
 	authUserID, err := getAuthMemberID(fileGroupTypeUser, userName, uid)
 	if err != nil {
-		return
+		return err
 	}
 
 	return client.Delete(ctx, userPath, authUserID, nil, nil, nil)

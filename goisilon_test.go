@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package goisilon
+package gopowerscale
 
 import (
 	"context"
@@ -21,10 +21,9 @@ import (
 	"os"
 	"testing"
 
-	log "github.com/akutz/gournal"
-	glogrus "github.com/akutz/gournal/logrus"
-	"github.com/dell/goisilon/mocks"
-	"github.com/sirupsen/logrus"
+	"github.com/dell/gopowerscale/api"
+	"github.com/dell/gopowerscale/mocks"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -40,11 +39,8 @@ func init() {
 	defaultCtx = context.Background()
 	defaultCtx = context.WithValue(
 		defaultCtx,
-		log.AppenderKey(),
-		glogrus.NewWithOptions(
-			logrus.StandardLogger().Out,
-			logrus.DebugLevel,
-			logrus.StandardLogger().Formatter))
+		api.LevelKey,
+		log.DebugLevel)
 }
 
 func skipTest(t *testing.T) {
@@ -58,7 +54,7 @@ func TestMain(m *testing.M) {
 	if testing.Verbose() {
 		defaultCtx = context.WithValue(
 			defaultCtx,
-			log.LevelKey(),
+			api.LevelKey,
 			log.DebugLevel)
 	}
 

@@ -18,8 +18,8 @@ package v12
 import (
 	"context"
 
-	"github.com/dell/goisilon/api"
-	"github.com/dell/goisilon/openapi"
+	"github.com/dell/gopowerscale/api"
+	"github.com/dell/gopowerscale/openapi"
 )
 
 const sharesPath = "/platform/12/protocols/smb/shares"

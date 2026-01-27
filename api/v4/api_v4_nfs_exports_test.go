@@ -20,7 +20,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/dell/goisilon/mocks"
+	"github.com/dell/gopowerscale/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

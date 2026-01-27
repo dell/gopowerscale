@@ -13,19 +13,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package goisilon
+package gopowerscale
 
 import (
 	"context"
 	"errors"
 
-	apiv4 "github.com/dell/goisilon/api/v4"
-	"github.com/dell/goisilon/openapi"
+	apiv4 "github.com/dell/gopowerscale/api/v4"
+	"github.com/dell/gopowerscale/openapi"
 
-	api "github.com/dell/goisilon/api"
-	str "github.com/dell/goisilon/api/common/utils/stringutils"
-	apiv1 "github.com/dell/goisilon/api/v1"
-	apiv2 "github.com/dell/goisilon/api/v2"
+	api "github.com/dell/gopowerscale/api"
+	str "github.com/dell/gopowerscale/api/common/utils/stringutils"
+	apiv1 "github.com/dell/gopowerscale/api/v1"
+	apiv2 "github.com/dell/gopowerscale/api/v2"
 )
 
 // ExportList is a list of Isilon Exports.

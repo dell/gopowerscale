@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	api "github.com/dell/goisilon/api"
+	api "github.com/dell/gopowerscale/api"
 
 	mock "github.com/stretchr/testify/mock"
 )

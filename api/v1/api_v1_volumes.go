@@ -19,7 +19,7 @@ import (
 	"context"
 	"path"
 
-	"github.com/dell/goisilon/api"
+	"github.com/dell/gopowerscale/api"
 )
 
 // const defaultACL = "public_read_write"

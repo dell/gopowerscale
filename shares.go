@@ -13,13 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package goisilon
+package gopowerscale
 
 import (
 	"context"
 
-	apiv12 "github.com/dell/goisilon/api/v12"
-	"github.com/dell/goisilon/openapi"
+	apiv12 "github.com/dell/gopowerscale/api/v12"
+	"github.com/dell/gopowerscale/openapi"
 )
 
 // ListALlSmbSharesWithStructParams returns all the smb shares with params

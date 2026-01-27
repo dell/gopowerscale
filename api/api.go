@@ -32,10 +32,15 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/akutz/gournal"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/PuerkitoBio/goquery"
+)
+
+type contextKey uint8
+
+const (
+	LevelKey contextKey = iota
 )
 
 const (
@@ -400,7 +405,7 @@ var doWithHeadersFunc = func(c *client, ctx context.Context, method string, uri 
 	}
 	defer func() {
 		if err := res.Body.Close(); err != nil {
-			logrus.Printf("Error closing HTTP response: %s", err.Error())
+			log.Printf("Error closing HTTP response: %s", err.Error())
 		}
 	}()
 	logResponse(ctx, res, c.verboseLogging)
@@ -494,7 +499,7 @@ var doAndGetResponseBodyFunc = func(
 			req, err = http.NewRequest(method, u.String(), r)
 			defer func() {
 				if err := r.Close(); err != nil {
-					logrus.Printf("Error closing HTTP response: %s", err.Error())
+					log.Printf("Error closing HTTP response: %s", err.Error())
 				}
 			}()
 			if v, ok := headers[headerKeyContentType]; ok {
@@ -557,10 +562,10 @@ var doAndGetResponseBodyFunc = func(
 	logReqBuf := &bytes.Buffer{}
 
 	if debug {
-		log.Info(ctx, "Setting log level to debug in goisilon")
+		log.Info(ctx, "Setting log level to debug in gopowerscale")
 		ctx = context.WithValue(
 			ctx,
-			log.LevelKey(),
+			LevelKey,
 			log.DebugLevel)
 	}
 
@@ -680,7 +685,7 @@ var authenticateFunc = func(c *client, ctx context.Context, username string, pas
 		log.Debug(ctx, "Authentication response code: %d", resp.StatusCode)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
-				logrus.Printf("Error closing HTTP response: %s", err.Error())
+				log.Printf("Error closing HTTP response: %s", err.Error())
 			}
 		}()
 

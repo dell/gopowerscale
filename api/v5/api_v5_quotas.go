@@ -20,8 +20,8 @@ import (
 	"errors"
 	"fmt"
 
-	log "github.com/akutz/gournal"
-	"github.com/dell/goisilon/api"
+	"github.com/dell/gopowerscale/api"
+	log "github.com/sirupsen/logrus"
 )
 
 const (

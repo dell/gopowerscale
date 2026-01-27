@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dell/goisilon/api"
+	"github.com/dell/gopowerscale/api"
 )
 
 const (
@@ -102,5 +102,5 @@ func getAuthMemberID(memberType string, memberName *string, memberID *int32) (au
 	if memberID != nil {
 		authMemberID = fmt.Sprintf("%sID:%d", strings.ToUpper(memberType)[0:1], *memberID)
 	}
-	return
+	return authMemberID, err
 }

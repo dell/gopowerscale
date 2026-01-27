@@ -24,7 +24,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/dell/goisilon/api"
+	"github.com/dell/gopowerscale/api"
 )
 
 // ContainerChild is a child object of a container.

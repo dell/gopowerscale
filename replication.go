@@ -1,4 +1,4 @@
-package goisilon
+package gopowerscale
 
 /*
 Copyright (c) 2021-2023 Dell Inc, or its subsidiaries.
@@ -23,9 +23,9 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/akutz/gournal"
-	"github.com/dell/goisilon/api/common/utils/poll"
-	apiv11 "github.com/dell/goisilon/api/v11"
+	"github.com/dell/gopowerscale/api/common/utils/poll"
+	apiv11 "github.com/dell/gopowerscale/api/v11"
+	log "github.com/sirupsen/logrus"
 )
 
 const (

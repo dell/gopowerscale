@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 
-# Configuration file for goisilon tests
+# Configuration file for gopowerscale tests
 
 GOISILON_ENDPOINT="https://1.1.1.0:8080"
 GOISILON_USERNAME="admin"

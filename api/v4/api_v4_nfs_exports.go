@@ -18,8 +18,8 @@ package v4
 import (
 	"context"
 
-	"github.com/dell/goisilon/api"
-	"github.com/dell/goisilon/openapi"
+	"github.com/dell/gopowerscale/api"
+	"github.com/dell/gopowerscale/openapi"
 )
 
 const exportsPath = "/platform/4/protocols/nfs/exports"
