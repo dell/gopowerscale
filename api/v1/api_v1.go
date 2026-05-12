@@ -37,6 +37,7 @@ const (
 	roleMemberPath    = "platform/1/auth/roles/%s/members"
 	groupPath         = "platform/1/auth/groups"
 	groupMemberPath   = "platform/1/auth/groups/%s/members"
+	userLookupPath    = "platform/1/auth/mapping/users/lookup"
 )
 
 var debug, _ = strconv.ParseBool(os.Getenv("GOISILON_DEBUG"))

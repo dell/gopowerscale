@@ -25,3 +25,8 @@ import (
 func (c *Client) GetZoneByName(ctx context.Context, name string) (*apiv1.IsiZone, error) {
 	return apiv1.GetZoneByName(ctx, c.API, name)
 }
+
+// GetIsiZoneList returns a list of all access zones
+func (c *Client) GetIsiZoneList(ctx context.Context) (*apiv1.GetIsiZonesResp, error) {
+	return apiv1.GetIsiZoneList(ctx, c.API)
+}

@@ -133,6 +133,22 @@ func TestWriteIndentedN(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, "forced write error", err.Error())
 	})
+
+	t.Run("empty input", func(t *testing.T) {
+		var out bytes.Buffer
+		emptyData := []byte("")
+		err := WriteIndentedN(&out, emptyData, 2)
+		assert.NoError(t, err)
+		assert.Equal(t, "", out.String())
+	})
+
+	t.Run("single line without newline", func(t *testing.T) {
+		var out bytes.Buffer
+		singleLineData := []byte("single line")
+		err := WriteIndentedN(&out, singleLineData, 3)
+		assert.NoError(t, err)
+		assert.Equal(t, "   single line", out.String())
+	})
 }
 
 func TestEncryptPassword(t *testing.T) {

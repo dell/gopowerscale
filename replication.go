@@ -352,7 +352,7 @@ func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
 
 	runningJobs, err := c.GetJobsByPolicyName(ctx, policyName)
 	if err != nil {
-		log.Info(ctx, err.Error())
+		log.WithContext(ctx).Info(err.Error())
 		return err
 	}
 	for _, i := range runningJobs {
@@ -362,7 +362,7 @@ func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
 		}
 	}
 	if isRunning {
-		log.Info(ctx, "found active jobs, waiting for completion")
+		log.WithContext(ctx).Info("found active jobs, waiting for completion")
 		err = c.WaitForNoActiveJobs(ctx, policyName)
 		if err != nil {
 			return err
@@ -372,7 +372,7 @@ func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
 	jobReq := &apiv11.JobRequest{
 		ID: policyName,
 	}
-	log.Info(ctx, "found no active sync jobs, starting a new one")
+	log.WithContext(ctx).Info("found no active sync jobs, starting a new one")
 
 	// workaround for PowerScale KB article
 	// https://www.dell.com/support/kbdoc/en-us/000019414/quotas-on-synciq-source-directories
@@ -395,7 +395,7 @@ func (c *Client) SyncPolicy(ctx context.Context, policyName string) error {
 				return fmt.Errorf("found no retryable error in reports for failed sync job %s", policyName)
 			}
 
-			log.Info(ctx, "Sync job failed with error: %s. %v of %v - retrying in %v...",
+			log.WithContext(ctx).Infof("Sync job failed with error: %s. %v of %v - retrying in %v...",
 				reports.Reports[0].Errors[0], i+1, maxRetries, retryInterval)
 			time.Sleep(retryInterval)
 

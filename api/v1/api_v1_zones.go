@@ -37,3 +37,16 @@ func GetZoneByName(ctx context.Context,
 	}
 	return resp.Zones[0], nil
 }
+
+// GetIsiZoneList returns a list of all access zones
+func GetIsiZoneList(ctx context.Context,
+	client api.Client,
+) (*GetIsiZonesResp, error) {
+	var resp GetIsiZonesResp
+	// PAPI call: GET https://1.2.3.4:8080/platform/1/zones
+	err := client.Get(ctx, zonesPath, "", nil, nil, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}

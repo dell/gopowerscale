@@ -4,6 +4,7 @@ package mocks
 
 import (
 	context "context"
+	netHttp "net/http"
 
 	api "github.com/dell/gopowerscale/api"
 
@@ -226,6 +227,29 @@ func (_m *Client) SetCSRFToken(csrf string) {
 // SetReferer provides a mock function with given fields: referer
 func (_m *Client) SetReferer(referer string) {
 	_m.Called(referer)
+}
+
+// SetCustomHTTPHeaders provides a mock function with given fields: headers
+func (_m *Client) SetCustomHTTPHeaders(headers netHttp.Header) {
+	_m.Called(headers)
+}
+
+// GetCustomHTTPHeaders provides a mock function with no fields
+func (_m *Client) GetCustomHTTPHeaders() netHttp.Header {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCustomHTTPHeaders")
+	}
+
+	var r0 netHttp.Header
+	if rf, ok := ret.Get(0).(func() netHttp.Header); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(netHttp.Header)
+	}
+
+	return r0
 }
 
 // User provides a mock function with no fields

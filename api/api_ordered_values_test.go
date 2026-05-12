@@ -16,6 +16,7 @@ limitations under the License.
 package api
 
 import (
+	"bytes"
 	"os"
 	"testing"
 
@@ -117,6 +118,45 @@ func TestStringOrderedValuesGet(t *testing.T) {
 	assert.Equal(t, "", v.StringGet("query"))
 	assert.Equal(t, "2", v.StringGet("size"))
 	assert.Equal(t, "owner", v.StringGet("detail"))
+
+	// Test empty key case
+	assert.Equal(t, "", v.StringGet(""))
+
+	// Test non-existent key
+	assert.Equal(t, "", v.StringGet("nonexistent"))
+}
+
+func TestOrderedValuesEncodeTo(t *testing.T) {
+	v := NewOrderedValues([][]string{
+		{"query"},
+		{"size", "2"},
+		{"detail", "owner", "group"},
+	})
+
+	// Test successful encoding
+	var buf bytes.Buffer
+	err := v.EncodeTo(&buf)
+	assert.NoError(t, err)
+	assert.Equal(t, "query&size=2&detail=owner,group", buf.String())
+
+	// Test with empty values
+	emptyV := OrderedValues{}
+	var emptyBuf bytes.Buffer
+	err = emptyV.EncodeTo(&emptyBuf)
+	assert.NoError(t, err)
+	assert.Equal(t, "", emptyBuf.String())
+
+	// Test with values that have empty arrays
+	vWithEmpty := OrderedValues{
+		{}, // empty array should be skipped
+		{[]byte("key1")},
+		{}, // another empty array
+		{[]byte("key2"), []byte("value2")},
+	}
+	var buf2 bytes.Buffer
+	err = vWithEmpty.EncodeTo(&buf2)
+	assert.NoError(t, err)
+	assert.Equal(t, "key1&key2=value2", buf2.String())
 }
 
 func TestOrderedValuesGetOk(t *testing.T) {

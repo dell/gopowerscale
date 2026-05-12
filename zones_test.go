@@ -45,3 +45,30 @@ func TestGetZoneByName(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, expectedZone, zone)
 }
+
+// Test if GetIsiZoneList returns all access zones correctly
+func TestGetIsiZoneList(t *testing.T) {
+	ctx := context.Background()
+	expectedZones := []*apiv1.IsiZone{
+		{
+			Name: "System",
+			ID:   "system-id",
+			Path: "/ifs",
+		},
+		{
+			Name: "csi0zone",
+			ID:   "zone-id",
+			Path: "/ifs/csi0zone",
+		},
+	}
+	client.API.(*mocks.Client).On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv1.GetIsiZonesResp)
+		*resp = apiv1.GetIsiZonesResp{
+			Zones: expectedZones,
+		}
+	}).Once()
+	zonesResp, err := client.GetIsiZoneList(ctx)
+	assert.Nil(t, err)
+	assert.NotNil(t, zonesResp)
+	assert.Equal(t, expectedZones, zonesResp.Zones)
+}

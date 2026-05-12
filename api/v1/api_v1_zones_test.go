@@ -38,3 +38,18 @@ func TestGetZoneByName(t *testing.T) {
 	_, err = GetZoneByName(ctx, client, "name")
 	assert.Equal(t, nil, err)
 }
+
+func TestGetIsiZoneList(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+	client.On("Get", anyArgs...).Return(errors.New("error found")).Once()
+	_, err := GetIsiZoneList(ctx, client)
+	if err == nil {
+		assert.Equal(t, "Test case failed", err)
+	}
+	client.ExpectedCalls = nil
+	client.On("Get", anyArgs...).Return(nil).Once()
+	resp, err := GetIsiZoneList(ctx, client)
+	assert.Equal(t, nil, err)
+	assert.NotNil(t, resp)
+}

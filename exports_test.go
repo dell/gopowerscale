@@ -2893,3 +2893,211 @@ func TestGetExportsCountAttachedToNode(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, int64(1), count)
 }
+
+func TestListExportsWithStructParams(t *testing.T) {
+	client := &Client{}
+	client.API = &mocks.Client{}
+	ctx := context.Background()
+
+	// Test case: Successful call
+	params := apiv4.ListV4NfsExportsParams{}
+	expectedExports := &openapi.V2NfsExports{}
+
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*openapi.V2NfsExports)
+		*resp = *expectedExports
+	}).Once()
+
+	result, err := client.ListExportsWithStructParams(ctx, params)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedExports, result)
+
+	// Test case: API returns error
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	expectedErr := errors.New("API error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+
+	result, err = client.ListExportsWithStructParams(ctx, params)
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestGetExportWithStructParams(t *testing.T) {
+	client := &Client{}
+	client.API = &mocks.Client{}
+	ctx := context.Background()
+
+	// Test case: Successful call
+	params := apiv4.GetV2NfsExportRequest{}
+	expectedExport := &openapi.V2NfsExportsExtended{}
+
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*openapi.V2NfsExportsExtended)
+		*resp = *expectedExport
+	}).Once()
+
+	result, err := client.GetExportWithStructParams(ctx, params)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedExport, result)
+
+	// Test case: API returns error
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	expectedErr := errors.New("API error")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+
+	result, err = client.GetExportWithStructParams(ctx, params)
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestCreateExportWithStructParams(t *testing.T) {
+	client := &Client{}
+	client.API = &mocks.Client{}
+	ctx := context.Background()
+
+	// Test case: Successful call
+	params := apiv4.CreateV4NfsExportRequest{}
+	expectedResponse := &openapi.Createv3EventEventResponse{}
+
+	client.API.(*mocks.Client).On("Post", anyArgs[0:7]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(6).(*openapi.Createv3EventEventResponse)
+		*resp = *expectedResponse
+	}).Once()
+
+	result, err := client.CreateExportWithStructParams(ctx, params)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedResponse, result)
+
+	// Test case: API returns error
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	expectedErr := errors.New("API error")
+	client.API.(*mocks.Client).On("Post", anyArgs[0:7]...).Return(expectedErr).Once()
+
+	result, err = client.CreateExportWithStructParams(ctx, params)
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestDeleteExportWithStructParams(t *testing.T) {
+	client := &Client{}
+	client.API = &mocks.Client{}
+	ctx := context.Background()
+
+	// Test case: Successful call
+	params := apiv4.DeleteV4NfsExportRequest{}
+
+	client.API.(*mocks.Client).On("Delete", anyArgs[0:6]...).Return(nil).Once()
+
+	err := client.DeleteExportWithStructParams(ctx, params)
+	assert.NoError(t, err)
+
+	// Test case: API returns error
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	expectedErr := errors.New("API error")
+	client.API.(*mocks.Client).On("Delete", anyArgs[0:6]...).Return(expectedErr).Once()
+
+	err = client.DeleteExportWithStructParams(ctx, params)
+	assert.Error(t, err)
+}
+
+func TestUpdateExportWithStructParams(t *testing.T) {
+	client := &Client{}
+	client.API = &mocks.Client{}
+	ctx := context.Background()
+
+	// Test case: Successful call
+	params := apiv4.UpdateV4NfsExportRequest{}
+
+	client.API.(*mocks.Client).On("Put", anyArgs[0:7]...).Return(nil).Once()
+
+	err := client.UpdateExportWithStructParams(ctx, params)
+	assert.NoError(t, err)
+
+	// Test case: API returns error
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	expectedErr := errors.New("API error")
+	client.API.(*mocks.Client).On("Put", anyArgs[0:7]...).Return(expectedErr).Once()
+
+	err = client.UpdateExportWithStructParams(ctx, params)
+	assert.Error(t, err)
+}
+
+func TestRemoveExportClientsByName(t *testing.T) {
+	client := &Client{}
+	client.API = &mocks.Client{}
+	ctx := context.Background()
+
+	// Test case: Successful call
+	exportName := "testExport"
+	clientsToRemove := []string{"client1", "client2"}
+	ignoreUnresolvableHosts := false
+
+	mockExport := &apiv2.Export{
+		ID:               123,
+		Paths:            &[]string{"/ifs/data/testExport"},
+		Clients:          &[]string{"client1", "client2", "client3"},
+		ReadOnlyClients:  &[]string{"client1"},
+		ReadWriteClients: &[]string{"client2"},
+		RootClients:      &[]string{"client3"},
+		Zone:             "System",
+	}
+
+	client.API.(*mocks.Client).On("VolumePath", mock.AnythingOfType("string")).Return("/ifs/data/testExport").Once()
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{mockExport}
+	}).Once()
+
+	client.API.(*mocks.Client).On("Put", anyArgs[0:7]...).Return(nil).Once()
+
+	err := client.RemoveExportClientsByName(ctx, exportName, clientsToRemove, ignoreUnresolvableHosts)
+	assert.NoError(t, err)
+
+	// Test case: GetExportByName returns error
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	expectedErr := errors.New("export not found")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+
+	err = client.RemoveExportClientsByName(ctx, exportName, clientsToRemove, ignoreUnresolvableHosts)
+	assert.Error(t, err)
+}
+
+func TestRemoveExportClientsWithPathAndZone(t *testing.T) {
+	client := &Client{}
+	client.API = &mocks.Client{}
+	ctx := context.Background()
+
+	// Test case: Successful call
+	path := "/test/path"
+	zone := "testZone"
+	clientsToRemove := []string{"client1", "client2"}
+	ignoreUnresolvableHosts := false
+
+	mockExport := &apiv2.Export{
+		ID:               123,
+		Paths:            &[]string{path},
+		Clients:          &[]string{"client1", "client2", "client3"},
+		ReadOnlyClients:  &[]string{"client1"},
+		ReadWriteClients: &[]string{"client2"},
+		RootClients:      &[]string{"client3"},
+		Zone:             zone,
+	}
+
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+		resp := args.Get(5).(*apiv2.ExportList)
+		*resp = apiv2.ExportList{mockExport}
+	}).Once()
+
+	client.API.(*mocks.Client).On("Put", anyArgs[0:7]...).Return(nil).Once()
+
+	err := client.RemoveExportClientsWithPathAndZone(ctx, path, zone, clientsToRemove, ignoreUnresolvableHosts)
+	assert.NoError(t, err)
+
+	// Test case: GetExportWithPathAndZone returns error
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	expectedErr := errors.New("export not found")
+	client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(expectedErr).Once()
+
+	err = client.RemoveExportClientsWithPathAndZone(ctx, path, zone, clientsToRemove, ignoreUnresolvableHosts)
+	assert.Error(t, err)
+}
