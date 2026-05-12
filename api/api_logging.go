@@ -77,7 +77,7 @@ func logResponse(ctx context.Context, res *http.Response, verbose VerboseType) {
 	// when DumpResponse gets err, buf will be nil. No message content will be printed
 	_ = WriteIndented(w, buf)
 
-	log.Debug(ctx, w.String())
+	log.WithContext(ctx).Debug(w.String())
 }
 
 // WriteIndentedN indents all lines n spaces.

@@ -468,3 +468,16 @@ type IsiGroupListRespResume struct {
 	// Provide this token as the 'resume' query argument to continue listing results.
 	Resume string `json:"resume,omitempty"`
 }
+
+type UserLookup struct {
+	Mappings []Mapping `json:"mapping,omitempty"`
+}
+
+// Mapping represents each element of the "mapping" array of the user.
+type Mapping struct {
+	Groups     []IsiGroup             `json:"groups"`
+	Privileges []IsiRolePrivilegeItem `json:"privileges"`
+	User       IsiUser                `json:"user"`
+	ZID        int                    `json:"zid"`
+	Zone       string                 `json:"zone"`
+}

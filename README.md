@@ -44,6 +44,7 @@ Name | Description
 `GOISILON_VOLUMEPATH` | which base path to use when looking for volume directories
 `GOISILON_VOLUMEPATH_PERMISSIONS` | permissions for new volume directory
 `GOISILON_AUTHTYPE` | what should be the auth type, session-based or basic
+`GOISILON_CAFILEPATH` | path to the CA file
 
 ### Initialize a new client with options
 
@@ -62,6 +63,27 @@ client, err := NewClientWithArgs(
 	"/ifs/volumes",
 	"0777",
 	0)
+if err != nil {
+	panic(err)
+}
+```
+
+The following example demonstrates how to explicitly specify options when
+creating a client with CA file:
+
+```go
+client, err := NewClientWithArgsWithCAFilePath(
+	context.Background(),
+	"https://172.17.177.230:8080",
+	true,
+	1,
+	"userName",
+	"groupName",
+	"password",
+	"/ifs/volumes",
+	"0777",
+	0,
+	"/path/to/cafile")
 if err != nil {
 	panic(err)
 }
@@ -121,4 +143,3 @@ specific language governing permissions and limitations under the License.
 ## Support
 
 For any issues, questions or feedback, please follow our [support process](https://github.com/dell/csm/blob/main/docs/SUPPORT.md)
-

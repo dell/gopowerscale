@@ -80,9 +80,9 @@ func (c *Client) IsVolumeExistent(
 	err := apiv1.GetIsiVolumeWithoutMetadata(ctx, c.API, name)
 
 	if err == nil {
-		log.Debug(ctx, "the query of volume (id '%s', name '%s') did not return an error, regard the volume as existent.", id, name)
+		log.WithContext(ctx).Debugf("the query of volume (id '%s', name '%s') did not return an error, regard the volume as existent.", id, name)
 	} else {
-		log.Debug(ctx, "the query of volume (id '%s', name '%s') returned an error, regard the volume as non-existent. error : '%v'", id, name, err)
+		log.WithContext(ctx).Debugf("the query of volume (id '%s', name '%s') returned an error, regard the volume as non-existent. error : '%v'", id, name, err)
 	}
 
 	return err == nil
@@ -100,9 +100,9 @@ func (c *Client) IsVolumeExistentWithIsiPath(
 	err := apiv1.GetIsiVolumeWithoutMetadataWithIsiPath(ctx, c.API, isiPath, name)
 
 	if err == nil {
-		log.Debug(ctx, "the query of volume (id '%s', name '%s') did not return an error, regard the volume as existent.", id, name)
+		log.WithContext(ctx).Debugf("the query of volume (id '%s', name '%s') did not return an error, regard the volume as existent.", id, name)
 	} else {
-		log.Debug(ctx, "the query of volume (id '%s', name '%s') returned an error, regard the volume as non-existent. error : '%v'", id, name, err)
+		log.WithContext(ctx).Debugf("the query of volume (id '%s', name '%s') returned an error, regard the volume as non-existent. error : '%v'", id, name, err)
 	}
 
 	return err == nil
@@ -317,10 +317,10 @@ func (c *Client) CopyVolumeWithIsiPath(
 	if res != nil && res.Success == false {
 		resJSON, err := json.Marshal(res)
 		if err != nil {
-			log.Error(ctx, "error encountered while cloning volume. error: '%v'", res.CopyErrors)
+			log.WithContext(ctx).Errorf("error encountered while cloning volume. error: '%v'", res.CopyErrors)
 			return nil, fmt.Errorf("error encountered while cloning volume. error: '%v'", res.CopyErrors)
 		}
-		log.Error(ctx, "error encountered while cloning volume. error: '%v'", string(resJSON))
+		log.WithContext(ctx).Errorf("error encountered while cloning volume. error: '%v'", string(resJSON))
 		return nil, fmt.Errorf("error encountered while cloning volume. error: '%v'", string(resJSON))
 
 	}

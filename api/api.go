@@ -30,6 +30,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -62,7 +63,38 @@ const (
 var (
 	debug, _     = strconv.ParseBool(os.Getenv("GOISILON_DEBUG"))
 	errNewClient = errors.New("missing endpoint, username, or password")
+	// Global flag to skip authentication for authorization mode
+	skipAuthForAuthorization = false
 )
+
+// SafeHeader provides thread-safe storage for HTTP headers
+type SafeHeader struct {
+	mu     *sync.RWMutex
+	header http.Header
+}
+
+// NewSafeHeader creates a new SafeHeader instance
+func NewSafeHeader() *SafeHeader {
+	return &SafeHeader{
+		mu:     &sync.RWMutex{},
+		header: make(http.Header),
+	}
+}
+
+// SetHeader safely sets the HTTP headers
+func (s *SafeHeader) SetHeader(h http.Header) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.header = h.Clone() // clone to avoid external mutations
+}
+
+// GetHeader safely returns a copy of the HTTP headers
+func (s *SafeHeader) GetHeader() http.Header {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	h := s.header.Clone()
+	return h
+}
 
 // Client is an API client.
 type Client interface {
@@ -140,6 +172,12 @@ type Client interface {
 
 	// GetReferer gets the Referer header
 	GetReferer() string
+
+	// SetCustomHTTPHeaders sets custom HTTP headers that will be sent with every request
+	SetCustomHTTPHeaders(headers http.Header)
+
+	// GetCustomHTTPHeaders returns the current custom HTTP headers
+	GetCustomHTTPHeaders() http.Header
 }
 
 type client struct {
@@ -156,6 +194,8 @@ type client struct {
 	verboseLogging          VerboseType
 	sessionCredentials      session
 	authType                uint8
+	caFilePath              string
+	customHTTPHeaders       *SafeHeader
 }
 
 type session struct {
@@ -216,6 +256,9 @@ type ClientOptions struct {
 	// IgnoreUnresolvableHosts is the unresolvable hosts param from platform
 	IgnoreUnresolvableHosts bool
 
+	// CAFilePath is the path to the CA file
+	CAFilePath string
+
 	// Timeout specifies a time limit for requests made by this client.
 	Timeout time.Duration
 }
@@ -236,6 +279,10 @@ func New(
 		authType = authTypeBasic
 	}
 
+	if debug {
+		log.SetLevel(log.DebugLevel)
+	}
+
 	c := &client{
 		hostname:                hostname,
 		username:                username,
@@ -246,6 +293,8 @@ func New(
 		ignoreUnresolvableHosts: defaultIgnoreUnresolvableHosts,
 		verboseLogging:          VerboseType(verboseLogging),
 		authType:                authType,
+		caFilePath:              "",
+		customHTTPHeaders:       NewSafeHeader(),
 	}
 
 	c.http = &http.Client{}
@@ -266,12 +315,16 @@ func New(
 			c.http.Timeout = opts.Timeout
 		}
 
-		log.Debug(ctx, "opts.Insecure : '%v'", opts.Insecure)
+		if opts.CAFilePath != "" {
+			c.caFilePath = opts.CAFilePath
+		}
+
+		log.WithContext(ctx).Debugf("opts.Insecure : '%v'", opts.Insecure)
 
 		if opts.Insecure {
 			c.http.Transport = &http.Transport{
 				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true, // #nosec,G402
+					InsecureSkipVerify: true, // #nosec,gosec
 					MinVersion:         tls.VersionTLS12,
 					MaxVersion:         tls.VersionTLS13,
 					CipherSuites:       GetSecuredCipherSuites(),
@@ -282,8 +335,19 @@ func New(
 			if err != nil {
 				return nil, err
 			}
+
+			if c.caFilePath != "" {
+				caCert, err := os.ReadFile(c.caFilePath)
+				if err != nil {
+					return nil, fmt.Errorf("unable to read CA certificate from file %s: %v", c.caFilePath, err)
+				}
+				if !pool.AppendCertsFromPEM(caCert) {
+					return nil, fmt.Errorf("unable to append CA certificate from file %s to cert pool", c.caFilePath)
+				}
+			}
+
 			c.http.Transport = &http.Transport{
-				TLSClientConfig: &tls.Config{ //nolint:gosec,G402
+				TLSClientConfig: &tls.Config{ //nolint:gosec
 					RootCAs:            pool,
 					InsecureSkipVerify: false,
 					MinVersion:         tls.VersionTLS12,
@@ -298,9 +362,12 @@ func New(
 		_ = c.authenticate(ctx, username, password, hostname)
 	}
 	resp := &apiVerResponse{}
-	if err := c.Get(ctx, "/platform/latest", "", nil, nil, resp); err != nil &&
-		!strings.HasPrefix(err.Error(), "json: ") {
-		return nil, err
+	// Skip platform/latest request in authorization mode since proxy doesn't support this endpoint
+	if !skipAuthForAuthorization {
+		if err := c.Get(ctx, "/platform/latest", "", nil, nil, resp); err != nil &&
+			!strings.HasPrefix(err.Error(), "json: ") {
+			return nil, err
+		}
 	}
 
 	if resp.Latest != nil {
@@ -320,7 +387,8 @@ func New(
 			return nil, err
 		}
 		c.apiVersion = uint8(i)
-	} else {
+	} else if c.apiVersion == 0 {
+		// Don't override API version if it was already set (e.g., in authorization mode)
 		c.apiVersion = 2
 	}
 
@@ -539,7 +607,7 @@ var doAndGetResponseBodyFunc = func(
 		isContentTypeSet = req.Header.Get(headerKeyContentType) != ""
 	}
 
-	// add headers to the request
+	// add custom headers to the request
 	if len(headers) > 0 {
 		for header, value := range headers {
 			if header == headerKeyContentType && isContentTypeSet {
@@ -550,7 +618,15 @@ var doAndGetResponseBodyFunc = func(
 	}
 
 	if c.authType == authTypeBasic {
-		req.SetBasicAuth(c.username, c.password)
+		// Check if this is Bearer token authentication
+		if c.username == "Bearer" && c.password != "" {
+			// Set Bearer token header instead of Basic auth
+			authHeader := "Bearer " + c.password
+			req.Header.Set("Authorization", authHeader)
+		} else {
+			// Use regular Basic auth
+			req.SetBasicAuth(c.username, c.password)
+		}
 	} else {
 		if c.GetAuthToken() != "" {
 			req.Header.Set(headerISISessToken, c.GetAuthToken())
@@ -559,18 +635,17 @@ var doAndGetResponseBodyFunc = func(
 		}
 	}
 
-	logReqBuf := &bytes.Buffer{}
-
-	if debug {
-		log.Info(ctx, "Setting log level to debug in gopowerscale")
-		ctx = context.WithValue(
-			ctx,
-			LevelKey,
-			log.DebugLevel)
+	// add custom headers to the request (after auth to allow override)
+	for key, values := range c.customHTTPHeaders.GetHeader() {
+		for _, elem := range values {
+			req.Header.Add(key, elem)
+		}
 	}
 
+	logReqBuf := &bytes.Buffer{}
+
 	logRequest(ctx, logReqBuf, req, c.verboseLogging)
-	log.Debug(ctx, logReqBuf.String())
+	log.WithContext(ctx).Debug(logReqBuf.String())
 
 	// send the request
 	req = req.WithContext(ctx)
@@ -633,6 +708,16 @@ func (c *client) GetReferer() string {
 	return c.sessionCredentials.referer
 }
 
+// SetCustomHTTPHeaders sets custom HTTP headers that will be sent with every request
+func (c *client) SetCustomHTTPHeaders(headers http.Header) {
+	c.customHTTPHeaders.SetHeader(headers)
+}
+
+// GetCustomHTTPHeaders returns the current custom HTTP headers
+func (c *client) GetCustomHTTPHeaders() http.Header {
+	return c.customHTTPHeaders.GetHeader()
+}
+
 func parseJSONHTMLError(r *http.Response) error {
 	// check the content type of the response
 	if r.Header.Get("Content-Type") == "text/html" {
@@ -666,6 +751,11 @@ func parseJSONHTMLError(r *http.Response) error {
 	return jsonErr
 }
 
+// SetSkipAuthForAuthorization sets the global flag to skip authentication for authorization mode
+func SetSkipAuthForAuthorization(skipAuth bool) {
+	skipAuthForAuthorization = skipAuth
+}
+
 // Authenticate make a REST API call [/session/1/session] to PowerScale to authenticate the given credentials.
 // The response contains the session Cookie, X-CSRF-Token and the client uses it for further communication.
 func (c *client) authenticate(ctx context.Context, username string, password string, endpoint string) error {
@@ -673,6 +763,25 @@ func (c *client) authenticate(ctx context.Context, username string, password str
 }
 
 var authenticateFunc = func(c *client, ctx context.Context, username string, password string, endpoint string) error {
+	// If global skip flag is set, skip authentication (for authorization mode)
+	if skipAuthForAuthorization {
+		log.Debug(ctx, "Authorization mode detected, skipping authentication")
+		return nil
+	}
+
+	// If we already have a session token, skip authentication (for authorization mode)
+	if c.sessionCredentials.sessionCookies != "" {
+		log.Debug(ctx, "Session token already set, skipping authentication")
+		return nil
+	}
+
+	// For authorization mode, try to authenticate with the authorization token instead of username/password
+	if strings.Contains(username, "authorization-user") && strings.Contains(password, "authorization-pass") {
+		log.Debug(ctx, "Authorization placeholder credentials detected, attempting token-based authentication")
+		// Don't make the authentication request - let the token handle it
+		return nil
+	}
+
 	headers := make(map[string]string, 1)
 	headers[headerKeyContentType] = headerValContentTypeJSON
 	data := &setupConnection{Services: []string{"platform", "namespace"}, Username: username, Password: password}
@@ -682,7 +791,7 @@ var authenticateFunc = func(c *client, ctx context.Context, username string, pas
 	}
 
 	if resp != nil {
-		log.Debug(ctx, "Authentication response code: %d", resp.StatusCode)
+		log.WithContext(ctx).Debugf("Authentication response code: %d", resp.StatusCode)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				log.Printf("Error closing HTTP response: %s", err.Error())
@@ -692,11 +801,11 @@ var authenticateFunc = func(c *client, ctx context.Context, username string, pas
 		switch {
 		case resp.StatusCode == 201:
 			{
-				log.Debug(ctx, "Authentication successful")
+				log.WithContext(ctx).Debug("Authentication successful")
 			}
 		case resp.StatusCode == 401:
 			{
-				log.Debug(ctx, "Response Code %v", resp)
+				log.WithContext(ctx).Debugf("Response Code %v", resp)
 				return fmt.Errorf("authentication failed. unable to login to powerscale. verify username and password")
 			}
 		default:
@@ -713,14 +822,14 @@ var authenticateFunc = func(c *client, ctx context.Context, username string, pas
 
 		startIndex, endIndex, matchStrLen = FetchValueIndexForKey(headerRes, "isicsrf=", ";")
 		if startIndex < 0 || endIndex < 0 {
-			log.Warn(ctx, "Anti-CSRF Token not retrieved")
+			log.WithContext(ctx).Warn("Anti-CSRF Token not retrieved")
 		} else {
 			c.SetCSRFToken(headerRes[startIndex+matchStrLen : startIndex+matchStrLen+endIndex])
 		}
 
 		c.SetReferer(endpoint)
 	} else {
-		log.Error(ctx, "Authenticate error: Nil response received")
+		log.WithContext(ctx).Error("Authenticate error: Nil response received")
 	}
 	return nil
 }
@@ -733,32 +842,32 @@ func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri s
 		return err
 	}
 	if err == nil {
-		log.Debug(ctx, "Execution successful on Method: %v, URI: %v", method, uri)
+		log.WithContext(ctx).Debugf("Execution successful on Method: %v, URI: %v", method, uri)
 		return nil
 	}
 
 	switch e := err.(type) {
 	case *JSONError:
 		if e.StatusCode == 401 {
-			log.Debug(ctx, "Authentication failed. Trying to re-authenticate")
+			log.WithContext(ctx).Debugf("Authentication failed. Trying to re-authenticate")
 			if err := c.authenticate(ctx, c.username, c.password, c.hostname); err != nil {
 				return fmt.Errorf("authentication failure due to: %v", err)
 			}
 			return c.DoWithHeaders(ctx, method, uri, id, params, headers, body, resp)
 		}
-		log.Error(ctx, "Error in response. Method:%s URI:%s Error: %v JSON Error: %+v", method, uri, err, e)
+		log.WithContext(ctx).Errorf("Error in response. Method:%s URI:%s Error: %v JSON Error: %+v", method, uri, err, e)
 
 	case *HTMLError:
 		if e.StatusCode == 401 {
-			log.Debug(ctx, "Authentication failed. Trying to re-authenticate")
+			log.WithContext(ctx).Debugf("Authentication failed. Trying to re-authenticate")
 			if err := c.authenticate(ctx, c.username, c.password, c.hostname); err != nil {
 				return fmt.Errorf("authentication failure due to: %v", err)
 			}
 			return c.DoWithHeaders(ctx, method, uri, id, params, headers, body, resp)
 		}
-		log.Error(ctx, "Error in response. Method:%s URI:%s Error: %v HTML Error: %+v", method, uri, err, e)
+		log.WithContext(ctx).Errorf("Error in response. Method:%s URI:%s Error: %v HTML Error: %+v", method, uri, err, e)
 	default:
-		log.Error(ctx, "Error is not a type of \"*JSONError or *HTMLError\". Error:", err)
+		log.WithContext(ctx).Errorf("Error is not a type of \"*JSONError or *HTMLError\". Error: %s", err.Error())
 	}
 	return err
 }

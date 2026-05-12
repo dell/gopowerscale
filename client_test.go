@@ -99,3 +99,57 @@ func TestNewClientWithArgs(t *testing.T) {
 	client, _ := NewClientWithArgs(context.Background(), mockServer.URL, true, 1, "user", "group", "pass", "/path", "0777", false, 1)
 	assert.Nil(t, client)
 }
+
+func TestNewClientWithCAFilePath(t *testing.T) {
+	os.Setenv("GOISILON_TIMEOUT", "30s")
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"version": "8.0.0.0", "message": "success"}`))
+	}))
+	defer mockServer.Close()
+
+	client, _ := NewClientWithCAFilePath(context.Background())
+	assert.Nil(t, client)
+}
+
+func TestNewClientWithArgsWithCAFilePath(t *testing.T) {
+	os.Setenv("GOISILON_TIMEOUT", "30s")
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"version": "8.0.0.0", "message": "success"}`))
+	}))
+	defer mockServer.Close()
+
+	client, _ := NewClientWithArgsWithCAFilePath(context.Background(), mockServer.URL, true, 1, "user", "group", "pass", "/path", "0777", false, 1, "/path/to/cafile")
+	assert.Nil(t, client)
+}
+
+func TestClient_SetCustomHTTPHeaders(_ *testing.T) {
+	client := &Client{}
+	client.SetCustomHTTPHeaders(nil)
+	// This should not panic
+}
+
+func TestClient_SetAuthToken(_ *testing.T) {
+	client := &Client{}
+	client.SetAuthToken("test-token")
+	// This should not panic
+}
+
+func TestClient_SetCSRFToken(_ *testing.T) {
+	client := &Client{}
+	client.SetCSRFToken("test-csrf")
+	// This should not panic
+}
+
+func TestClient_SetReferer(_ *testing.T) {
+	client := &Client{}
+	client.SetReferer("test-referer")
+	// This should not panic
+}
+
+func TestClient_SetAuthorizationMode(_ *testing.T) {
+	SetAuthorizationMode(true)
+	// This should not panic
+	SetAuthorizationMode(false)
+}
