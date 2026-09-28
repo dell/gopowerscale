@@ -306,6 +306,29 @@ func (_m *Client) VolumesPath() string {
 	return r0
 }
 
+// SetRequestObserver provides a mock function with given fields: observer
+func (_m *Client) SetRequestObserver(observer api.RequestObserver) {
+	_m.Called(observer)
+}
+
+// GetRequestObserver provides a mock function with no fields
+func (_m *Client) GetRequestObserver() api.RequestObserver {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetRequestObserver")
+	}
+
+	var r0 api.RequestObserver
+	if rf, ok := ret.Get(0).(func() api.RequestObserver); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(api.RequestObserver)
+	}
+
+	return r0
+}
+
 // NewClient creates a new instance of Client. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewClient(t interface {

@@ -249,6 +249,75 @@ func UpdateIsiQuotaHardThresholdByID(
 	return err
 }
 
+// ModifyIsiQuotaByID modifies specific threshold parameters of a quota using PUT
+// This only updates the provided parameters without affecting others
+func ModifyIsiQuotaByID(
+	ctx context.Context,
+	client api.Client,
+	ID string,
+	params map[string]interface{},
+) (err error) {
+	// PAPI call: PUT https://1.2.3.4:8080/platform/1/quota/quotas/Id
+	// PUT is used to modify the specified fields
+
+	// Build the thresholds object with only the specified parameters
+	thresholds := make(map[string]interface{})
+	for key, value := range params {
+		switch key {
+		case "AdvisoryLimit":
+			if value == nil {
+				thresholds["advisory"] = nil
+			} else if intVal, ok := value.(int64); ok {
+				if intVal == 0 {
+					thresholds["advisory"] = nil
+				} else {
+					thresholds["advisory"] = intVal
+				}
+			} else {
+				return fmt.Errorf("AdvisoryLimit must be int64 or nil, got %T", value)
+			}
+		case "SoftLimit":
+			if value == nil {
+				thresholds["soft"] = nil
+			} else if intVal, ok := value.(int64); ok {
+				if intVal == 0 {
+					thresholds["soft"] = nil
+				} else {
+					thresholds["soft"] = intVal
+				}
+			} else {
+				return fmt.Errorf("SoftLimit must be int64 or nil, got %T", value)
+			}
+		case "SoftGracePrd":
+			if value == nil {
+				thresholds["soft_grace"] = nil
+			} else if intVal, ok := value.(int64); ok {
+				if intVal == 0 {
+					thresholds["soft_grace"] = nil
+				} else {
+					thresholds["soft_grace"] = intVal
+				}
+			} else {
+				return fmt.Errorf("SoftGracePrd must be int64 or nil, got %T", value)
+			}
+		default:
+			return fmt.Errorf("unsupported param key: %s", key)
+		}
+	}
+
+	data := map[string]interface{}{
+		"thresholds": thresholds,
+	}
+
+	var quotaResp IsiQuota
+	// Using DoWithHeaders with PUT method
+	headers := map[string]string{
+		"Content-Type": "application/json",
+	}
+	err = client.DoWithHeaders(ctx, "PUT", quotaPath, ID, nil, headers, data, &quotaResp)
+	return err
+}
+
 var (
 	byteArrPath = []byte("path")
 	byteArrID   = []byte("id")

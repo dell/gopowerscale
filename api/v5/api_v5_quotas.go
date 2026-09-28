@@ -20,8 +20,8 @@ import (
 	"errors"
 	"fmt"
 
+	log "github.com/dell/csmlog"
 	"github.com/dell/gopowerscale/api"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -79,7 +79,7 @@ func getIsiQuotaLicenseStatus(
 		return "", errors.New("SmartQuotas license status is empty")
 	}
 
-	log.Debug(ctx, "SmartQuotas license status retrieved : '%s'", lic.STATUS)
+	log.Debugf("SmartQuotas license status retrieved : '%s'", lic.STATUS)
 
 	if !isQuotaLicenseStatusValid(lic.STATUS) {
 		return "", fmt.Errorf("unknown SmartQuotas license status '%s'", lic.STATUS)
@@ -95,7 +95,7 @@ func IsQuotaLicenseActivated(ctx context.Context,
 	status, err := getIsiQuotaLicenseStatus(ctx, client)
 	if err != nil {
 
-		log.Error(ctx, "error encountered when retrieving SmartQuotas license info, cannot determine whether SmartQuotas is activated. error : '%v'", err)
+		log.Errorf("error encountered when retrieving SmartQuotas license info, cannot determine whether SmartQuotas is activated. error : '%v'", err)
 		return false, nil
 	}
 

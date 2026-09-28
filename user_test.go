@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023-2025 Dell Inc, or its subsidiaries.
+Copyright (c) 2023-2026 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -149,7 +149,7 @@ func TestUpdateUserByNameOrUID(t *testing.T) {
 			PasswordExpires: &passwordExpires,
 			PrimaryGroup: &apiv1.IsiAccessItemFileGroup{
 				Type: "group",
-				ID:   fmt.Sprintf("GID:%d", &primaryGroupID),
+				ID:   fmt.Sprintf("GID:%d", primaryGroupID),
 				Name: primaryGroupName,
 			},
 			PromptPasswordChange: &promptPasswordChange,

@@ -1,19 +1,20 @@
 module github.com/dell/gopowerscale
 
-go 1.26
+go 1.27
 
 require (
-	github.com/PuerkitoBio/goquery v1.12.0
-	github.com/sirupsen/logrus v1.9.4
-	github.com/stretchr/testify v1.11.1
+	github.com/dell/csmlog v1.2.0
+	github.com/PuerkitoBio/goquery v1.13.0
+	github.com/stretchr/testify v1.12.1
 )
 
 require (
-	github.com/andybalholm/cascadia v1.3.3 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/andybalholm/cascadia v1.3.4 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
-	golang.org/x/net v0.52.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
+	go.uber.org/zap v1.28.0 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
+	golang.org/x/net v0.58.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	google.golang.org/grpc v1.83.2 // indirect
 )

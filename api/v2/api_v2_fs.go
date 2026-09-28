@@ -38,10 +38,14 @@ type ContainerChild struct {
 	Size  *int      `json:"size,omitempty"`
 }
 
-type resumeableContainerChildList struct {
+// ResumeableContainerChildList represents a list of container children with pagination support.
+type ResumeableContainerChildList struct {
 	Children []*ContainerChild `json:"children,omitempty"`
 	Resume   string            `json:"resume,omitempty"`
 }
+
+// For backward compatibility
+type resumeableContainerChildList = ResumeableContainerChildList
 
 // ContainerChildList is a list of a container's children.
 type ContainerChildList []*ContainerChild
@@ -289,6 +293,52 @@ func ContainerChildrenPostQuery(
 	}
 
 	return resp, nil
+}
+
+// ContainerChildrenList lists children of a container with pagination support.
+// Returns the list of children and a resume token for pagination.
+func ContainerChildrenList(
+	ctx context.Context,
+	client api.Client,
+	containerPath string,
+	limit int,
+	objectType string,
+	resumeToken string,
+	detail []string,
+) ([]*ContainerChild, string, error) {
+	qs := api.OrderedValues{}
+
+	if limit > 0 {
+		qs = append(qs, [][]byte{limitByteArr, []byte(fmt.Sprintf("%d", limit))})
+	}
+
+	if objectType != "" {
+		qs.Set(queryByteArr, nil)
+		qs.Set(typeByteArr, []byte(objectType))
+		qs.Set(maxDepthByteArr, []byte("1"))
+	}
+
+	if resumeToken != "" {
+		qs.Set(resumeByteArr, []byte(resumeToken))
+	}
+
+	if len(detail) > 0 {
+		qs = append(qs, append(detailQS, to2DByteArray(detail)...))
+	}
+
+	var resp resumeableContainerChildList
+	namespacePath := path.Join("namespace", containerPath)
+	if err := client.Get(
+		ctx,
+		namespacePath,
+		"",
+		qs,
+		nil,
+		&resp); err != nil {
+		return nil, "", err
+	}
+
+	return resp.Children, resp.Resume, nil
 }
 
 var (

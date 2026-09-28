@@ -21,9 +21,9 @@ import (
 	"os"
 	"testing"
 
+	log "github.com/dell/csmlog"
 	"github.com/dell/gopowerscale/api"
 	"github.com/dell/gopowerscale/mocks"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -60,7 +60,7 @@ func TestMain(m *testing.M) {
 
 	client = &Client{&mocks.Client{}}
 	if err != nil {
-		log.WithError(err).Panic(defaultCtx, "error creating test client")
+		log.Panicf("error creating test client: %v", err)
 	}
 
 	os.Exit(m.Run())

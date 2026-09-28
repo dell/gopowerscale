@@ -33,7 +33,7 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	log "github.com/dell/csmlog"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -59,6 +59,20 @@ const (
 	authTypeBasic                         = 0
 	authTypeSessionBased                  = 1
 )
+
+// RequestObserver is the interface for observing PowerScale API calls
+type RequestObserver interface {
+	ObservePowerScaleRequest(obs RequestObservation)
+}
+
+// RequestObservation contains details about each API call
+type RequestObservation struct {
+	Endpoint   string        // API endpoint (e.g., "/platform/1/nfs/exports")
+	Method     string        // HTTP method (GET, POST, PUT, DELETE)
+	StatusCode int           // HTTP status code
+	Err        error         // Error if request failed
+	Duration   time.Duration // Request duration
+}
 
 var (
 	debug, _     = strconv.ParseBool(os.Getenv("GOISILON_DEBUG"))
@@ -178,6 +192,12 @@ type Client interface {
 
 	// GetCustomHTTPHeaders returns the current custom HTTP headers
 	GetCustomHTTPHeaders() http.Header
+
+	// SetRequestObserver sets the observer for API call metrics
+	SetRequestObserver(observer RequestObserver)
+
+	// GetRequestObserver returns the current observer
+	GetRequestObserver() RequestObserver
 }
 
 type client struct {
@@ -196,6 +216,7 @@ type client struct {
 	authType                uint8
 	caFilePath              string
 	customHTTPHeaders       *SafeHeader
+	requestObserver         RequestObserver
 }
 
 type session struct {
@@ -261,6 +282,9 @@ type ClientOptions struct {
 
 	// Timeout specifies a time limit for requests made by this client.
 	Timeout time.Duration
+
+	// RequestObserver is the observer for API call metrics
+	RequestObserver RequestObserver
 }
 
 // New returns a new API client.
@@ -275,7 +299,7 @@ func New(
 	}
 
 	if authType != authTypeBasic && authType != authTypeSessionBased {
-		log.Warn(ctx, "AuthType can be 0 or 1. Setting it to default value 0")
+		log.WithContext(ctx).Warn("AuthType can be 0 or 1. Setting it to default value 0")
 		authType = authTypeBasic
 	}
 
@@ -355,6 +379,10 @@ func New(
 					CipherSuites:       GetSecuredCipherSuites(),
 				},
 			}
+		}
+
+		if opts.RequestObserver != nil {
+			c.requestObserver = opts.RequestObserver
 		}
 	}
 
@@ -473,7 +501,7 @@ var doWithHeadersFunc = func(c *client, ctx context.Context, method string, uri 
 	}
 	defer func() {
 		if err := res.Body.Close(); err != nil {
-			log.Printf("Error closing HTTP response: %s", err.Error())
+			log.Infof("Error closing HTTP response: %s", err.Error())
 		}
 	}()
 	logResponse(ctx, res, c.verboseLogging)
@@ -523,6 +551,7 @@ var doAndGetResponseBodyFunc = func(
 		hostnameEndsWithSlash = endsWithSlash(c.hostname)
 		uriBeginsWithSlash    = beginsWithSlash(uri)
 		uriEndsWithSlash      = endsWithSlash(uri)
+		start                 = time.Now()
 	)
 
 	ubf.WriteString(c.hostname)
@@ -567,7 +596,7 @@ var doAndGetResponseBodyFunc = func(
 			req, err = http.NewRequest(method, u.String(), r)
 			defer func() {
 				if err := r.Close(); err != nil {
-					log.Printf("Error closing HTTP response: %s", err.Error())
+					log.Infof("Error closing HTTP response: %s", err.Error())
 				}
 			}()
 			if v, ok := headers[headerKeyContentType]; ok {
@@ -650,7 +679,32 @@ var doAndGetResponseBodyFunc = func(
 	// send the request
 	req = req.WithContext(ctx)
 	if res, err = c.http.Do(req); err != nil {
+		// Call observer on error
+		if c.requestObserver != nil {
+			c.requestObserver.ObservePowerScaleRequest(RequestObservation{
+				Endpoint:   uri,
+				Method:     method,
+				StatusCode: 0,
+				Err:        err,
+				Duration:   time.Since(start),
+			})
+		}
 		return nil, debug, err
+	}
+
+	// Call observer on success
+	if c.requestObserver != nil {
+		statusCode := 0
+		if res != nil {
+			statusCode = res.StatusCode
+		}
+		c.requestObserver.ObservePowerScaleRequest(RequestObservation{
+			Endpoint:   uri,
+			Method:     method,
+			StatusCode: statusCode,
+			Err:        nil,
+			Duration:   time.Since(start),
+		})
 	}
 
 	return res, debug, err
@@ -718,6 +772,16 @@ func (c *client) GetCustomHTTPHeaders() http.Header {
 	return c.customHTTPHeaders.GetHeader()
 }
 
+// SetRequestObserver sets the observer for API call metrics
+func (c *client) SetRequestObserver(observer RequestObserver) {
+	c.requestObserver = observer
+}
+
+// GetRequestObserver returns the current observer
+func (c *client) GetRequestObserver() RequestObserver {
+	return c.requestObserver
+}
+
 func parseJSONHTMLError(r *http.Response) error {
 	// check the content type of the response
 	if r.Header.Get("Content-Type") == "text/html" {
@@ -765,19 +829,19 @@ func (c *client) authenticate(ctx context.Context, username string, password str
 var authenticateFunc = func(c *client, ctx context.Context, username string, password string, endpoint string) error {
 	// If global skip flag is set, skip authentication (for authorization mode)
 	if skipAuthForAuthorization {
-		log.Debug(ctx, "Authorization mode detected, skipping authentication")
+		log.WithContext(ctx).Debug("Authorization mode detected, skipping authentication")
 		return nil
 	}
 
 	// If we already have a session token, skip authentication (for authorization mode)
 	if c.sessionCredentials.sessionCookies != "" {
-		log.Debug(ctx, "Session token already set, skipping authentication")
+		log.WithContext(ctx).Debug("Session token already set, skipping authentication")
 		return nil
 	}
 
 	// For authorization mode, try to authenticate with the authorization token instead of username/password
 	if strings.Contains(username, "authorization-user") && strings.Contains(password, "authorization-pass") {
-		log.Debug(ctx, "Authorization placeholder credentials detected, attempting token-based authentication")
+		log.WithContext(ctx).Debug("Authorization placeholder credentials detected, attempting token-based authentication")
 		// Don't make the authentication request - let the token handle it
 		return nil
 	}
@@ -794,7 +858,7 @@ var authenticateFunc = func(c *client, ctx context.Context, username string, pas
 		log.WithContext(ctx).Debugf("Authentication response code: %d", resp.StatusCode)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
-				log.Printf("Error closing HTTP response: %s", err.Error())
+				log.WithContext(ctx).Infof("Error closing HTTP response: %s", err.Error())
 			}
 		}()
 
@@ -850,6 +914,8 @@ func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri s
 	case *JSONError:
 		if e.StatusCode == 401 {
 			log.WithContext(ctx).Debugf("Authentication failed. Trying to re-authenticate")
+			c.sessionCredentials.sessionCookies = ""
+			c.sessionCredentials.sessionCSRF = ""
 			if err := c.authenticate(ctx, c.username, c.password, c.hostname); err != nil {
 				return fmt.Errorf("authentication failure due to: %v", err)
 			}
@@ -860,6 +926,8 @@ func (c *client) executeWithRetryAuthenticate(ctx context.Context, method, uri s
 	case *HTMLError:
 		if e.StatusCode == 401 {
 			log.WithContext(ctx).Debugf("Authentication failed. Trying to re-authenticate")
+			c.sessionCredentials.sessionCookies = ""
+			c.sessionCredentials.sessionCSRF = ""
 			if err := c.authenticate(ctx, c.username, c.password, c.hostname); err != nil {
 				return fmt.Errorf("authentication failure due to: %v", err)
 			}

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023-2025 Dell Inc, or its subsidiaries.
+Copyright (c) 2023-2026 Dell Inc, or its subsidiaries.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -146,7 +146,7 @@ func CreateIsiUser(ctx context.Context, client api.Client, name string,
 			Type: "group",
 		}
 		if primaryGroupID != nil {
-			primaryGroup.ID = fmt.Sprintf("GID:%d", primaryGroupID)
+			primaryGroup.ID = fmt.Sprintf("GID:%d", *primaryGroupID)
 		}
 		if primaryGroupName != nil {
 			primaryGroup.Name = *primaryGroupName
@@ -225,7 +225,7 @@ func UpdateIsiUser(ctx context.Context, client api.Client, userName *string, uid
 			Type: "group",
 		}
 		if primaryGroupID != nil {
-			primaryGroup.ID = fmt.Sprintf("GID:%d", primaryGroupID)
+			primaryGroup.ID = fmt.Sprintf("GID:%d", *primaryGroupID)
 		}
 		if primaryGroupName != nil {
 			primaryGroup.Name = *primaryGroupName

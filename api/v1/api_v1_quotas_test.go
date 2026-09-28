@@ -28,6 +28,74 @@ import (
 
 var anyArgs = []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
 
+func TestModifyIsiQuotaByID_WrongType_SoftLimit(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+
+	params := map[string]interface{}{
+		"SoftLimit": "200", // string instead of int64
+	}
+
+	err := ModifyIsiQuotaByID(ctx, client, "test-id", params)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "SoftLimit must be int64 or nil")
+
+	anyArgs8 := []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
+	client.AssertNotCalled(t, "DoWithHeaders", anyArgs8...)
+}
+
+func TestModifyIsiQuotaByID_WrongType_SoftGracePrd(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+
+	params := map[string]interface{}{
+		"SoftGracePrd": "300", // string instead of int64
+	}
+
+	err := ModifyIsiQuotaByID(ctx, client, "test-id", params)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "SoftGracePrd must be int64 or nil")
+
+	anyArgs8 := []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
+	client.AssertNotCalled(t, "DoWithHeaders", anyArgs8...)
+}
+
+func TestModifyIsiQuotaByID_UnsupportedKey(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+
+	// Unsupported key should error before making any HTTP call
+	params := map[string]interface{}{
+		"HardLimit": int64(100),
+	}
+
+	err := ModifyIsiQuotaByID(ctx, client, "test-id", params)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported param key: HardLimit")
+
+	// Ensure no request was attempted
+	anyArgs8 := []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
+	client.AssertNotCalled(t, "DoWithHeaders", anyArgs8...)
+}
+
+func TestModifyIsiQuotaByID_WrongType(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+
+	// Wrong type for AdvisoryLimit should return an error and not call HTTP
+	params := map[string]interface{}{
+		"AdvisoryLimit": "100", // string instead of int64
+	}
+
+	err := ModifyIsiQuotaByID(ctx, client, "test-id", params)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "AdvisoryLimit must be int64 or nil")
+
+	// Ensure no request was attempted
+	anyArgs8 := []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
+	client.AssertNotCalled(t, "DoWithHeaders", anyArgs8...)
+}
+
 func TestGetIsiQuota(t *testing.T) {
 	ctx := context.Background()
 	client := &mocks.Client{}
@@ -192,6 +260,50 @@ func TestUpdateIsiQuotaHardThresholdByID(t *testing.T) {
 	client.On("Put", anyArgs...).Return(nil).Twice()
 	err := UpdateIsiQuotaHardThresholdByID(ctx, client, "", 5, 0, 0, 0)
 	assert.Equal(t, nil, err)
+}
+
+func TestModifyIsiQuotaByID(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+
+	params := map[string]interface{}{
+		"AdvisoryLimit": int64(10),
+		"SoftLimit":     int64(20),
+		"SoftGracePrd":  int64(30),
+	}
+
+	paramsClear := map[string]interface{}{
+		"AdvisoryLimit": int64(0),
+		"SoftLimit":     int64(0),
+		"SoftGracePrd":  int64(0),
+	}
+
+	anyArgs8 := []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything}
+
+	// Success case with values
+	client.On("DoWithHeaders", anyArgs8...).Return(nil).Once()
+	err := ModifyIsiQuotaByID(ctx, client, "test-id", params)
+	assert.Equal(t, nil, err)
+
+	// Success case with clearing limits
+	client.On("DoWithHeaders", anyArgs8...).Return(nil).Once()
+	err = ModifyIsiQuotaByID(ctx, client, "test-id", paramsClear)
+	assert.Equal(t, nil, err)
+
+	// Success case with nil limits
+	paramsNil := map[string]interface{}{
+		"AdvisoryLimit": nil,
+		"SoftLimit":     nil,
+		"SoftGracePrd":  nil,
+	}
+	client.On("DoWithHeaders", anyArgs8...).Return(nil).Once()
+	err = ModifyIsiQuotaByID(ctx, client, "test-id", paramsNil)
+	assert.Equal(t, nil, err)
+
+	// Error case
+	client.On("DoWithHeaders", anyArgs8...).Return(errors.New("error")).Once()
+	err = ModifyIsiQuotaByID(ctx, client, "test-id", params)
+	assert.Equal(t, errors.New("error"), err)
 }
 
 func TestDeleteIsiQuota(t *testing.T) {

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2019-2025 Dell Inc, or its subsidiaries.
+Copyright (c) 2019-2026 Dell Inc. or its subsidiaries. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package gopowerscale
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path"
@@ -25,6 +26,7 @@ import (
 
 	apiv1 "github.com/dell/gopowerscale/api/v1"
 	apiv2 "github.com/dell/gopowerscale/api/v2"
+	apiv27 "github.com/dell/gopowerscale/api/v27"
 	"github.com/dell/gopowerscale/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -472,6 +474,34 @@ func TestExportVolumeWithZoneAndPath(t *testing.T) {
 	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
 	client.API.(*mocks.Client).On("Post", anyArgs...).Return(nil).Once()
 	_, err := client.ExportVolumeWithZoneAndPath(defaultCtx, isiPath, "zone", "description")
+	assert.Nil(t, err)
+}
+
+func TestExportVolumeWithZoneAndPathAndXprtsec(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+
+	// Test case: xprtsec is forwarded and routed to the v27 endpoint
+	client.API.(*mocks.Client).On("Post", mock.Anything, "platform/27/protocols/nfs/exports",
+		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+	).Return(nil).Run(func(args mock.Arguments) {
+		req := args.Get(5).(*apiv27.ExportReq)
+		assert.NotNil(t, req.Xprtsec)
+		assert.Equal(t, "mtls", *req.Xprtsec)
+	}).Once()
+	_, err := client.ExportVolumeWithZoneAndPathAndXprtsec(defaultCtx, isiPath, "zone", "description", "mtls")
+	assert.Nil(t, err)
+
+	// Test case: empty xprtsec keeps the legacy v2 endpoint (backward compatible)
+	client.API.(*mocks.Client).On("Post", mock.Anything, "platform/2/protocols/nfs/exports",
+		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+	).Return(nil).Run(func(args mock.Arguments) {
+		// v2 request type structurally cannot carry xprtsec
+		req := args.Get(5).(*apiv2.ExportReq)
+		body, marshalErr := json.Marshal(req)
+		assert.NoError(t, marshalErr)
+		assert.NotContains(t, string(body), "xprtsec")
+	}).Once()
+	_, err = client.ExportVolumeWithZoneAndPathAndXprtsec(defaultCtx, isiPath, "zone", "description", "")
 	assert.Nil(t, err)
 }
 
@@ -1181,4 +1211,226 @@ func TestForceDeleteVolume(t *testing.T) {
 	client.API.(*mocks.Client).On("Delete", anyArgs[0:6]...).Return(nil).Once()
 	err := client.ForceDeleteVolume(context.Background(), "testvol")
 	assert.NoError(t, err)
+}
+
+func TestListVolumes(t *testing.T) {
+	ctx := context.Background()
+
+	// Test case 1: List volumes successfully with type="container" filter
+	t.Run("ListVolumesSuccess", func(t *testing.T) {
+		client.API.(*mocks.Client).ExpectedCalls = nil
+
+		vol1 := "volume1"
+		vol2 := "volume2"
+		path1 := "/ifs/data"
+		containerType := "container"
+
+		client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*apiv2.ResumeableContainerChildList)
+			*resp = apiv2.ResumeableContainerChildList{
+				Children: []*apiv2.ContainerChild{
+					{
+						Name: &vol1,
+						Path: &path1,
+						Type: &containerType,
+					},
+					{
+						Name: &vol2,
+						Path: &path1,
+						Type: &containerType,
+					},
+				},
+				Resume: "",
+			}
+		}).Once()
+
+		volumes, resumeToken, err := client.ListVolumes(ctx, "/ifs/data", "type=container", 0, "")
+		assertNoError(t, err)
+		assertNotNil(t, volumes)
+		assertEqual(t, 2, len(volumes))
+		assertEqual(t, vol1, *volumes[0].Name)
+		assertEqual(t, vol2, *volumes[1].Name)
+		assertEqual(t, "", resumeToken)
+	})
+
+	// Test case 2: List volumes with no volumes (empty list)
+	t.Run("ListVolumesEmpty", func(t *testing.T) {
+		client.API.(*mocks.Client).ExpectedCalls = nil
+
+		client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*apiv2.ResumeableContainerChildList)
+			*resp = apiv2.ResumeableContainerChildList{
+				Children: []*apiv2.ContainerChild{},
+				Resume:   "",
+			}
+		}).Once()
+
+		volumes, resumeToken, err := client.ListVolumes(ctx, "/ifs/data", "type=container", 0, "")
+		assertNoError(t, err)
+		assertNotNil(t, volumes)
+		assertEqual(t, 0, len(volumes))
+		assertEqual(t, "", resumeToken)
+	})
+
+	// Test case 3: List volumes with pagination (resume token)
+	t.Run("ListVolumesWithPagination", func(t *testing.T) {
+		client.API.(*mocks.Client).ExpectedCalls = nil
+
+		vol1 := "volume1"
+		path1 := "/ifs/data"
+		containerType := "container"
+		expectedResumeToken := "resume-token-123"
+
+		client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*apiv2.ResumeableContainerChildList)
+			*resp = apiv2.ResumeableContainerChildList{
+				Children: []*apiv2.ContainerChild{
+					{
+						Name: &vol1,
+						Path: &path1,
+						Type: &containerType,
+					},
+				},
+				Resume: expectedResumeToken,
+			}
+		}).Once()
+
+		volumes, resumeToken, err := client.ListVolumes(ctx, "/ifs/data", "type=container", 10, "")
+		assertNoError(t, err)
+		assertNotNil(t, volumes)
+		assertEqual(t, 1, len(volumes))
+		assertEqual(t, expectedResumeToken, resumeToken)
+	})
+
+	// Test case 4: List volumes with error
+	t.Run("ListVolumesError", func(t *testing.T) {
+		client.API.(*mocks.Client).ExpectedCalls = nil
+
+		client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(fmt.Errorf("backend API failure")).Once()
+
+		volumes, resumeToken, err := client.ListVolumes(ctx, "/ifs/data", "type=container", 0, "")
+		assertError(t, err)
+		assertNil(t, volumes)
+		assertEqual(t, "", resumeToken)
+	})
+
+	// Test case 5: List volumes with empty filter (uses defaults)
+	t.Run("ListVolumesWithDefaultFilter", func(t *testing.T) {
+		client.API.(*mocks.Client).ExpectedCalls = nil
+
+		vol1 := "volume1"
+		path1 := "/ifs/data"
+		containerType := "container"
+
+		client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*apiv2.ResumeableContainerChildList)
+			*resp = apiv2.ResumeableContainerChildList{
+				Children: []*apiv2.ContainerChild{
+					{
+						Name: &vol1,
+						Path: &path1,
+						Type: &containerType,
+					},
+				},
+				Resume: "",
+			}
+		}).Once()
+
+		volumes, resumeToken, err := client.ListVolumes(ctx, "/ifs/data", "", 0, "")
+		assertNoError(t, err)
+		assertNotNil(t, volumes)
+		assertEqual(t, 1, len(volumes))
+		assertEqual(t, vol1, *volumes[0].Name)
+		assertEqual(t, "", resumeToken)
+	})
+
+	// Test case 6: List volumes with custom detail fields
+	t.Run("ListVolumesWithCustomDetail", func(t *testing.T) {
+		client.API.(*mocks.Client).ExpectedCalls = nil
+
+		vol1 := "volume1"
+		path1 := "/ifs/data"
+		containerType := "container"
+
+		client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*apiv2.ResumeableContainerChildList)
+			*resp = apiv2.ResumeableContainerChildList{
+				Children: []*apiv2.ContainerChild{
+					{
+						Name: &vol1,
+						Path: &path1,
+						Type: &containerType,
+					},
+				},
+				Resume: "",
+			}
+		}).Once()
+
+		volumes, resumeToken, err := client.ListVolumes(ctx, "/ifs/data", "detail=name|size|owner", 0, "")
+		assertNoError(t, err)
+		assertNotNil(t, volumes)
+		assertEqual(t, 1, len(volumes))
+		assertEqual(t, vol1, *volumes[0].Name)
+		assertEqual(t, "", resumeToken)
+	})
+
+	// Test case 7: List volumes with type override to "object"
+	t.Run("ListVolumesWithTypeObject", func(t *testing.T) {
+		client.API.(*mocks.Client).ExpectedCalls = nil
+
+		obj1 := "object1"
+		path1 := "/ifs/data"
+		objectType := "object"
+
+		client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*apiv2.ResumeableContainerChildList)
+			*resp = apiv2.ResumeableContainerChildList{
+				Children: []*apiv2.ContainerChild{
+					{
+						Name: &obj1,
+						Path: &path1,
+						Type: &objectType,
+					},
+				},
+				Resume: "",
+			}
+		}).Once()
+
+		volumes, resumeToken, err := client.ListVolumes(ctx, "/ifs/data", "type=object", 0, "")
+		assertNoError(t, err)
+		assertNotNil(t, volumes)
+		assertEqual(t, 1, len(volumes))
+		assertEqual(t, obj1, *volumes[0].Name)
+		assertEqual(t, "", resumeToken)
+	})
+
+	// Test case 8: List volumes with combined filters
+	t.Run("ListVolumesWithCombinedFilters", func(t *testing.T) {
+		client.API.(*mocks.Client).ExpectedCalls = nil
+
+		obj1 := "file1"
+		path1 := "/ifs/data"
+		fileType := "file"
+
+		client.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*apiv2.ResumeableContainerChildList)
+			*resp = apiv2.ResumeableContainerChildList{
+				Children: []*apiv2.ContainerChild{
+					{
+						Name: &obj1,
+						Path: &path1,
+						Type: &fileType,
+					},
+				},
+				Resume: "",
+			}
+		}).Once()
+
+		volumes, resumeToken, err := client.ListVolumes(ctx, "/ifs/data", "type=file,detail=name|container_path", 0, "")
+		assertNoError(t, err)
+		assertNotNil(t, volumes)
+		assertEqual(t, 1, len(volumes))
+		assertEqual(t, obj1, *volumes[0].Name)
+		assertEqual(t, "", resumeToken)
+	})
 }

@@ -125,6 +125,15 @@ func (c *Client) UpdateQuotaSizeByID(
 		ctx, c.API, ID, size, softLimit, advisoryLimit, softGracePrd)
 }
 
+// ModifyQuotaByID modifies specific quota parameters using PUT (CSI 1.12 ControllerModifyVolume)
+// This only updates the provided parameters without affecting others
+// params is a map of parameter names to values (e.g., {"AdvisoryLimit": 1073741824})
+func (c *Client) ModifyQuotaByID(
+	ctx context.Context, ID string, params map[string]interface{},
+) error {
+	return api.ModifyIsiQuotaByID(ctx, c.API, ID, params)
+}
+
 // ClearQuota removes the quota from a volume
 func (c *Client) ClearQuota(ctx context.Context, name string) error {
 	return api.DeleteIsiQuota(ctx, c.API, c.API.VolumePath(name))

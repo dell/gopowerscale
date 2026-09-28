@@ -145,12 +145,14 @@ type Jobs struct {
 }
 
 type Report struct {
-	Policy  Policy   `json:"policy,omitempty"`
-	ID      string   `json:"id"`
-	JobID   int64    `json:"job_id"`
-	State   JobState `json:"state,omitempty"`
-	EndTime int64    `json:"end_time"`
-	Errors  []string `json:"errors"`
+	Policy           Policy   `json:"policy,omitempty"`
+	ID               string   `json:"id"`
+	JobID            int64    `json:"job_id"`
+	State            JobState `json:"state,omitempty"`
+	StartTime        int64    `json:"start_time"`
+	EndTime          int64    `json:"end_time"`
+	BytesTransferred int64    `json:"bytes_transferred"`
+	Errors           []string `json:"errors"`
 }
 
 // GetPolicyByName returns policy by name

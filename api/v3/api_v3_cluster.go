@@ -72,6 +72,28 @@ func GetIsiFloatStats(
 	return resp, err
 }
 
+// GetIsiComplexStats queries statistics with complex values (objects/arrays)
+func GetIsiComplexStats(
+	ctx context.Context,
+	client api.Client,
+	keys []string,
+) (resp *IsiComplexStatsResp, err error) {
+	// PAPI call: GET https://1.2.3.4:8080/platform/3/statistics/current?keys=node.nfs.basic_stats
+
+	keysStr := strings.Join(keys, ",")
+	statsOv := api.OrderedValues{{[]byte("keys"), []byte(keysStr)}}
+
+	err = client.Get(
+		ctx,
+		string(platfromStatsPath),
+		"current",
+		statsOv,
+		nil,
+		&resp)
+
+	return resp, err
+}
+
 // IsIOInProgress returns the list of clients currently performing IO on the particular array
 func IsIOInProgress(ctx context.Context,
 	client api.Client,

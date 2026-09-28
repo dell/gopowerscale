@@ -33,9 +33,24 @@ type isiFloatStats struct {
 	Value     float64 `json:"value"`
 }
 
+// IsiComplexStats represents a statistic entry with a complex value (object/array)
+type IsiComplexStats struct {
+	ID        int         `json:"devid"`
+	Error     string      `json:"error"`
+	ErrorCode int         `json:"error_code"`
+	Key       string      `json:"key"`
+	Time      int64       `json:"time"`
+	Value     interface{} `json:"value"`
+}
+
 // IsiStatsResp PAPI stats response attributes JSON structure
 type IsiStatsResp struct {
 	StatsList []*IsiStats `json:"stats"`
+}
+
+// IsiComplexStatsResp PAPI stats response for complex values (objects/arrays)
+type IsiComplexStatsResp struct {
+	StatsList []*IsiComplexStats `json:"stats"`
 }
 
 // IsiFloatStatsResp PAPI stats response float attributes JSON structure

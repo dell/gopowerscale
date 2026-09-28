@@ -23,9 +23,9 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/dell/csmlog"
 	"github.com/dell/gopowerscale/api/common/utils/poll"
 	apiv11 "github.com/dell/gopowerscale/api/v11"
-	log "github.com/sirupsen/logrus"
 )
 
 const (

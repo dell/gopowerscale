@@ -180,6 +180,65 @@ func TestUpdateQuotaSize(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestModifyQuotaByID(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+
+	// anyArgsExt extends anyArgs with one more mock.Anything for the 8th parameter
+	anyArgsExt := append(anyArgs, mock.Anything)
+
+	// Test modifying AdvisoryLimit
+	t.Run("ModifyAdvisoryLimit", func(t *testing.T) {
+		params := map[string]interface{}{
+			"AdvisoryLimit": int64(10737418240),
+		}
+		client.API.(*mocks.Client).On("DoWithHeaders", anyArgsExt...).Return(nil).Once()
+		err := client.ModifyQuotaByID(defaultCtx, quotaID, params)
+		assert.Nil(t, err)
+	})
+
+	// Test modifying SoftLimit
+	t.Run("ModifySoftLimit", func(t *testing.T) {
+		params := map[string]interface{}{
+			"SoftLimit": int64(21474836480),
+		}
+		client.API.(*mocks.Client).On("DoWithHeaders", anyArgsExt...).Return(nil).Once()
+		err := client.ModifyQuotaByID(defaultCtx, quotaID, params)
+		assert.Nil(t, err)
+	})
+
+	// Test modifying SoftGracePeriod
+	t.Run("ModifySoftGracePeriod", func(t *testing.T) {
+		params := map[string]interface{}{
+			"SoftGracePrd": int64(604800),
+		}
+		client.API.(*mocks.Client).On("DoWithHeaders", anyArgsExt...).Return(nil).Once()
+		err := client.ModifyQuotaByID(defaultCtx, quotaID, params)
+		assert.Nil(t, err)
+	})
+
+	// Test modifying multiple parameters
+	t.Run("ModifyMultipleParams", func(t *testing.T) {
+		params := map[string]interface{}{
+			"AdvisoryLimit": int64(10737418240),
+			"SoftLimit":     int64(21474836480),
+			"SoftGracePrd":  int64(604800),
+		}
+		client.API.(*mocks.Client).On("DoWithHeaders", anyArgsExt...).Return(nil).Once()
+		err := client.ModifyQuotaByID(defaultCtx, quotaID, params)
+		assert.Nil(t, err)
+	})
+
+	// Test error case
+	t.Run("ModifyQuotaError", func(t *testing.T) {
+		params := map[string]interface{}{
+			"AdvisoryLimit": int64(10737418240),
+		}
+		client.API.(*mocks.Client).On("DoWithHeaders", anyArgsExt...).Return(fmt.Errorf("backend error")).Once()
+		err := client.ModifyQuotaByID(defaultCtx, quotaID, params)
+		assert.NotNil(t, err)
+	})
+}
+
 func TestClearQuota(t *testing.T) {
 	client.API.(*mocks.Client).On("VolumePath", anyArgs[0:6]...).Return("").Once()
 	client.API.(*mocks.Client).On("Delete", anyArgs[0:6]...).Return(nil).Once()

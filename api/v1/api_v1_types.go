@@ -481,3 +481,36 @@ type Mapping struct {
 	ZID        int                    `json:"zid"`
 	Zone       string                 `json:"zone"`
 }
+
+// IsiNodePool represents a PowerScale storage node pool
+type IsiNodePool struct {
+	// Unique identifier for the node pool
+	ID int32 `json:"id"`
+	// Node pool name
+	Name string `json:"name"`
+	// Protection policy (e.g., "+2d:1n")
+	ProtectionPolicy string `json:"protection_policy"`
+	// Storage tier name
+	Tier string `json:"tier"`
+	// Usage metrics (nested structure)
+	Usage *IsiNodePoolUsage `json:"usage"`
+}
+
+// IsiNodePoolUsage represents capacity and usage metrics for a node pool
+type IsiNodePoolUsage struct {
+	// Total capacity in bytes (string format from API)
+	TotalBytes string `json:"total_bytes"`
+	// Used capacity in bytes (string format from API)
+	UsedBytes string `json:"used_bytes"`
+	// Available capacity in bytes (string format from API)
+	AvailBytes string `json:"avail_bytes"`
+	// Usable capacity in bytes (string format from API)
+	UsableBytes string `json:"usable_bytes"`
+	// Percentage used (string format from API)
+	PctUsed string `json:"pct_used"`
+}
+
+// IsiNodePoolsResp represents the response from node pools API
+type IsiNodePoolsResp struct {
+	NodePools []*IsiNodePool `json:"nodepools"`
+}
