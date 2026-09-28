@@ -25,9 +25,10 @@ import (
 
 // Stats is Isilon statistics data structure .
 type (
-	Stats      *apiv3.IsiStatsResp
-	FloatStats *apiv3.IsiFloatStatsResp
-	Clients    *apiv3.ExportClientList
+	Stats        *apiv3.IsiStatsResp
+	FloatStats   *apiv3.IsiFloatStatsResp
+	ComplexStats *apiv3.IsiComplexStatsResp
+	Clients      *apiv3.ExportClientList
 )
 
 // ClusterConfig represents the configuration of cluster in k8s (namespace API).
@@ -45,6 +46,20 @@ func (c *Client) GetStatistics(
 	keys []string,
 ) (Stats, error) {
 	stats, err := apiv3.GetIsiStats(ctx, c.API, keys)
+	if err != nil {
+		return nil, err
+	}
+
+	return stats, nil
+}
+
+// GetComplexStatistics returns statistics with complex values (objects/arrays) from Isilon.
+// Use this for stats endpoints that return JSON objects instead of simple int64 values.
+func (c *Client) GetComplexStatistics(
+	ctx context.Context,
+	keys []string,
+) (*apiv3.IsiComplexStatsResp, error) {
+	stats, err := apiv3.GetIsiComplexStats(ctx, c.API, keys)
 	if err != nil {
 		return nil, err
 	}

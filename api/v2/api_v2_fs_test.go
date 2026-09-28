@@ -24,6 +24,7 @@ import (
 
 	"github.com/dell/gopowerscale/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestContainerChildList_MarshalJSON(t *testing.T) {
@@ -231,4 +232,129 @@ func TestContainerChildDelete(t *testing.T) {
 
 	err := ContainerChildDelete(context.Background(), client, "", true)
 	assert.NoError(t, err)
+}
+
+func TestContainerChildrenList(t *testing.T) {
+	// Test case 1: Basic success with no parameters
+	t.Run("BasicSuccess", func(t *testing.T) {
+		client := &mocks.Client{}
+		client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*ResumeableContainerChildList)
+			*resp = ResumeableContainerChildList{
+				Children: []*ContainerChild{},
+				Resume:   "",
+			}
+		}).Once()
+
+		children, resumeToken, err := ContainerChildrenList(context.Background(), client, "/ifs/data", 0, "", "", []string{"default"})
+		assert.NoError(t, err)
+		assert.NotNil(t, children)
+		assert.Equal(t, "", resumeToken)
+	})
+
+	// Test case 2: With limit parameter
+	t.Run("WithLimit", func(t *testing.T) {
+		client := &mocks.Client{}
+		client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*ResumeableContainerChildList)
+			*resp = ResumeableContainerChildList{
+				Children: []*ContainerChild{},
+				Resume:   "",
+			}
+		}).Once()
+
+		children, resumeToken, err := ContainerChildrenList(context.Background(), client, "/ifs/data", 10, "", "", []string{"default"})
+		assert.NoError(t, err)
+		assert.NotNil(t, children)
+		assert.Equal(t, "", resumeToken)
+	})
+
+	// Test case 3: With objectType parameter
+	t.Run("WithObjectType", func(t *testing.T) {
+		client := &mocks.Client{}
+		client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*ResumeableContainerChildList)
+			*resp = ResumeableContainerChildList{
+				Children: []*ContainerChild{},
+				Resume:   "",
+			}
+		}).Once()
+
+		children, resumeToken, err := ContainerChildrenList(context.Background(), client, "/ifs/data", 0, "container", "", []string{"default"})
+		assert.NoError(t, err)
+		assert.NotNil(t, children)
+		assert.Equal(t, "", resumeToken)
+	})
+
+	// Test case 4: With resumeToken parameter
+	t.Run("WithResumeToken", func(t *testing.T) {
+		client := &mocks.Client{}
+		client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*ResumeableContainerChildList)
+			*resp = ResumeableContainerChildList{
+				Children: []*ContainerChild{},
+				Resume:   "next-token",
+			}
+		}).Once()
+
+		children, resumeToken, err := ContainerChildrenList(context.Background(), client, "/ifs/data", 0, "", "resume-token", []string{"default"})
+		assert.NoError(t, err)
+		assert.NotNil(t, children)
+		assert.Equal(t, "next-token", resumeToken)
+	})
+
+	// Test case 5: With detail parameter
+	t.Run("WithDetail", func(t *testing.T) {
+		client := &mocks.Client{}
+		client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*ResumeableContainerChildList)
+			*resp = ResumeableContainerChildList{
+				Children: []*ContainerChild{},
+				Resume:   "",
+			}
+		}).Once()
+
+		children, resumeToken, err := ContainerChildrenList(context.Background(), client, "/ifs/data", 0, "", "", []string{"name", "size"})
+		assert.NoError(t, err)
+		assert.NotNil(t, children)
+		assert.Equal(t, "", resumeToken)
+	})
+
+	// Test case 6: With all parameters
+	t.Run("WithAllParameters", func(t *testing.T) {
+		client := &mocks.Client{}
+		client.On("Get", anyArgs...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*ResumeableContainerChildList)
+			name := "test"
+			path := "/ifs/data/test"
+			objType := "container"
+			*resp = ResumeableContainerChildList{
+				Children: []*ContainerChild{
+					{
+						Name: &name,
+						Path: &path,
+						Type: &objType,
+					},
+				},
+				Resume: "next-token",
+			}
+		}).Once()
+
+		children, resumeToken, err := ContainerChildrenList(context.Background(), client, "/ifs/data", 10, "container", "resume-token", []string{"name", "size"})
+		assert.NoError(t, err)
+		assert.NotNil(t, children)
+		assert.Equal(t, 1, len(children))
+		assert.Equal(t, "next-token", resumeToken)
+	})
+
+	// Test case 7: Error case
+	t.Run("Error", func(t *testing.T) {
+		client := &mocks.Client{}
+		client.On("Get", anyArgs...).Return(errors.New("API error")).Once()
+
+		children, resumeToken, err := ContainerChildrenList(context.Background(), client, "/ifs/data", 0, "", "", []string{"default"})
+		assert.Error(t, err)
+		assert.Nil(t, children)
+		assert.Equal(t, "", resumeToken)
+	})
 }

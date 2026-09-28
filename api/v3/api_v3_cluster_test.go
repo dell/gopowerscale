@@ -123,3 +123,15 @@ func TestGetIsiStats(t *testing.T) {
 		assert.Equal(t, "Test scenario failed", err)
 	}
 }
+
+func TestGetIsiComplexStats(t *testing.T) {
+	ctx := context.Background()
+	client := &mocks.Client{}
+	client.On("Get", anyArgs...).Return(nil).Twice()
+	_, err := GetIsiComplexStats(ctx, client, []string{})
+	assert.NoError(t, err)
+	client.ExpectedCalls = nil
+	client.On("Get", anyArgs...).Return(errors.New("error in get isi complex stats")).Twice()
+	_, err = GetIsiComplexStats(ctx, client, []string{})
+	assert.Error(t, err)
+}

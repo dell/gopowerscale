@@ -365,7 +365,7 @@ func shouldEscape(c byte) bool {
 // StructToOrderedValues returns ordered value
 func StructToOrderedValues(s interface{}) OrderedValues {
 	v := reflect.ValueOf(s)
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Ptr { //nolint:govet
 		v = v.Elem()
 	}
 	t := v.Type()
@@ -377,9 +377,7 @@ func StructToOrderedValues(s interface{}) OrderedValues {
 			if v.Field(i).IsNil() {
 				continue
 			}
-			if strings.HasSuffix(tag, ",omitempty") {
-				tag = tag[:len(tag)-len(",omitempty")]
-			}
+			tag = strings.TrimSuffix(tag, ",omitempty")
 			data = append(data, [][]byte{[]byte(tag), []byte(fmt.Sprintf("%v", v.Field(i).Elem().Interface()))})
 		}
 	}

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2019-2022 Dell Inc, or its subsidiaries.
+Copyright (c) 2019-2026 Dell Inc. or its subsidiaries. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ import (
 	"strings"
 	"sync"
 
+	log "github.com/dell/csmlog"
 	apiv1 "github.com/dell/gopowerscale/api/v1"
 	apiv2 "github.com/dell/gopowerscale/api/v2"
-	log "github.com/sirupsen/logrus"
 )
 
 // Volume represents an Isilon Volume (namespace API).
@@ -120,6 +120,94 @@ func (c *Client) GetVolumes(ctx context.Context) ([]Volume, error) {
 		isiVolumes = append(isiVolumes, newVolume)
 	}
 	return isiVolumes, nil
+}
+
+// ListVolumes lists volumes at the specified path with filtering and pagination support.
+//
+// Default behavior (when filter is empty):
+//   - type: "container" (only lists containers/directories)
+//   - detail: "default" (returns default fields)
+//
+// Parameters:
+//   - ctx: context for the request
+//   - containerPath: the path to list volumes from (e.g., "/ifs/data")
+//   - filter: optional filter string to override defaults. Supported filters:
+//   - "type=<value>" - object type filter (e.g., "container", "object", "file")
+//   - "detail=<value>" - detail level (e.g., "default" or "name|container_path|type" for custom fields)
+//   - Multiple filters: "type=object,detail=name|size"
+//   - maxEntries: maximum number of entries to return (0 for no limit)
+//   - startingToken: pagination token from previous response (empty string for first request)
+//
+// Returns:
+//   - list of ContainerChild entries
+//   - next pagination token (empty string if no more results)
+//   - error if the operation fails
+//
+// Example usage:
+//
+//	// Use defaults (type=container, detail=default)
+//	children, token, err := client.ListVolumes(ctx, "/ifs/data", "", 100, "")
+//
+//	// Override type filter
+//	children, token, err := client.ListVolumes(ctx, "/ifs/data", "type=object", 100, "")
+//
+//	// Custom detail fields
+//	children, token, err := client.ListVolumes(ctx, "/ifs/data", "detail=name|size|owner", 100, "")
+//
+//	// Pagination (use same filter on subsequent calls)
+//	children2, token2, err := client.ListVolumes(ctx, "/ifs/data", "", 100, token)
+func (c *Client) ListVolumes(
+	ctx context.Context,
+	containerPath string,
+	filter string,
+	maxEntries int,
+	startingToken string,
+) ([]*apiv2.ContainerChild, string, error) {
+	// Set default values for type and detail parameters
+	objectType := "container"
+	detail := []string{"default"}
+
+	// Parse filter to override defaults if specified
+	if filter != "" {
+		filters := strings.Split(filter, ",")
+		for _, f := range filters {
+			parts := strings.Split(strings.TrimSpace(f), "=")
+			if len(parts) == 2 {
+				key := strings.TrimSpace(parts[0])
+				value := strings.TrimSpace(parts[1])
+
+				switch key {
+				case "type":
+					objectType = value
+				case "detail":
+					if value == "default" {
+						detail = []string{"default"}
+					} else {
+						// Support comma-separated detail fields
+						detail = strings.Split(value, "|")
+					}
+				}
+			}
+		}
+	}
+
+	// Call the low-level API
+	children, resumeToken, err := apiv2.ContainerChildrenList(
+		ctx,
+		c.API,
+		containerPath,
+		maxEntries,
+		objectType,
+		startingToken,
+		detail,
+	)
+	if err != nil {
+		log.WithContext(ctx).Errorf("ListVolumes failed for path %s: %v", containerPath, err)
+		return nil, "", err
+	}
+
+	log.WithContext(ctx).Debugf("ListVolumes returned %d volumes for path %s", len(children), containerPath)
+	return children, resumeToken, nil
 }
 
 // CreateVolume creates a volume
@@ -342,11 +430,29 @@ func (c *Client) ExportVolumeWithZone(
 	return c.ExportWithZone(ctx, name, zone, description)
 }
 
-// ExportVolumeWithZoneAndPath exports a volume in the specified access zone and path
+// ExportVolumeWithZoneAndPath exports a volume in the specified access zone and path.
+// For transport security control, use ExportVolumeWithZoneAndPathAndXprtsec instead.
 func (c *Client) ExportVolumeWithZoneAndPath(
 	ctx context.Context, path, zone, description string,
 ) (int, error) {
 	return c.ExportWithZoneAndPath(ctx, path, zone, description)
+}
+
+// ExportVolumeWithZoneAndPathAndXprtsec exports a volume with transport security policy (xprtsec).
+// This is a convenience wrapper around ExportWithZoneAndPathAndXprtsec.
+// Requires OneFS 9.16.0+ (PAPI v27) for xprtsec support.
+//
+// Parameters:
+//   - path: Full path to export (e.g., "/ifs/data/volume1")
+//   - zone: Access zone name (e.g., "System")
+//   - description: Export description (e.g., "k8s_pvc_<uuid>")
+//   - xprtsec: Transport security policy (empty string uses cluster default)
+//
+// See ExportWithZoneAndPathAndXprtsec for detailed xprtsec documentation.
+func (c *Client) ExportVolumeWithZoneAndPathAndXprtsec(
+	ctx context.Context, path, zone, description, xprtsec string,
+) (int, error) {
+	return c.ExportWithZoneAndPathAndXprtsec(ctx, path, zone, description, xprtsec)
 }
 
 // UnexportVolume stops exporting a volume
@@ -405,10 +511,10 @@ func (c *Client) GetVolumeExportMap(
 			for _, p := range *e.Clients {
 				if vp == p {
 					if _, ok := volToExpMap[v]; ok {
-						log.WithFields(map[string]interface{}{
+						log.WithContext(ctx).WithFields(map[string]interface{}{
 							"volumeName": v.Name,
 							"volumePath": vp,
-						}).Info(ctx, "vol-ex client map already defined")
+						}).Info("vol-ex client map already defined")
 						break
 					}
 					volToExpMap[v] = e
@@ -420,10 +526,10 @@ func (c *Client) GetVolumeExportMap(
 			for _, p := range *e.RootClients {
 				if vp == p {
 					if _, ok := volToExpMap[v]; ok {
-						log.WithFields(map[string]interface{}{
+						log.WithContext(ctx).WithFields(map[string]interface{}{
 							"volumeName": v.Name,
 							"volumePath": vp,
-						}).Info(ctx, "vol-ex root client map already defined")
+						}).Info("vol-ex root client map already defined")
 						break
 					}
 					volToExpMap[v] = e

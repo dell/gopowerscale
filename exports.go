@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2019-2022 Dell Inc, or its subsidiaries.
+Copyright (c) 2019-2026 Dell Inc. or its subsidiaries. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import (
 	str "github.com/dell/gopowerscale/api/common/utils/stringutils"
 	apiv1 "github.com/dell/gopowerscale/api/v1"
 	apiv2 "github.com/dell/gopowerscale/api/v2"
+	apiv27 "github.com/dell/gopowerscale/api/v27"
 )
 
 // ExportList is a list of Isilon Exports.
@@ -143,14 +144,74 @@ func (c *Client) ExportWithZone(ctx context.Context, name, zone, description str
 		zone)
 }
 
-// ExportWithZoneAndPath exports the volume with a given name, zone and path on the cluster
+// ExportWithZoneAndPath exports the volume with a given name, zone and path on the cluster.
+// For transport security control, use ExportWithZoneAndPathAndXprtsec instead.
 func (c *Client) ExportWithZoneAndPath(ctx context.Context, path, zone, description string) (int, error) {
+	return c.ExportWithZoneAndPathAndXprtsec(ctx, path, zone, description, "")
+}
+
+// ExportWithZoneAndPathAndXprtsec exports a volume with transport security policy (xprtsec).
+// The xprtsec parameter specifies allowed transport modes (e.g., "tls:mtls", "mtls", "none:tls:mtls").
+//
+// DUAL-PATH ARCHITECTURE (Automatic API Version Selection):
+//   - When xprtsec is specified (mTLS/TLS): Uses v27 API (/platform/27/protocols/nfs/exports)
+//     Requires OneFS 9.16.0+ (PAPI v27)
+//   - When xprtsec is empty (non-mTLS): Uses v2 API (/platform/2/protocols/nfs/exports)
+//     Works on all OneFS versions (backward compatible)
+//
+// This dual-path approach ensures:
+//   - mTLS/TLS works on OneFS 9.16.0+ without "property not defined" errors
+//   - Non-mTLS operations work on all OneFS versions including < 9.16.0
+//   - No breaking changes for existing deployments
+//
+// Parameters:
+//   - path: Full path to export (e.g., "/ifs/data/volume1")
+//   - zone: Access zone name (e.g., "System")
+//   - description: Export description (e.g., "k8s_pvc_<uuid>")
+//   - xprtsec: Transport security policy (empty string uses cluster default, usually "none:tls:mtls")
+//
+// Valid xprtsec values:
+//   - "" (empty): Use cluster default via v2 API (backward compatible)
+//   - "none": Plaintext only via v27 API
+//   - "tls": Server-authenticated TLS only via v27 API
+//   - "mtls": Mutual TLS only via v27 API
+//   - "tls:mtls": TLS or mTLS (no plaintext) via v27 API
+//   - "none:tls:mtls": All modes allowed via v27 API
+//
+// The effective policy is the intersection of xprtsec with cluster-wide nfs_tls_mode.
+// If the intersection is empty, the API returns 400 Bad Request.
+//
+// Example:
+//
+//	// Create mTLS-only export (uses v27 API)
+//	exportID, err := client.ExportWithZoneAndPathAndXprtsec(
+//	    ctx, "/ifs/data/vol1", "System", "k8s volume", "mtls")
+//
+//	// Create export with cluster default xprtsec (uses v2 API, backward compatible)
+//	exportID, err := client.ExportWithZoneAndPathAndXprtsec(
+//	    ctx, "/ifs/data/vol1", "System", "k8s volume", "")
+func (c *Client) ExportWithZoneAndPathAndXprtsec(ctx context.Context, path, zone, description, xprtsec string) (int, error) {
 	paths := []string{path}
 
-	return apiv2.ExportCreateWithZone(
-		ctx, c.API,
-		&apiv2.Export{Paths: &paths, Description: description},
-		zone)
+	export := &apiv2.Export{
+		Paths:       &paths,
+		Description: description,
+	}
+
+	// DUAL-PATH ARCHITECTURE: Choose API version based on xprtsec parameter
+	// This ensures backward compatibility while supporting mTLS on OneFS 9.16.0+
+	if xprtsec != "" {
+		// Path 1: mTLS/TLS requested - Use v27 API with xprtsec support
+		// Requires OneFS 9.16.0+ (PAPI v27)
+		// xprtsec is carried by the v27 request type, so it can never be
+		// serialised onto a v2 request.
+		return apiv27.ExportCreateWithZoneAndXprtsec(ctx, c.API, export, zone, xprtsec)
+	}
+
+	// Path 2: Non-mTLS (empty xprtsec) - Use v2 API for backward compatibility
+	// Works on all OneFS versions (including < 9.16.0)
+	// Does not include xprtsec field, uses cluster default
+	return apiv2.ExportCreateWithZone(ctx, c.API, export, zone)
 }
 
 // GetRootMapping returns the root mapping for an Export.
@@ -1205,6 +1266,96 @@ func (c *Client) CreateExportWithStructParams(ctx context.Context, params apiv4.
 // DeleteExportWithStructParams delete export with parameters
 func (c *Client) DeleteExportWithStructParams(ctx context.Context, params apiv4.DeleteV4NfsExportRequest) error {
 	return apiv4.DeleteNfsExport(ctx, params, c.API)
+}
+
+// AddExportAllClientsByIDWithZone adds the given IPs to all 4 client fields
+// (Clients, RootClients, ReadOnlyClients, ReadWriteClients) of the export
+// in a single GET + PUT operation, with dedup-safe merge.
+func (c *Client) AddExportAllClientsByIDWithZone(
+	ctx context.Context, id int, zone string, ips []string, ignoreUnresolvableHosts bool,
+) error {
+	if len(ips) == 0 {
+		return nil
+	}
+
+	export, err := c.GetExportByIDWithZone(ctx, id, zone)
+	if err != nil {
+		return err
+	}
+	if export == nil {
+		return errors.New("export not found")
+	}
+
+	updatedClients := c.getUpdatedClients(ctx, export.ID, export.Clients, ips)
+	updatedRootClients := c.getUpdatedClients(ctx, export.ID, export.RootClients, ips)
+	updatedReadOnlyClients := c.getUpdatedClients(ctx, export.ID, export.ReadOnlyClients, ips)
+	updatedReadWriteClients := c.getUpdatedClients(ctx, export.ID, export.ReadWriteClients, ips)
+
+	return apiv2.ExportUpdateWithZone(
+		ctx, c.API, &apiv2.Export{
+			ID:               export.ID,
+			Clients:          updatedClients,
+			RootClients:      updatedRootClients,
+			ReadOnlyClients:  updatedReadOnlyClients,
+			ReadWriteClients: updatedReadWriteClients,
+		}, export.Zone, ignoreUnresolvableHosts)
+}
+
+// GetExportsCountAttachedToNodeIPs returns the count of exports that have any
+// of the provided node IPs in any of the 4 client fields. Uses the v4 API
+// with auto-pagination and zone filter.
+func (c *Client) GetExportsCountAttachedToNodeIPs(
+	ctx context.Context, nodeIPs []string, zone string,
+) (int, error) {
+	if len(nodeIPs) == 0 {
+		return 0, nil
+	}
+
+	ipSet := make(map[string]bool, len(nodeIPs))
+	for _, ip := range nodeIPs {
+		ipSet[ip] = true
+	}
+
+	exports, err := c.ListAllExportsWithStructParams(ctx, apiv4.ListV4NfsExportsParams{
+		Zone: &zone,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	var count int
+	for _, export := range exports {
+		if anyIPInExportFields(export, ipSet) {
+			count++
+		}
+	}
+	return count, nil
+}
+
+// anyIPInExportFields checks if any of the IPs in ipSet appear in any of the
+// 4 client fields of the export.
+func anyIPInExportFields(export openapi.V2NfsExportExtended, ipSet map[string]bool) bool {
+	for _, ip := range export.Clients {
+		if ipSet[ip] {
+			return true
+		}
+	}
+	for _, ip := range export.RootClients {
+		if ipSet[ip] {
+			return true
+		}
+	}
+	for _, ip := range export.ReadOnlyClients {
+		if ipSet[ip] {
+			return true
+		}
+	}
+	for _, ip := range export.ReadWriteClients {
+		if ipSet[ip] {
+			return true
+		}
+	}
+	return false
 }
 
 // UpdateExportWithStructParams update export with parameters

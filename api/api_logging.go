@@ -26,7 +26,7 @@ import (
 	"net/http/httputil"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	log "github.com/dell/csmlog"
 )
 
 func isBinOctetBody(h http.Header) bool {

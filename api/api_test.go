@@ -48,6 +48,15 @@ type (
 	}
 )
 
+// mockRequestObserver is a mock implementation of RequestObserver for testing
+type mockRequestObserver struct {
+	observations []RequestObservation
+}
+
+func (m *mockRequestObserver) ObservePowerScaleRequest(obs RequestObservation) {
+	m.observations = append(m.observations, obs)
+}
+
 func (m *MockBody) Read(p []byte) (n int, err error) {
 	return m.ReadFunc(p)
 }
@@ -301,7 +310,8 @@ func TestNew(t *testing.T) {
 				td.groupName,
 				td.verboseLogging,
 				td.authType,
-				td.opts)
+				td.opts,
+			)
 			if td.expectedErr != "" {
 				assert.ErrorContains(t, err, td.expectedErr)
 			} else {
@@ -335,7 +345,8 @@ func TestNew_SystemCertPoolError(t *testing.T) {
 		&ClientOptions{
 			Insecure: false,
 			Timeout:  5 * time.Second,
-		})
+		},
+	)
 
 	// This should succeed in most environments, but if SystemCertPool fails,
 	// it would return an error, covering that path
@@ -603,6 +614,71 @@ func TestExecuteWithRetryAuthenticate(t *testing.T) {
 	assert.Error(t, err)
 	err = c.executeWithRetryAuthenticate(ctx, http.MethodGet, "/bad-auth-401", "", nil, headers, nil, nil)
 	assert.Error(t, err)
+}
+
+func TestExecuteWithRetryAuthenticate_ClearsStaleSessionOn401(t *testing.T) {
+	// Regression test for CSME-261 / container-storage-modules#78:
+	// When a 401 is received and sessionCookies is non-empty (stale expired cookie),
+	// executeWithRetryAuthenticate must clear sessionCookies and sessionCSRF before
+	// calling authenticate, so the authenticateFunc guard does not block re-auth.
+	defaultAuthenticateFunc := authenticateFunc
+	defer func() {
+		authenticateFunc = defaultAuthenticateFunc
+	}()
+
+	var cookieOnAuthenticate string
+	var csrfOnAuthenticate string
+	authenticateFunc = func(c *client, _ context.Context, _, _, _ string) error {
+		cookieOnAuthenticate = c.sessionCredentials.sessionCookies
+		csrfOnAuthenticate = c.sessionCredentials.sessionCSRF
+		return nil
+	}
+
+	jsonServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		res := &JSONError{StatusCode: http.StatusUnauthorized, Err: []Error{{Message: "Unauthorized", Code: "401"}}}
+		body, _ := json.Marshal(res)
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write(body) //nolint:errcheck
+	}))
+	defer jsonServer.Close()
+
+	c := &client{
+		http:              http.DefaultClient,
+		hostname:          jsonServer.URL,
+		authType:          authTypeSessionBased,
+		username:          "testuser",
+		password:          "testpassword",
+		customHTTPHeaders: NewSafeHeader(),
+		sessionCredentials: session{
+			sessionCookies: "stale-expired-cookie",
+			sessionCSRF:    "stale-csrf-token",
+		},
+	}
+
+	_ = c.executeWithRetryAuthenticate(context.Background(), http.MethodGet, "/any", "", nil, nil, nil, nil)
+
+	assert.Empty(t, cookieOnAuthenticate, "sessionCookies must be cleared before re-authenticate (JSONError 401)")
+	assert.Empty(t, csrfOnAuthenticate, "sessionCSRF must be cleared before re-authenticate (JSONError 401)")
+
+	htmlServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("<html><head><title>401 Unauthorized</title></head><body></body></html>")) //nolint:errcheck
+	}))
+	defer htmlServer.Close()
+
+	c.hostname = htmlServer.URL
+	c.sessionCredentials = session{
+		sessionCookies: "stale-expired-cookie",
+		sessionCSRF:    "stale-csrf-token",
+	}
+	cookieOnAuthenticate = ""
+	csrfOnAuthenticate = ""
+
+	_ = c.executeWithRetryAuthenticate(context.Background(), http.MethodGet, "/any", "", nil, nil, nil, nil)
+
+	assert.Empty(t, cookieOnAuthenticate, "sessionCookies must be cleared before re-authenticate (HTMLError 401)")
+	assert.Empty(t, csrfOnAuthenticate, "sessionCSRF must be cleared before re-authenticate (HTMLError 401)")
 }
 
 func TestDoWithHeaders(t *testing.T) {
@@ -943,6 +1019,121 @@ func TestSetSkipAuthForAuthorization(t *testing.T) {
 	// Test setting skipAuthForAuthorization to false
 	SetSkipAuthForAuthorization(false)
 	assert.False(t, skipAuthForAuthorization)
+}
+
+func TestSetRequestObserver(t *testing.T) {
+	c := &client{
+		customHTTPHeaders: NewSafeHeader(),
+	}
+
+	mockObserver := &mockRequestObserver{
+		observations: []RequestObservation{},
+	}
+
+	c.SetRequestObserver(mockObserver)
+	assert.Equal(t, mockObserver, c.requestObserver)
+}
+
+func TestGetRequestObserver(t *testing.T) {
+	mockObserver := &mockRequestObserver{
+		observations: []RequestObservation{},
+	}
+
+	c := &client{
+		customHTTPHeaders: NewSafeHeader(),
+		requestObserver:   mockObserver,
+	}
+
+	got := c.GetRequestObserver()
+	assert.Equal(t, mockObserver, got)
+}
+
+func TestObserverOnSuccess(t *testing.T) {
+	mockObserver := &mockRequestObserver{
+		observations: []RequestObservation{},
+	}
+
+	// Create a mock server
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"message":"Success"}`))
+	}))
+	defer server.Close()
+
+	ctx := context.Background()
+	c := &client{
+		http:              &http.Client{},
+		hostname:          server.URL,
+		username:          "test",
+		password:          "test",
+		authType:          authTypeBasic,
+		customHTTPHeaders: NewSafeHeader(),
+		requestObserver:   mockObserver,
+	}
+
+	resp := &struct {
+		Message string `json:"message"`
+	}{}
+
+	err := c.Get(ctx, "api/v1/endpoint", "", nil, nil, resp)
+	assert.NoError(t, err)
+	assert.Len(t, mockObserver.observations, 1)
+	assert.Equal(t, 200, mockObserver.observations[0].StatusCode)
+	assert.Nil(t, mockObserver.observations[0].Err)
+}
+
+func TestObserverOnError(t *testing.T) {
+	mockObserver := &mockRequestObserver{
+		observations: []RequestObservation{},
+	}
+
+	ctx := context.Background()
+	c := &client{
+		http:              &http.Client{},
+		hostname:          "http://invalid-host-that-does-not-exist-12345",
+		username:          "test",
+		password:          "test",
+		authType:          authTypeBasic,
+		customHTTPHeaders: NewSafeHeader(),
+		requestObserver:   mockObserver,
+	}
+
+	resp := &struct {
+		Message string `json:"message"`
+	}{}
+
+	err := c.Get(ctx, "api/v1/endpoint", "", nil, nil, resp)
+	assert.Error(t, err)
+	assert.Len(t, mockObserver.observations, 1)
+	assert.NotNil(t, mockObserver.observations[0].Err)
+}
+
+func TestObserverNil(t *testing.T) {
+	// Create a mock server
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"message":"Success"}`))
+	}))
+	defer server.Close()
+
+	ctx := context.Background()
+	c := &client{
+		http:              &http.Client{},
+		hostname:          server.URL,
+		username:          "test",
+		password:          "test",
+		authType:          authTypeBasic,
+		customHTTPHeaders: NewSafeHeader(),
+		requestObserver:   nil, // No observer
+	}
+
+	resp := &struct {
+		Message string `json:"message"`
+	}{}
+
+	// Should not panic when observer is nil
+	err := c.Get(ctx, "api/v1/endpoint", "", nil, nil, resp)
+	assert.NoError(t, err)
 }
 
 func TestOrderedValues_StringDel(t *testing.T) {

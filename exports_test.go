@@ -1,35 +1,35 @@
-/*
-Copyright (c) 2022-2025 Dell Inc, or its subsidiaries.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-	http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright (c) Dell Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 package gopowerscale
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
 	"strconv"
 	"testing"
 
+	log "github.com/dell/csmlog"
 	api "github.com/dell/gopowerscale/api"
 	apiv1 "github.com/dell/gopowerscale/api/v1"
 	apiv2 "github.com/dell/gopowerscale/api/v2"
+	apiv27 "github.com/dell/gopowerscale/api/v27"
 	apiv4 "github.com/dell/gopowerscale/api/v4"
 	"github.com/dell/gopowerscale/mocks"
 	"github.com/dell/gopowerscale/openapi"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -1790,7 +1790,7 @@ func testAddExportClientsByID(t *testing.T, exportID int, export Export, addExpo
 ) {
 	clientsToAdd := []string{"192.168.1.110", "192.168.1.110", "192.168.1.111", "192.168.1.112", "192.168.1.113"}
 
-	log.Debug(defaultCtx, "add '%v' to '%v' for export '%d'", clientsToAdd, *export.Clients, exportID)
+	log.Debugf("add '%v' to '%v' for export '%d'", clientsToAdd, *export.Clients, exportID)
 
 	err = addExportClientsByID(defaultCtx, exportID, clientsToAdd, false)
 	assert.NoError(t, err)
@@ -1822,7 +1822,7 @@ func testRemoveExportClients(t *testing.T,
 
 	clientsToRemove := []string{"192.168.1.110", "192.168.1.110", "192.168.1.111", "192.168.1.116", "k8s-node-1.lab.acme.com"}
 
-	log.Debug(defaultCtx, "remove '%v' from '%v' for export '%d'", clientsToRemove, *export.Clients, exportID)
+	log.Debugf("remove '%v' from '%v' for export '%d'", clientsToRemove, *export.Clients, exportID)
 
 	if removeExportClientsByIDFunc != nil {
 		err = removeExportClientsByIDFunc(defaultCtx, exportID, clientsToRemove, false)
@@ -2195,7 +2195,7 @@ func testClientExportLifeCycleWithStructParams(t *testing.T) {
 	})
 	assertNil(t, err)
 	assert.Equal(t, 1, len(getExport.Exports))
-	assert.Equal(t, res.ID, *(getExport.Exports[0].ID))
+	assert.Equal(t, res.ID, *getExport.Exports[0].ID)
 
 	// Test getExport
 	readOnly := true
@@ -2209,7 +2209,7 @@ func testClientExportLifeCycleWithStructParams(t *testing.T) {
 	getUpdatedExport, err := client.GetExportWithStructParams(defaultCtx, apiv4.GetV2NfsExportRequest{
 		V2NFSExportID: exportID,
 	})
-	assert.Equal(t, true, *(getUpdatedExport.Exports[0].ReadOnly))
+	assert.Equal(t, true, *getUpdatedExport.Exports[0].ReadOnly)
 
 	// Test delete export
 	err = client.DeleteExportWithStructParams(defaultCtx, apiv4.DeleteV4NfsExportRequest{V2NFSExportID: exportID})
@@ -3062,6 +3062,329 @@ func TestRemoveExportClientsByName(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestAddExportAllClientsByIDWithZone(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Add to all 4 fields - empty export", func(t *testing.T) {
+		c := &Client{}
+		c.API = &mocks.Client{}
+
+		mockExport := &apiv2.Export{
+			ID:   1,
+			Zone: "zone1",
+		}
+		c.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*apiv2.ExportList)
+			*resp = apiv2.ExportList{mockExport}
+		}).Once()
+		c.API.(*mocks.Client).On("Put", anyArgs[0:7]...).Return(nil).Once()
+
+		err := c.AddExportAllClientsByIDWithZone(ctx, 1, "zone1", []string{"10.0.0.1", "10.0.0.2"}, false)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Dedup existing IPs", func(t *testing.T) {
+		c := &Client{}
+		c.API = &mocks.Client{}
+
+		existingClients := []string{"10.0.0.1"}
+		mockExport := &apiv2.Export{
+			ID:               1,
+			Zone:             "zone1",
+			Clients:          &existingClients,
+			RootClients:      &[]string{"10.0.0.1"},
+			ReadOnlyClients:  &[]string{},
+			ReadWriteClients: &[]string{},
+		}
+		c.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*apiv2.ExportList)
+			*resp = apiv2.ExportList{mockExport}
+		}).Once()
+		c.API.(*mocks.Client).On("Put", anyArgs[0:7]...).Return(nil).Run(func(args mock.Arguments) {
+			req := args.Get(5).(*apiv2.ExportReq)
+			// Clients should have 10.0.0.1 and 10.0.0.2 (no dup)
+			assert.Contains(t, *req.Clients, "10.0.0.1")
+			assert.Contains(t, *req.Clients, "10.0.0.2")
+			assert.Equal(t, 2, len(*req.Clients))
+		}).Once()
+
+		err := c.AddExportAllClientsByIDWithZone(ctx, 1, "zone1", []string{"10.0.0.1", "10.0.0.2"}, false)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Nil client fields - no panic", func(t *testing.T) {
+		c := &Client{}
+		c.API = &mocks.Client{}
+
+		mockExport := &apiv2.Export{
+			ID:               1,
+			Zone:             "zone1",
+			Clients:          nil,
+			RootClients:      nil,
+			ReadOnlyClients:  nil,
+			ReadWriteClients: nil,
+		}
+		c.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*apiv2.ExportList)
+			*resp = apiv2.ExportList{mockExport}
+		}).Once()
+		c.API.(*mocks.Client).On("Put", anyArgs[0:7]...).Return(nil).Once()
+
+		err := c.AddExportAllClientsByIDWithZone(ctx, 1, "zone1", []string{"10.0.0.1"}, false)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Empty IP list - return early", func(t *testing.T) {
+		c := &Client{}
+		c.API = &mocks.Client{}
+
+		err := c.AddExportAllClientsByIDWithZone(ctx, 1, "zone1", []string{}, false)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Nil IP slice - return early", func(t *testing.T) {
+		c := &Client{}
+		c.API = &mocks.Client{}
+
+		err := c.AddExportAllClientsByIDWithZone(ctx, 1, "zone1", nil, false)
+		assert.NoError(t, err)
+	})
+
+	t.Run("GET fails - error propagated", func(t *testing.T) {
+		c := &Client{}
+		c.API = &mocks.Client{}
+
+		c.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(errors.New("GET failed")).Once()
+
+		err := c.AddExportAllClientsByIDWithZone(ctx, 1, "zone1", []string{"10.0.0.1"}, false)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "GET failed")
+	})
+
+	t.Run("PUT fails - error propagated", func(t *testing.T) {
+		c := &Client{}
+		c.API = &mocks.Client{}
+
+		mockExport := &apiv2.Export{
+			ID:   1,
+			Zone: "zone1",
+		}
+		c.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*apiv2.ExportList)
+			*resp = apiv2.ExportList{mockExport}
+		}).Once()
+		c.API.(*mocks.Client).On("Put", anyArgs[0:7]...).Return(errors.New("PUT failed")).Once()
+
+		err := c.AddExportAllClientsByIDWithZone(ctx, 1, "zone1", []string{"10.0.0.1"}, false)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "PUT failed")
+	})
+
+	t.Run("GET returns nil export", func(t *testing.T) {
+		c := &Client{}
+		c.API = &mocks.Client{}
+
+		c.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*apiv2.ExportList)
+			*resp = apiv2.ExportList{}
+		}).Once()
+
+		err := c.AddExportAllClientsByIDWithZone(ctx, 1, "zone1", []string{"10.0.0.1"}, false)
+		assert.Error(t, err)
+	})
+}
+
+func TestGetExportsCountAttachedToNodeIPs(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("IPs in different fields", func(t *testing.T) {
+		c := &Client{}
+		c.API = &mocks.Client{}
+
+		id1 := int32(1)
+		id2 := int32(2)
+		zone := "zone1"
+		exports := openapi.V2NfsExports{
+			Exports: []openapi.V2NfsExportExtended{
+				{ID: &id1, Clients: []string{"10.0.0.1"}},
+				{ID: &id2, RootClients: []string{"10.0.0.2"}},
+			},
+		}
+		c.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*openapi.V2NfsExports)
+			*resp = exports
+		}).Once()
+
+		count, err := c.GetExportsCountAttachedToNodeIPs(ctx, []string{"10.0.0.1", "10.0.0.2"}, zone)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, count)
+	})
+
+	t.Run("Same export both IPs - count once", func(t *testing.T) {
+		c := &Client{}
+		c.API = &mocks.Client{}
+
+		id1 := int32(1)
+		zone := "zone1"
+		exports := openapi.V2NfsExports{
+			Exports: []openapi.V2NfsExportExtended{
+				{ID: &id1, Clients: []string{"10.0.0.1", "10.0.0.2"}},
+			},
+		}
+		c.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*openapi.V2NfsExports)
+			*resp = exports
+		}).Once()
+
+		count, err := c.GetExportsCountAttachedToNodeIPs(ctx, []string{"10.0.0.1", "10.0.0.2"}, zone)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, count)
+	})
+
+	t.Run("No matches", func(t *testing.T) {
+		c := &Client{}
+		c.API = &mocks.Client{}
+
+		id1 := int32(1)
+		zone := "zone1"
+		exports := openapi.V2NfsExports{
+			Exports: []openapi.V2NfsExportExtended{
+				{ID: &id1, Clients: []string{"10.0.0.3"}},
+			},
+		}
+		c.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*openapi.V2NfsExports)
+			*resp = exports
+		}).Once()
+
+		count, err := c.GetExportsCountAttachedToNodeIPs(ctx, []string{"10.0.0.1"}, zone)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, count)
+	})
+
+	t.Run("No exports", func(t *testing.T) {
+		c := &Client{}
+		c.API = &mocks.Client{}
+
+		zone := "zone1"
+		exports := openapi.V2NfsExports{
+			Exports: []openapi.V2NfsExportExtended{},
+		}
+		c.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*openapi.V2NfsExports)
+			*resp = exports
+		}).Once()
+
+		count, err := c.GetExportsCountAttachedToNodeIPs(ctx, []string{"10.0.0.1"}, zone)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, count)
+	})
+
+	t.Run("Pagination across 2 pages", func(t *testing.T) {
+		c := &Client{}
+		c.API = &mocks.Client{}
+
+		id1 := int32(1)
+		id2 := int32(2)
+		zone := "zone1"
+		resume := "page2token"
+
+		page1 := openapi.V2NfsExports{
+			Exports: []openapi.V2NfsExportExtended{
+				{ID: &id1, Clients: []string{"10.0.0.1"}},
+			},
+			Resume: &resume,
+		}
+		page2 := openapi.V2NfsExports{
+			Exports: []openapi.V2NfsExportExtended{
+				{ID: &id2, ReadWriteClients: []string{"10.0.0.1"}},
+			},
+		}
+		c.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*openapi.V2NfsExports)
+			*resp = page1
+		}).Once()
+		c.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*openapi.V2NfsExports)
+			*resp = page2
+		}).Once()
+
+		count, err := c.GetExportsCountAttachedToNodeIPs(ctx, []string{"10.0.0.1"}, zone)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, count)
+	})
+
+	t.Run("Nil client fields - no panic", func(t *testing.T) {
+		c := &Client{}
+		c.API = &mocks.Client{}
+
+		id1 := int32(1)
+		zone := "zone1"
+		exports := openapi.V2NfsExports{
+			Exports: []openapi.V2NfsExportExtended{
+				{ID: &id1},
+			},
+		}
+		c.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*openapi.V2NfsExports)
+			*resp = exports
+		}).Once()
+
+		count, err := c.GetExportsCountAttachedToNodeIPs(ctx, []string{"10.0.0.1"}, zone)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, count)
+	})
+
+	t.Run("Empty IP list", func(t *testing.T) {
+		c := &Client{}
+		c.API = &mocks.Client{}
+
+		zone := "zone1"
+		count, err := c.GetExportsCountAttachedToNodeIPs(ctx, []string{}, zone)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, count)
+	})
+
+	t.Run("API error", func(t *testing.T) {
+		c := &Client{}
+		c.API = &mocks.Client{}
+
+		zone := "zone1"
+		c.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(errors.New("API error")).Once()
+
+		_, err := c.GetExportsCountAttachedToNodeIPs(ctx, []string{"10.0.0.1"}, zone)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "API error")
+	})
+
+	t.Run("Checks all 4 client fields", func(t *testing.T) {
+		c := &Client{}
+		c.API = &mocks.Client{}
+
+		id1 := int32(1)
+		id2 := int32(2)
+		id3 := int32(3)
+		id4 := int32(4)
+		zone := "zone1"
+		exports := openapi.V2NfsExports{
+			Exports: []openapi.V2NfsExportExtended{
+				{ID: &id1, Clients: []string{"10.0.0.1"}},
+				{ID: &id2, RootClients: []string{"10.0.0.1"}},
+				{ID: &id3, ReadOnlyClients: []string{"10.0.0.1"}},
+				{ID: &id4, ReadWriteClients: []string{"10.0.0.1"}},
+			},
+		}
+		c.API.(*mocks.Client).On("Get", anyArgs[0:6]...).Return(nil).Run(func(args mock.Arguments) {
+			resp := args.Get(5).(*openapi.V2NfsExports)
+			*resp = exports
+		}).Once()
+
+		count, err := c.GetExportsCountAttachedToNodeIPs(ctx, []string{"10.0.0.1"}, zone)
+		assert.NoError(t, err)
+		assert.Equal(t, 4, count)
+	})
+}
+
 func TestRemoveExportClientsWithPathAndZone(t *testing.T) {
 	client := &Client{}
 	client.API = &mocks.Client{}
@@ -3100,4 +3423,92 @@ func TestRemoveExportClientsWithPathAndZone(t *testing.T) {
 
 	err = client.RemoveExportClientsWithPathAndZone(ctx, path, zone, clientsToRemove, ignoreUnresolvableHosts)
 	assert.Error(t, err)
+}
+
+func TestExportWithZoneAndPathAndXprtsec(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	path := "test_path"
+	zone := "test_zone"
+	description := "test_description"
+	expectedExport := &apiv2.Export{
+		ID:          1,
+		Paths:       &[]string{path},
+		Description: description,
+	}
+
+	// Test case: xprtsec is routed to the v27 endpoint and the field is sent
+	for _, xprtsec := range []string{"mtls", "tls", "tls:mtls", "none", "none:tls:mtls"} {
+		client.API.(*mocks.Client).On("Post", mock.Anything, "platform/27/protocols/nfs/exports",
+			mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+		).Return(nil).Run(func(args mock.Arguments) {
+			// The v27 request type carries xprtsec
+			req := args.Get(5).(*apiv27.ExportReq)
+			assert.NotNil(t, req.Xprtsec)
+			assert.Equal(t, xprtsec, *req.Xprtsec)
+
+			resp := args.Get(6).(*apiv2.Export)
+			*resp = *expectedExport
+		}).Once()
+
+		exportID, err := client.ExportWithZoneAndPathAndXprtsec(defaultCtx, path, zone, description, xprtsec)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedExport.ID, exportID)
+	}
+
+	// Test case: empty xprtsec falls back to the v2 endpoint and omits the field
+	client.API.(*mocks.Client).On("Post", mock.Anything, "platform/2/protocols/nfs/exports",
+		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+	).Return(nil).Run(func(args mock.Arguments) {
+		// Backward compatibility: the v2 path uses the v2 request type, which
+		// has no xprtsec field at all, so the key cannot be serialised.
+		req := args.Get(5).(*apiv2.ExportReq)
+		body, marshalErr := json.Marshal(req)
+		assert.NoError(t, marshalErr)
+		assert.NotContains(t, string(body), "xprtsec")
+
+		resp := args.Get(6).(*apiv2.Export)
+		*resp = *expectedExport
+	}).Once()
+	exportID, err := client.ExportWithZoneAndPathAndXprtsec(defaultCtx, path, zone, description, "")
+	assert.NoError(t, err)
+	assert.Equal(t, expectedExport.ID, exportID)
+
+	// Test case: empty zone is rejected on the v27 path
+	exportID, err = client.ExportWithZoneAndPathAndXprtsec(defaultCtx, path, "", description, "mtls")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "zone cannot be empty")
+	assert.Equal(t, 0, exportID)
+
+	// Test case: API error on the v27 path is propagated
+	testErr := errors.New("test error")
+	client.API.(*mocks.Client).On("Post", anyArgs...).Return(testErr).Once()
+	exportID, err = client.ExportWithZoneAndPathAndXprtsec(defaultCtx, path, zone, description, "mtls")
+	assert.ErrorIs(t, err, testErr)
+	assert.Equal(t, 0, exportID)
+}
+
+func TestExportWithZoneAndPathBackwardCompatible(t *testing.T) {
+	client.API.(*mocks.Client).ExpectedCalls = nil
+	path := "test_path"
+	zone := "test_zone"
+	description := "test_description"
+	expectedExport := &apiv2.Export{ID: 7, Paths: &[]string{path}, Description: description}
+
+	// ExportWithZoneAndPath must keep using the v2 endpoint with no xprtsec,
+	// so existing callers are unaffected by the new xprtsec support.
+	client.API.(*mocks.Client).On("Post", mock.Anything, "platform/2/protocols/nfs/exports",
+		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+	).Return(nil).Run(func(args mock.Arguments) {
+		req := args.Get(5).(*apiv2.ExportReq)
+		body, marshalErr := json.Marshal(req)
+		assert.NoError(t, marshalErr)
+		assert.NotContains(t, string(body), "xprtsec")
+
+		resp := args.Get(6).(*apiv2.Export)
+		*resp = *expectedExport
+	}).Once()
+
+	exportID, err := client.ExportWithZoneAndPath(defaultCtx, path, zone, description)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedExport.ID, exportID)
 }
