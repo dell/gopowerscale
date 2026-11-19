@@ -3,7 +3,7 @@ module github.com/dell/gopowerscale
 go 1.27
 
 require (
-	github.com/dell/csmlog v1.2.0
+	github.com/dell/csmlog v1.2.1
 	github.com/PuerkitoBio/goquery v1.13.0
 	github.com/stretchr/testify v1.12.1
 )

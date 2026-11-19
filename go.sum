@@ -1,5 +1,5 @@
-github.com/dell/csmlog v1.2.0 h1:gQZ9eyuUzjBdbK8D8hNDrjRi4EsZ8Ny5Ksq+EpbOlbA=
-github.com/dell/csmlog v1.2.0/go.mod h1:0kTVQosDpXLRaFOsgDw8v9GTw1EyMvc7CZJnaDIfFbQ=
+github.com/dell/csmlog v1.2.1 h1:EvyaH3dhw2X1P5im8E1gntA6e0/WIqQ8ozyEptHEdds=
+github.com/dell/csmlog v1.2.1/go.mod h1:0kTVQosDpXLRaFOsgDw8v9GTw1EyMvc7CZJnaDIfFbQ=
 github.com/PuerkitoBio/goquery v1.13.0 h1:mqHbjD7Jmnul4DTR24LKTjo1uUmHUh072kteGV+xpFM=
 github.com/PuerkitoBio/goquery v1.13.0/go.mod h1:Hip5mdBL8K2wEGKJdr27sRaNwIdDajmCwB/ExUPwW+g=
 github.com/andybalholm/cascadia v1.3.4 h1:vM2lgh0Vru9Vwyfm4cQqWP2HHMW0u0+2PAW7Q38Qufg=
